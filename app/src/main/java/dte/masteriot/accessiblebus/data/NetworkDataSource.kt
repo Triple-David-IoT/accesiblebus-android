@@ -12,7 +12,10 @@ interface StopsApiService {
 }
 
 object NetworkDataSource {
-    private const val BASE_URL = "http://10.0.2.2:1880/"
+
+    // Con "adb reverse tcp:1880 tcp:1880", localhost del emulador = Mac
+    private const val BASE_URL = "http://localhost:1880/"
+
     private val json = Json { ignoreUnknownKeys = true }
 
     private val retrofit = Retrofit.Builder()
@@ -20,7 +23,7 @@ object NetworkDataSource {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
 
-    private val service = retrofit.create(StopsApiService::class.java)
+    private val service: StopsApiService = retrofit.create(StopsApiService::class.java)
 
     suspend fun getStops(): StopList = service.getStops()
 }
