@@ -1,0 +1,4 @@
+{ "stops": [
+  { "id": "DEMO-01", "name": "Parada demo 1", "lat": 40.4000, "lon": -3.7000 },
+  { "id": "DEMO-02", "name": "Parada demo 2", "lat": 40.4100, "lon": -3.7100 }
+]}
