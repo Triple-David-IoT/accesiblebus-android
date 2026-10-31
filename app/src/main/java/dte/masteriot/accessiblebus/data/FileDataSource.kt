@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 class FileDataSource(private val context: Context) {
+
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun getStops(): StopList = withContext(Dispatchers.IO) {
