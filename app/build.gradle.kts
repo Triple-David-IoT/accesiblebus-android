@@ -6,14 +6,12 @@ plugins {
 
 android {
     namespace = "dte.masteriot.accessiblebus"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "dte.masteriot.accessiblebus"
         minSdk = 24
-        targetSdk = 37
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -54,12 +52,13 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.ktor.client.core)
     implementation(platform(libs.mqtt.client.bom))
     implementation(libs.mqtt.client.core)
     implementation(libs.mqtt.client.transport.tcp)
-    implementation(libs.ktor.client.core)
     implementation(libs.kotlinx.coroutines.android)
 }
