@@ -7,7 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dte.masteriot.accessiblebus.ui.screens.PlaceholderScreen
 
-// TODO: Replace with the actual navigation routes.(A)
+// TODO: Replace placeholders with the actual navigation routes.(A)
 
 @Composable
 fun AppNav(

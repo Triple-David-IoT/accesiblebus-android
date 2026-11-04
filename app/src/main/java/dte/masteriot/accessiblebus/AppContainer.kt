@@ -1,26 +1,30 @@
 package dte.masteriot.accessiblebus
 
-import dte.masteriot.accessiblebus.core.net.ApiSource
-import dte.masteriot.accessiblebus.core.net.SampleApi
+import android.content.Context
+import dte.masteriot.accessiblebus.data.FileDataSource
+import dte.masteriot.accessiblebus.data.NetworkDataSource
+import dte.masteriot.accessiblebus.data.Repository
 
 /**
- * Default implementation of AppContainer.
+ * Container for Dependency Injection holding app-wide data sources and repositories.
  */
 interface AppContainer {
-
-    val apiSource: ApiSource
+    val repository: Repository
+    val networkDataSource: NetworkDataSource
+    val fileDataSource: FileDataSource
 }
 
-class DefaultAppContainer : AppContainer {
+class DefaultAppContainer(private val context: Context) : AppContainer {
 
-    private val useSampleApi = true
+    override val repository: Repository by lazy {
+        Repository(context)
+    }
 
-    override val apiSource: ApiSource by lazy {
-        if (useSampleApi) {
-            SampleApi()
-        } else {
-            // TODO: Replace with the real API implementation.
-            SampleApi()
-        }
+    override val networkDataSource: NetworkDataSource by lazy {
+        NetworkDataSource
+    }
+
+    override val fileDataSource: FileDataSource by lazy {
+        FileDataSource(context)
     }
 }

@@ -51,8 +51,7 @@ mqtt-client-transport-tcp = { module = "org.meshtastic:mqtt-client-transport-tcp
 
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 
-kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
-
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
