@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dte.masteriot.accessiblebus.core.net.ApiSource
+import dte.masteriot.accessiblebus.navigation.AppNav
 import dte.masteriot.accessiblebus.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
@@ -26,7 +27,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AppTheme(useHighContrast = false) {
-                // APP NAV
+                AppNav()
             }
         }
     }
