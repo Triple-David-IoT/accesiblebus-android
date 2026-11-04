@@ -28,7 +28,7 @@ private val HighContrastColorScheme = darkColorScheme(
 )
 
 @Composable
-fun AccessibleBusTheme(
+fun AppTheme(
     useHighContrast: Boolean = false,
     content: @Composable () -> Unit
 ) {

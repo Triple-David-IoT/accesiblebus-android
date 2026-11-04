@@ -1,4 +1,4 @@
-package dte.masteriot.accessiblebus.ui
+package dte.masteriot.accessiblebus
 
 import androidx.compose.runtime.Composable
 
