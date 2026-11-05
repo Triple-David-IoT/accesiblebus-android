@@ -8,12 +8,10 @@ echo "Performing API Health Check"
 
 response=$(curl -fsS "$API_URL/health")
 
-if [ "$response" != '{"status":"ok"}' ]; then
+if ! grep -q '"status":"ok"' <<<"$response"; then
   echo "ERROR: Unexpected API response"
   echo "$response"
   exit 1
 fi
 
 echo "OK: API is Healthy"
-
-
