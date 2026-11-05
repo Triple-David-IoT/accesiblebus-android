@@ -1,0 +1,8 @@
+{
+  "name": "nodered_flow",
+  "version": "1.0.0",
+  "description": "Node-RED flows for AccessibleBus",
+  "dependencies": {
+    "@flowfuse/node-red-dashboard": "1.29.0"
+  }
+}
