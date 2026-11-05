@@ -31,7 +31,7 @@ AccessibleBus/
 ├── app/                         # Android application
 ├── api/
 │   ├── Dockerfile
-│   ├── main.py
+│   ├── app/                     # API code; see api/app/README.md
 │   ├── requirements.txt
 │   └── tests/
 │       └── smoke.sh
@@ -190,7 +190,8 @@ Expected response:
 
 ```json
 {
-  "status": "ok"
+  "status": "ok",
+  "schemaVersion": 1
 }
 ```
 
@@ -203,7 +204,7 @@ curl http://localhost:8000/health
 The API container runs Uvicorn with one worker:
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
 ```
 
 This is the initial API skeleton. The project API functionality will be integrated separately.
