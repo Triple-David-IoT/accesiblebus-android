@@ -1,0 +1,13 @@
+{
+  "line": "27",
+  "direction": "1",
+  "directionLabel": "Glorieta de Embajadores → Plaza de Castilla",
+  "itineraryCode": 342046,
+  "sourceDataDate": "2026-05-29",
+  "stops": [
+    { "sequence": 1, "physicalStopCode": "292" },
+    { "sequence": 2, "physicalStopCode": "293" },
+    { "sequence": 3, "physicalStopCode": "294" },
+    { "sequence": 4, "physicalStopCode": "1045" }
+  ]
+}
