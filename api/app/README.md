@@ -57,6 +57,7 @@ Outbox rows that are still pending stay in the database, and the publisher resum
 | `DATABASE_URL` | Yes | | PostgreSQL connection string |
 | `MQTT_HOST` | Yes | | Broker host |
 | `MQTT_PORT` | No | `1883` | Broker port |
+| `MANIFEST_PATH` | No | `/app/contracts/manifest.json` | Stop manifest, mounted from `contracts/` |
 
 To add a variable, add it to `settings.py` and `docker-compose.yml` in the same pull request.
 

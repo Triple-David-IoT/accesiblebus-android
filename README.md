@@ -38,6 +38,7 @@ AccessibleBus/
 ├── mosquitto/
 │   └── mosquitto.conf
 ├── nodered/
+│   ├── Dockerfile
 │   └── package.json
 ├── scripts/
 │   └── up.sh
@@ -53,14 +54,14 @@ The Compose configuration uses the following image families:
 
 | Service | Image | Version |
 |---|---|---|
-| Mosquitto | `eclipse-mosquitto` | 2.x |
-| Node-RED | `nodered/node-red` | 4.x |
+| Mosquitto | `eclipse-mosquitto` | 2.1.2-alpine |
+| Node-RED | `nodered/node-red` | 4.1.3 |
 | API | `python` | 3.12-slim |
 | PostgreSQL | `postgres` | 16.x |
 
 The exact image tags are defined in `docker-compose.yml`.
 
-Node-RED Dashboard 2.0 is declared in `nodered/package.json`.
+Node-RED Dashboard 2.0 is declared in `nodered/package.json` and installed by `nodered/Dockerfile`.
 
 ## 5. Environment Configuration
 
