@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-This repository contains the Docker Compose infrastructure for the AccessibleBus project.
+This file describes the Docker Compose infrastructure for the AccessibleBus project.
 
 The environment provides the services required for local development and integration:
 
@@ -311,7 +311,7 @@ Evidence should be stored under:
 
 ```text
 docs/
-└── evidencias/
+└── evidence/
     └── C01/
         ├── 01-compose-ps.png
         ├── 02-api-health.png
@@ -340,16 +340,3 @@ docker compose down
 ```
 
 The named volumes remain available for the next execution.
-
-## 16. C01 Completion Criteria
-
-C01 is considered complete when:
-
-- The four services are defined in `docker-compose.yml`.
-- The services can be started with Docker Compose.
-- PostgreSQL health checks work.
-- The API health endpoint responds.
-- Mosquitto accepts MQTT messages from the development computer.
-- MQTT communication can be verified from an Android device on the local network.
-- Persistent volumes are configured.
-- The environment setup and verification steps are documented.
