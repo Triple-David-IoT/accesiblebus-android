@@ -1,61 +1,67 @@
-# Datos de paradas (PV-DATOS, A01)
+# Stop data (PV-DATOS, A01)
 
-Consulta comprobada el 5 de noviembre de 2026. Los datos del servicio tienen `FECHAACTUAL = 20260529`.
+Query checked on 6 November 2026. The service data has `FECHAACTUAL = 20260529`.
 
-## Selección
+## Selection
 
-Línea **27**, sentido **1** (Glorieta de Embajadores → Plaza de Castilla), itinerario `342046`, paradas consecutivas 16 a 19 de la tabla `M6_ParadasPorItinerario`. La selección compartida por la API (A04) y la app (A10) está en [`contracts/manifest.json`](../contracts/manifest.json).
+Line **27**, direction **2** (Plaza de Castilla → Glorieta de Embajadores), itinerary `369441`, consecutive stops 21 to 24 of the `M6_ParadasPorItinerario` table. The API (A04) and the app (A10) share this selection through [`contracts/manifest.json`](../contracts/manifest.json).
 
-| Secuencia del viaje | Orden en el itinerario | `CODIGOESTACION` | `DENOMINACION` | Código público EMT (`CODIGOEMPRESA`) |
-| --- | --- | --- | --- | --- |
-| 1 | 16 | `292` | PZA.DOCTOR MARAÑON | 56 |
-| 2 | 17 | `293` | PZA.SAN JUAN DE LA CRUZ | 54 |
-| 3 | 18 | `294` | Pº. CASTELLANA-JORGE MANRIQUE | 52 |
-| 4 | 19 | `1045` | Pº CASTELLANA-Pº DE LA HABANA | 50 |
+| Trip sequence | Itinerary order | `CODIGOESTACION` | `DENOMINACION` (CRTM) | EMT stop code | EMT stop name |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 21 | `456` | Pº PRADO-BANCO DE ESPAÑA | `76` | Banco de España |
+| 2 | 22 | `459` | PZA.CANOVAS DEL CASTILLO | `77` | Neptuno |
+| 3 | 23 | `460` | Pº PRADO-PZA.PLATERIA MTNEZ. | `79` | Museo del Prado-Jardín Botánico |
+| 4 | 24 | `461` | Pº PRADO-ATOCHA | `81` | Prado-Atocha |
 
-Se eligieron porque son consecutivas, tienen nombres distintos y las cuatro figuran con `SITUACION = S`, `GRADOACCESIBILIDAD = T` y sin `FECHAFIN`. El significado de esos dos valores no está comprobado en la documentación del CRTM, así que la app no debe presentarlos como una garantía de accesibilidad.
+These stops replace the first selection on Paseo de la Castellana for three reasons:
 
-## Fuente
+- **They exist in both sources.** Two of the previous stops, EMT codes `56` and `52`, were reported as unavailable or nonexistent by EMT and were missing from its current list for line 27.
+- **Several lines serve them.** Lines `001`, `14`, `27`, `37`, `45` and `C03` run through all four, which makes live testing easier.
+- **They are close together.** The stops are 295 to 343 m apart, so all four fit well on the map.
 
-- Conjunto: [Elementos de la Red de Autobuses Urbanos de Madrid: EMT](https://data-crtm.opendata.arcgis.com/datasets/8ef563f232c244ca9b3a5d2d6a3dc19b) (CRTM).
-- Servicio: `https://services5.arcgis.com/UxADft6QPcvFyDU1/arcgis/rest/services/M6_Red/FeatureServer`
-- Capa 0, `M6_Estaciones`: paradas físicas y coordenadas.
-- Tabla 3, `M6_ParadasPorItinerario`: orden de las paradas por línea y sentido. Solo se usó para elegir el manifest; la app no la consulta.
+All four have `SITUACION = S`, `GRADOACCESIBILIDAD = T` and no `FECHAFIN`. The meaning of those two values is not confirmed in the CRTM documentation, so the app must not present them as a guarantee of accessibility.
 
-## Consulta
+## Source
 
-Parámetros, que el cliente HTTP debe construir y codificar:
+- Dataset: [Elementos de la Red de Autobuses Urbanos de Madrid: EMT](https://data-crtm.opendata.arcgis.com/datasets/8ef563f232c244ca9b3a5d2d6a3dc19b) (CRTM).
+- Service: `https://services5.arcgis.com/UxADft6QPcvFyDU1/arcgis/rest/services/M6_Red/FeatureServer`
+- Layer 0, `M6_Estaciones`: physical stops and coordinates.
+- Table 3, `M6_ParadasPorItinerario`: stop order by line and direction. It was only used to choose the manifest; the app does not query it.
 
-| Parámetro | Valor |
+## Query
+
+Parameters, which the HTTP client must build and encode:
+
+| Parameter | Value |
 | --- | --- |
-| `where` | `CODIGOESTACION IN ('292','293','294','1045')` |
+| `where` | `CODIGOESTACION IN ('456','459','460','461')` |
 | `outFields` | `CODIGOESTACION,DENOMINACION` |
 | `outSR` | `4326` |
 | `f` | `geojson` |
 
-URL completa:
+Full URL:
 
 ```text
-https://services5.arcgis.com/UxADft6QPcvFyDU1/arcgis/rest/services/M6_Red/FeatureServer/0/query?where=CODIGOESTACION+IN+%28%27292%27%2C%27293%27%2C%27294%27%2C%271045%27%29&outFields=CODIGOESTACION%2CDENOMINACION&outSR=4326&f=geojson
+https://services5.arcgis.com/UxADft6QPcvFyDU1/arcgis/rest/services/M6_Red/FeatureServer/0/query?where=CODIGOESTACION+IN+%28%27456%27%2C%27459%27%2C%27460%27%2C%27461%27%29&outFields=CODIGOESTACION%2CDENOMINACION&outSR=4326&f=geojson
 ```
 
-La respuesta real está en [`contracts/samples/stops.geojson`](../contracts/samples/stops.geojson).
+The real response is in [`contracts/samples/stops.geojson`](../contracts/samples/stops.geojson).
 
-## Resultado
+## Result
 
-- **Coincidencias:** exactamente cuatro features.
-- **Tipo del código:** `CODIGOESTACION` es texto, tanto en el esquema de la capa como en el GeoJSON. El filtro acepta comillas, y es la forma que se debe usar. Sin comillas también devolvió cuatro features, pero no conviene depender de eso.
-- **Campos:** cada feature trae `properties.CODIGOESTACION`, `properties.DENOMINACION` y `geometry.coordinates`.
-- **Coordenadas:** vienen en orden `[longitud, latitud]`, en WGS84, y caen sobre Madrid.
-- **Respuesta:** HTTP 200 con `Content-Type: application/json; charset=utf-8`, no `application/geo+json`.
+- **Matches:** exactly four features.
+- **Code type:** `CODIGOESTACION` is text, in both the layer schema and the GeoJSON. Use quotes in the filter.
+- **Fields:** each feature has `properties.CODIGOESTACION`, `properties.DENOMINACION` and `geometry.coordinates`.
+- **Coordinates:** in `[longitude, latitude]` order, in WGS84, over Madrid.
+- **Response:** HTTP 200 with `Content-Type: application/json; charset=utf-8`, not `application/geo+json`.
 
-## Reglas para quien consuma los datos
+## Rules for consumers
 
-1. **Ordenar por el manifest.** El servicio devolvió `293, 292, 1045, 294`, así que el orden de la respuesta no sirve como secuencia.
-2. **Unir por `CODIGOESTACION`.** No usar `OBJECTID`: tampoco viene en esta respuesta.
-3. **No confundir los códigos.** `CODIGOESTACION` es el identificador CRTM y `CODIGOEMPRESA` el código público EMT.
-4. **Comprobar que lleguen las cuatro paradas** antes de dar la descarga por buena.
+1. **Sort by the manifest.** The service returned `459, 460, 461, 456`, so the response order is not the sequence.
+2. **Join by `CODIGOESTACION`.** Do not use `OBJECTID`, which this response does not include.
+3. **Do not mix the codes.** `physicalStopCode` is the CRTM `CODIGOESTACION`. `emtStopCode` is the public EMT number (`CODIGOEMPRESA`). Sent to the EMT API, a CRTM code can return a different stop.
+4. **Check that all four stops arrive** before accepting the download.
 
-## Sin comprobar
+## Not verified
 
-La consulta se hizo desde el portátil. La descarga desde el terminal Android, incluidos sus certificados, queda para A10.
+The query ran from a laptop. Downloading from the Android device, including its certificates, belongs to A10. The EMT stop names and codes were checked against its API once, close to midnight.
