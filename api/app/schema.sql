@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS assistance_request (
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   CHECK (state <> 'REJECTED' OR close_reason IS NOT NULL),
-  CHECK (state <> 'EXPIRED' OR close_reason IN ('STOP_PASSED', 'TRIP_ENDED'))
+  CHECK (state <> 'EXPIRED' OR close_reason IN ('STOP_PASSED', 'TRIP_ENDED')),
+  UNIQUE (created_event_id, id)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS one_active_request_per_visit
@@ -85,10 +86,13 @@ CREATE TABLE IF NOT EXISTS outbox_event (
   CHECK ((event_type LIKE 'request.%') = (request_id IS NOT NULL))
 );
 
+-- The composite foreign key makes both values point to the same request.
 CREATE TABLE IF NOT EXISTS terminal_receipt (
-  created_event_id UUID NOT NULL REFERENCES assistance_request (created_event_id),
-  request_id       UUID NOT NULL REFERENCES assistance_request (id),
+  created_event_id UUID NOT NULL,
+  request_id       UUID NOT NULL,
   terminal_id      TEXT NOT NULL,
   received_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (created_event_id, terminal_id)
+  PRIMARY KEY (created_event_id, terminal_id),
+  FOREIGN KEY (created_event_id, request_id)
+    REFERENCES assistance_request (created_event_id, id)
 );
