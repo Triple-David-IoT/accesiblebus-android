@@ -1,0 +1,864 @@
+openapi: 3.1.0
+info:
+  title: AccessibleBus API
+  version: 0.1.0
+  description: |
+    REST contract K1. This hand-written version lets the HMI, the dashboard and the
+    test scripts be built before the API exists. A08 replaces it with the FastAPI export.
+
+    Rules for every client:
+
+    - Send `Authorization: Bearer <token>` with one of the fixed K7 demo tokens.
+    - Send `Idempotency-Key` on every POST. Reuse the key when retrying the same command,
+      including after a timeout, and use a new key for each new intention.
+    - A repeated command returns the stored response with status 200.
+    - A rejected command is not stored. Retrying its key evaluates the command again.
+servers:
+  - url: http://localhost:8000
+    description: Local laboratory
+security:
+  - demoToken: []
+tags:
+  - name: Requests
+  - name: Sync
+  - name: Trips
+  - name: Demo
+paths:
+  /requests:
+    post:
+      tags: [Requests]
+      operationId: createRequest
+      summary: Create an assistance request
+      description: Passenger only. The owner and the vehicle are derived from the token and the visit.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequestBody'
+            example:
+              stopVisitId: 22222222-2222-4222-8222-222222222222
+              assistanceType: RAMP_BOARDING
+      responses:
+        '201':
+          description: Request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistanceRequest'
+              examples:
+                pendingRequest:
+                  $ref: '#/components/examples/PendingRequest'
+        '200':
+          description: Repeated command; returns the stored response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistanceRequest'
+              examples:
+                pendingRequest:
+                  $ref: '#/components/examples/PendingRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /requests/{requestId}:
+    get:
+      tags: [Requests]
+      operationId: getRequest
+      summary: Read a request
+      description: Owner, assigned driver or operator.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: The request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistanceRequest'
+              examples:
+                acceptedRequest:
+                  $ref: '#/components/examples/AcceptedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /requests/{requestId}/accept:
+    post:
+      tags: [Requests]
+      operationId: acceptRequest
+      summary: Accept a pending request
+      description: Assigned driver only. PENDING to ACCEPTED.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionBody'
+            example:
+              expectedVersion: 1
+      responses:
+        '200':
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistanceRequest'
+              examples:
+                acceptedRequest:
+                  $ref: '#/components/examples/AcceptedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /requests/{requestId}/reject:
+    post:
+      tags: [Requests]
+      operationId: rejectRequest
+      summary: Reject a pending request
+      description: Assigned driver only. PENDING to REJECTED, with a reason from the fixed list.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectBody'
+            example:
+              expectedVersion: 1
+              reason: RAMP_UNAVAILABLE
+      responses:
+        '200':
+          description: Request rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistanceRequest'
+              examples:
+                rejectedRequest:
+                  $ref: '#/components/examples/RejectedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /requests/{requestId}/cancel:
+    post:
+      tags: [Requests]
+      operationId: cancelRequest
+      summary: Cancel a pending or accepted request
+      description: Owner only. PENDING or ACCEPTED to CANCELLED.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionBody'
+            example:
+              expectedVersion: 2
+      responses:
+        '200':
+          description: Request cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistanceRequest'
+              examples:
+                cancelledRequest:
+                  $ref: '#/components/examples/CancelledRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /requests/{requestId}/complete:
+    post:
+      tags: [Requests]
+      operationId: completeRequest
+      summary: Mark an accepted request as completed
+      description: Assigned driver only. ACCEPTED to COMPLETED while the trip is active, even if the stop was passed.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionBody'
+            example:
+              expectedVersion: 2
+      responses:
+        '200':
+          description: Request completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistanceRequest'
+              examples:
+                completedRequest:
+                  $ref: '#/components/examples/CompletedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /sync:
+    get:
+      tags: [Sync]
+      operationId: sync
+      summary: Read a consistent snapshot
+      description: |
+        `scope=mine` is for the passenger. `scope=vehicle` needs `vehicleId` and is for the
+        assigned driver or the operator, who can read any laboratory vehicle.
+
+        - `trip` is the active trip. With no active trip it is the last ended trip, so clients
+          can block new requests. It is null if the vehicle never had a trip, as with the
+          second bus, which only exists in Node-RED.
+        - `stopVisits` holds the visits of `trip`.
+        - `requests` holds the requests of `trip` and of the previous ended trip, including
+          closed ones, so clients can resolve closures that happened while disconnected.
+      parameters:
+        - name: scope
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [mine, vehicle]
+        - name: vehicleId
+          in: query
+          description: Required when scope is vehicle.
+          schema:
+            type: string
+          example: BUS-DEMO-01
+      responses:
+        '200':
+          description: The snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Snapshot'
+              example:
+                trip:
+                  id: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                  vehicleId: BUS-DEMO-01
+                  driverSubject: driver-1
+                  state: ACTIVE
+                  lastPassedSequence: 1
+                stopVisits:
+                  - id: 11111111-1111-4111-8111-111111111111
+                    tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                    sequence: 1
+                    physicalStopCode: '292'
+                  - id: 22222222-2222-4222-8222-222222222222
+                    tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                    sequence: 2
+                    physicalStopCode: '293'
+                  - id: 33333333-3333-4333-8333-333333333333
+                    tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                    sequence: 3
+                    physicalStopCode: '294'
+                  - id: 44444444-4444-4444-8444-444444444444
+                    tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                    sequence: 4
+                    physicalStopCode: '1045'
+                requests:
+                  - id: cccccccc-cccc-4ccc-8ccc-cccccccccccc
+                    tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                    vehicleId: BUS-DEMO-01
+                    ownerSubject: passenger-1
+                    stopVisitId: 22222222-2222-4222-8222-222222222222
+                    sequence: 2
+                    physicalStopCode: '293'
+                    assistanceType: RAMP_BOARDING
+                    state: ACCEPTED
+                    version: 2
+                    received: true
+                    createdEventId: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+                    closeReason: null
+                    createdAt: '2026-11-08T10:00:00Z'
+                    updatedAt: '2026-11-08T10:01:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /trips/{tripId}/stop-visits:
+    get:
+      tags: [Trips]
+      operationId: listStopVisits
+      summary: List the visits of a trip
+      description: Any valid token. Ordered by sequence, with no timetable or ETA.
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+      responses:
+        '200':
+          description: The visits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StopVisit'
+              example:
+                - id: 11111111-1111-4111-8111-111111111111
+                  tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                  sequence: 1
+                  physicalStopCode: '292'
+                - id: 22222222-2222-4222-8222-222222222222
+                  tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                  sequence: 2
+                  physicalStopCode: '293'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /trips/{tripId}/advance:
+    post:
+      tags: [Trips]
+      operationId: advanceTrip
+      summary: Pass the next stop
+      description: |
+        Assigned driver only. `fromSequence` must equal the current `lastPassedSequence`.
+        Closes the pending requests of the passed visit as EXPIRED with STOP_PASSED.
+        Accepted requests stay open. Passing the last stop does not end the trip.
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdvanceBody'
+            example:
+              fromSequence: 0
+      responses:
+        '200':
+          description: Trip advanced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+              examples:
+                activeTrip:
+                  $ref: '#/components/examples/ActiveTrip'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /trips/{tripId}/end:
+    post:
+      tags: [Trips]
+      operationId: endTrip
+      summary: End the trip
+      description: Assigned driver only. Closes all pending and accepted requests as EXPIRED with TRIP_ENDED.
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Trip ended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+              example:
+                id: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+                vehicleId: BUS-DEMO-01
+                driverSubject: driver-1
+                state: ENDED
+                lastPassedSequence: 4
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /demo/reset:
+    post:
+      tags: [Demo]
+      operationId: resetDemo
+      summary: Start a new demo trip
+      description: Operator only. Ends the current trip and creates another with new IDs over the same four stops.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: New trip created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetResult'
+              example:
+                trip:
+                  id: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+                  vehicleId: BUS-DEMO-01
+                  driverSubject: driver-1
+                  state: ACTIVE
+                  lastPassedSequence: 0
+                stopVisits:
+                  - id: 55555555-5555-4555-8555-555555555555
+                    tripId: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+                    sequence: 1
+                    physicalStopCode: '292'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+components:
+  securitySchemes:
+    demoToken:
+      type: http
+      scheme: bearer
+      description: Fixed demo token from K7.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Unique per actor and command. Reuse it only to retry the same command.
+      schema:
+        type: string
+        minLength: 1
+      example: 7f3c9d1e-5b2a-4c8e-9f10-2a6b7c8d9e0f
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TripId:
+      name: tripId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    CreateRequestBody:
+      type: object
+      additionalProperties: false
+      required: [stopVisitId, assistanceType]
+      properties:
+        stopVisitId:
+          type: string
+          format: uuid
+        assistanceType:
+          type: string
+          enum: [RAMP_BOARDING]
+    VersionBody:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion:
+          type: integer
+          minimum: 1
+    RejectBody:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, reason]
+      properties:
+        expectedVersion:
+          type: integer
+          minimum: 1
+        reason:
+          $ref: '#/components/schemas/RejectReason'
+    AdvanceBody:
+      type: object
+      additionalProperties: false
+      required: [fromSequence]
+      properties:
+        fromSequence:
+          type: integer
+          minimum: 0
+    RejectReason:
+      type: string
+      enum: [RAMP_UNAVAILABLE, UNSAFE_STOP, OTHER]
+    AssistanceRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - tripId
+        - vehicleId
+        - ownerSubject
+        - stopVisitId
+        - sequence
+        - physicalStopCode
+        - assistanceType
+        - state
+        - version
+        - received
+        - createdEventId
+        - closeReason
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        tripId:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+        ownerSubject:
+          type: string
+        stopVisitId:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          minimum: 1
+          description: Position of the visit in the trip. Lets clients sort and label without a lookup.
+        physicalStopCode:
+          type: string
+          description: CRTM CODIGOESTACION of the visited stop.
+        assistanceType:
+          type: string
+          enum: [RAMP_BOARDING]
+        state:
+          type: string
+          enum: [PENDING, ACCEPTED, REJECTED, CANCELLED, COMPLETED, EXPIRED]
+        version:
+          type: integer
+          minimum: 1
+        received:
+          type: boolean
+          description: True once the assigned HMI's receipt is recorded. It never means a person read it.
+        createdEventId:
+          type: string
+          format: uuid
+        closeReason:
+          type:
+            - string
+            - 'null'
+          description: A RejectReason when REJECTED; STOP_PASSED or TRIP_ENDED when EXPIRED; otherwise null.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Trip:
+      type: object
+      additionalProperties: false
+      required: [id, vehicleId, driverSubject, state, lastPassedSequence]
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+        driverSubject:
+          type: string
+        state:
+          type: string
+          enum: [ACTIVE, ENDED]
+        lastPassedSequence:
+          type: integer
+          minimum: 0
+    StopVisit:
+      type: object
+      additionalProperties: false
+      required: [id, tripId, sequence, physicalStopCode]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tripId:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          minimum: 1
+        physicalStopCode:
+          type: string
+    Snapshot:
+      type: object
+      additionalProperties: false
+      required: [trip, stopVisits, requests]
+      properties:
+        trip:
+          oneOf:
+            - $ref: '#/components/schemas/Trip'
+            - type: 'null'
+        stopVisits:
+          type: array
+          items:
+            $ref: '#/components/schemas/StopVisit'
+        requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssistanceRequest'
+    ResetResult:
+      type: object
+      additionalProperties: false
+      required: [trip, stopVisits]
+      properties:
+        trip:
+          $ref: '#/components/schemas/Trip'
+        stopVisits:
+          type: array
+          items:
+            $ref: '#/components/schemas/StopVisit'
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - NOT_FOUND
+            - IDEMPOTENCY_CONFLICT
+            - VERSION_CONFLICT
+            - INVALID_TRANSITION
+            - ACTIVE_REQUEST_EXISTS
+            - VISIT_ALREADY_PASSED
+            - TRIP_NOT_ACTIVE
+        message:
+          type: string
+        currentResource:
+          description: Current state of the resource, so clients can refresh without another call.
+          oneOf:
+            - $ref: '#/components/schemas/AssistanceRequest'
+            - $ref: '#/components/schemas/Trip'
+    ValidationError:
+      type: object
+      description: Default FastAPI validation response.
+      required: [detail]
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            required: [loc, msg, type]
+            properties:
+              loc:
+                type: array
+                items:
+                  type:
+                    - string
+                    - integer
+              msg:
+                type: string
+              type:
+                type: string
+  responses:
+    Unauthorized:
+      description: Missing or unknown token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: UNAUTHORIZED
+            message: Missing or unknown token
+    Forbidden:
+      description: The token's role or identity cannot perform this operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: FORBIDDEN
+            message: Only the request owner can cancel it
+    NotFound:
+      description: The request, trip or stop visit does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: NOT_FOUND
+            message: Request not found
+    Conflict:
+      description: Same key with other content, stale version or progress, invalid transition, or an active request already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: VERSION_CONFLICT
+            message: The request has changed
+            currentResource:
+              id: cccccccc-cccc-4ccc-8ccc-cccccccccccc
+              tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+              vehicleId: BUS-DEMO-01
+              ownerSubject: passenger-1
+              stopVisitId: 22222222-2222-4222-8222-222222222222
+              sequence: 2
+              physicalStopCode: '293'
+              assistanceType: RAMP_BOARDING
+              state: CANCELLED
+              version: 3
+              received: true
+              createdEventId: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+              closeReason: null
+              createdAt: '2026-11-08T10:00:00Z'
+              updatedAt: '2026-11-08T10:02:00Z'
+    ValidationFailed:
+      description: Invalid body or parameters, or a missing Idempotency-Key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+          example:
+            detail:
+              - loc: [header, idempotency-key]
+                msg: Field required
+                type: missing
+  examples:
+    ActiveTrip:
+      value:
+        id: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+        vehicleId: BUS-DEMO-01
+        driverSubject: driver-1
+        state: ACTIVE
+        lastPassedSequence: 1
+    PendingRequest:
+      value:
+        id: cccccccc-cccc-4ccc-8ccc-cccccccccccc
+        tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+        vehicleId: BUS-DEMO-01
+        ownerSubject: passenger-1
+        stopVisitId: 22222222-2222-4222-8222-222222222222
+        sequence: 2
+        physicalStopCode: '293'
+        assistanceType: RAMP_BOARDING
+        state: PENDING
+        version: 1
+        received: false
+        createdEventId: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+        closeReason: null
+        createdAt: '2026-11-08T10:00:00Z'
+        updatedAt: '2026-11-08T10:00:00Z'
+    AcceptedRequest:
+      value:
+        id: cccccccc-cccc-4ccc-8ccc-cccccccccccc
+        tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+        vehicleId: BUS-DEMO-01
+        ownerSubject: passenger-1
+        stopVisitId: 22222222-2222-4222-8222-222222222222
+        sequence: 2
+        physicalStopCode: '293'
+        assistanceType: RAMP_BOARDING
+        state: ACCEPTED
+        version: 2
+        received: true
+        createdEventId: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+        closeReason: null
+        createdAt: '2026-11-08T10:00:00Z'
+        updatedAt: '2026-11-08T10:01:00Z'
+    RejectedRequest:
+      value:
+        id: cccccccc-cccc-4ccc-8ccc-cccccccccccc
+        tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+        vehicleId: BUS-DEMO-01
+        ownerSubject: passenger-1
+        stopVisitId: 22222222-2222-4222-8222-222222222222
+        sequence: 2
+        physicalStopCode: '293'
+        assistanceType: RAMP_BOARDING
+        state: REJECTED
+        version: 2
+        received: true
+        createdEventId: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+        closeReason: RAMP_UNAVAILABLE
+        createdAt: '2026-11-08T10:00:00Z'
+        updatedAt: '2026-11-08T10:01:00Z'
+    CancelledRequest:
+      value:
+        id: cccccccc-cccc-4ccc-8ccc-cccccccccccc
+        tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+        vehicleId: BUS-DEMO-01
+        ownerSubject: passenger-1
+        stopVisitId: 22222222-2222-4222-8222-222222222222
+        sequence: 2
+        physicalStopCode: '293'
+        assistanceType: RAMP_BOARDING
+        state: CANCELLED
+        version: 3
+        received: true
+        createdEventId: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+        closeReason: null
+        createdAt: '2026-11-08T10:00:00Z'
+        updatedAt: '2026-11-08T10:02:00Z'
+    CompletedRequest:
+      value:
+        id: cccccccc-cccc-4ccc-8ccc-cccccccccccc
+        tripId: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+        vehicleId: BUS-DEMO-01
+        ownerSubject: passenger-1
+        stopVisitId: 22222222-2222-4222-8222-222222222222
+        sequence: 2
+        physicalStopCode: '293'
+        assistanceType: RAMP_BOARDING
+        state: COMPLETED
+        version: 3
+        received: true
+        createdEventId: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+        closeReason: null
+        createdAt: '2026-11-08T10:00:00Z'
+        updatedAt: '2026-11-08T10:02:00Z'
