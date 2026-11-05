@@ -1,15 +1,36 @@
 *.iml
 .gradle
-/local.properties
+.kotlin
+
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+
 .DS_Store
-/build
+Thumbs.db
+**/build
 /captures
 .externalNativeBuild
 .cxx
+
 local.properties
+/local.properties
+
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node.js
+node_modules/
+
+# Logs
+*.log
