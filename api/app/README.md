@@ -37,7 +37,7 @@ def start_receipts(settings: Settings) -> Stoppable: ...
 Startup, in the FastAPI `lifespan`:
 
 1. Apply `schema.sql`.
-2. Create the demo trip if there is no active trip (`demo.ensure_scenario()`).
+2. Create the demo trip if there is no active trip (`demo.ensure_scenario(settings)`).
 3. Start the outbox publisher.
 4. Start the receipts subscriber.
 5. Start serving requests.
