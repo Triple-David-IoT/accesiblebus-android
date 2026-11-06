@@ -49,7 +49,9 @@ class BusMqttClient(
     }
 
     suspend fun connect(): Boolean = try {
-        client.connect(MqttEndpoint.parse(broker)); true
+        client.connect(MqttEndpoint.parse(broker))
+        Log.d(TAG, "connect ok: $broker")
+        true
     } catch (e: Exception) { Log.e(TAG, "connect: ${e.message}"); false }
 
     suspend fun subscribe(topic: String, handler: (String, String) -> Unit) {
