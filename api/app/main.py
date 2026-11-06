@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 from . import db
 from .demo import ensure_scenario
+from .demo import router as demo_router
 from .errors import ApiError, api_error_handler
 from .outbox import start_outbox
 from .receipts import start_receipts
@@ -25,7 +26,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     try:
         db.apply_schema()
         logger.info("Schema version %s applied", db.SCHEMA_VERSION)
-        ensure_scenario()
+        ensure_scenario(settings)
         outbox = start_outbox(settings)
         receipts = start_receipts(settings)
         try:
@@ -39,6 +40,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="AccessibleBus API", version="0.1.0", lifespan=lifespan)
 app.add_exception_handler(ApiError, api_error_handler)
+app.include_router(demo_router)
 
 
 @app.get("/health", tags=["Health"])
