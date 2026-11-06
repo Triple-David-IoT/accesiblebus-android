@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 3,
+  "nodeId": "ramp-node-01",
+  "vehicleId": "BUS-DEMO-01",
+  "sessionId": "7c1d9a52-3e04-4f6b-9a18-0b5d2c8e4f71",
+  "sequence": 42,
+  "sourceMode": "SIMULATED",
+  "stowedLimit": true,
+  "deployedLimit": false
+}

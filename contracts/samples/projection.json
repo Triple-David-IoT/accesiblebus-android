@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 3,
+  "vehicleId": "BUS-DEMO-01",
+  "projectionRunId": "b2f4e6a8-1c3d-4e5f-8a7b-9c0d1e2f3a4b",
+  "projectionSequence": 17,
+  "sourceSequence": 42,
+  "position": "STOWED",
+  "quality": "VALID"
+}
