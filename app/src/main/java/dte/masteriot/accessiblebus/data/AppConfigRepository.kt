@@ -14,6 +14,7 @@ import dte.masteriot.accessiblebus.core.config.ConnectionProfile
 import dte.masteriot.accessiblebus.core.config.VoiceMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 
 private val Context.appConfigDataStore by preferencesDataStore(
     name = "app_config"
@@ -22,6 +23,9 @@ private val Context.appConfigDataStore by preferencesDataStore(
 class AppConfigRepository(
     private val context: Context
 ) {
+    suspend fun getConfig(profile: ConnectionProfile): AppConfig {
+        return config(profile).first()
+    }
     private fun keyName(
         profile: ConnectionProfile,
         name: String
