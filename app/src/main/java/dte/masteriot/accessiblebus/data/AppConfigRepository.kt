@@ -76,6 +76,7 @@ class AppConfigRepository(
 
     /**
      * Guarda una configuración completa.
+     * Guarda una configuración completa.
      */
     suspend fun saveConfig(config: AppConfig) {
         context.appConfigDataStore.edit { preferences ->
