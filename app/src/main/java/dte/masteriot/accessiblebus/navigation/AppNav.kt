@@ -14,6 +14,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import dte.masteriot.accessiblebus.data.AppConfigRepository
 import dte.masteriot.accessiblebus.ui.screens.PreferencesScreen
+import dte.masteriot.accessiblebus.AccessibleBusApplication
+import dte.masteriot.accessiblebus.data.Repository
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 
 // TODO: Replace placeholders with the actual navigation routes.(A)
@@ -24,9 +28,13 @@ fun AppNav(
 ) {
     val context = LocalContext.current
 
-    val configRepository = remember {
-        AppConfigRepository(context.applicationContext)
-    }
+    val container =
+        (context.applicationContext as AccessibleBusApplication).container
+
+    val configRepository = container.appConfigRepository
+    val mqttRepository = container.repository
+
+    val coroutineScope = rememberCoroutineScope()
 
     NavHost(
         navController = navController,
@@ -35,9 +43,15 @@ fun AppNav(
         composable(Route.Profile.route) {
             ProfileScreen(
                 onProfileSelected = { profile ->
-                    navController.navigate(
-                        Route.Preferences.createRoute(profile)
-                    )
+                    coroutineScope.launch {
+                        configRepository.saveActiveProfile(profile)
+
+                        mqttRepository.connectMqtt(profile)
+
+                        navController.navigate(
+                            Route.Preferences.createRoute(profile)
+                        )
+                    }
                 }
             )
         }
@@ -96,6 +110,7 @@ fun AppNav(
             PreferencesScreen(
                 profile = profile,
                 repository = configRepository,
+                mqttRepository = mqttRepository,
                 onBack = {
                     navController.popBackStack()
                 }
