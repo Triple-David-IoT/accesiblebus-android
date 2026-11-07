@@ -10,6 +10,11 @@ import androidx.navigation.navArgument
 import dte.masteriot.accessiblebus.core.config.ConnectionProfile
 import dte.masteriot.accessiblebus.ui.screens.PlaceholderScreen
 import dte.masteriot.accessiblebus.ui.screens.ProfileScreen
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import dte.masteriot.accessiblebus.data.AppConfigRepository
+import dte.masteriot.accessiblebus.ui.screens.PreferencesScreen
+
 
 // TODO: Replace placeholders with the actual navigation routes.(A)
 
@@ -17,13 +22,19 @@ import dte.masteriot.accessiblebus.ui.screens.ProfileScreen
 fun AppNav(
     navController: NavHostController = rememberNavController()
 ) {
+    val context = LocalContext.current
+
+    val configRepository = remember {
+        AppConfigRepository(context.applicationContext)
+    }
+
     NavHost(
         navController = navController,
         startDestination = Route.Profile.route
     ) {
         composable(Route.Profile.route) {
             ProfileScreen(
-                onSelectProfile = { profile ->
+                onProfileSelected = { profile ->
                     navController.navigate(
                         Route.Preferences.createRoute(profile)
                     )
@@ -70,7 +81,7 @@ fun AppNav(
             route = Route.Preferences.route,
             arguments = listOf(
                 navArgument("profile") {
-                    type = NavType.EnumType(ConnectionProfile::class.java)
+                    type = NavType.StringType
                 }
             )
         ) { backStackEntry ->
@@ -82,9 +93,12 @@ fun AppNav(
                 profileName ?: ConnectionProfile.LABORATORY.name
             )
 
-            PlaceholderScreen(
-                title = "Preferences: ${profile.name}",
-                onBack = { navController.popBackStack() }
+            PreferencesScreen(
+                profile = profile,
+                repository = configRepository,
+                onBack = {
+                    navController.popBackStack()
+                }
             )
         }
     }
