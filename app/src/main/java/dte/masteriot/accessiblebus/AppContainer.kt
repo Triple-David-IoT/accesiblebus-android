@@ -19,7 +19,10 @@ interface AppContainer {
 class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val repository: Repository by lazy {
-        Repository(context)
+        Repository(
+            context = context,
+            appConfigRepository = appConfigRepository
+        )
     }
 
     override val networkDataSource: NetworkDataSource by lazy {
