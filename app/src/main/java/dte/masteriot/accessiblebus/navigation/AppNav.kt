@@ -2,10 +2,14 @@ package dte.masteriot.accessiblebus.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import dte.masteriot.accessiblebus.core.config.ConnectionProfile
 import dte.masteriot.accessiblebus.ui.screens.PlaceholderScreen
+import dte.masteriot.accessiblebus.ui.screens.ProfileScreen
 
 // TODO: Replace placeholders with the actual navigation routes.(A)
 
@@ -18,9 +22,12 @@ fun AppNav(
         startDestination = Route.Profile.route
     ) {
         composable(Route.Profile.route) {
-            PlaceholderScreen(
-                title = "Profile",
-                onBack = { navController.popBackStack() }
+            ProfileScreen(
+                onSelectProfile = { profile ->
+                    navController.navigate(
+                        Route.Preferences.createRoute(profile)
+                    )
+                }
             )
         }
 
@@ -59,9 +66,24 @@ fun AppNav(
             )
         }
 
-        composable(Route.Preferences.route) {
+        composable(
+            route = Route.Preferences.route,
+            arguments = listOf(
+                navArgument("profile") {
+                    type = NavType.EnumType(ConnectionProfile::class.java)
+                }
+            )
+        ) { backStackEntry ->
+
+            val profileName =
+                backStackEntry.arguments?.getString("profile")
+
+            val profile = ConnectionProfile.valueOf(
+                profileName ?: ConnectionProfile.LABORATORY.name
+            )
+
             PlaceholderScreen(
-                title = "Preferences",
+                title = "Preferences: ${profile.name}",
                 onBack = { navController.popBackStack() }
             )
         }
