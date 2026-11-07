@@ -31,6 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import dte.masteriot.accessiblebus.core.config.AppConfig
 import dte.masteriot.accessiblebus.core.config.AppConfigDefaults
 import dte.masteriot.accessiblebus.core.config.ConnectionProfile
@@ -42,10 +45,11 @@ import java.util.Locale
 fun PreferencesScreen(
     profile: ConnectionProfile,
     repository: AppConfigRepository,
+    mqttRepository: dte.masteriot.accessiblebus.data.Repository,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-
+    val coroutineScope = rememberCoroutineScope()
     val configFlow = remember(profile) {
         repository.config(profile)
     }
@@ -262,13 +266,20 @@ fun PreferencesScreen(
                         highContrastEnabled = highContrastEnabled
                     )
 
-                    // Save the configuration for the selected profile.
-                    // The repository persists it using DataStore.
-                    kotlinx.coroutines.runBlocking {
+                    coroutineScope.launch {
+                        // Save the configuration for the selected profile.
                         repository.saveConfig(updatedConfig)
-                    }
 
-                    onBack()
+                        // Get the profile currently being used by the app.
+                        val activeProfile = repository.activeProfile().first()
+
+                        // Reconnect only if the edited profile is the active one.
+                        if (profile == activeProfile) {
+                            mqttRepository.connectMqtt(activeProfile)
+                        }
+
+                        onBack()
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

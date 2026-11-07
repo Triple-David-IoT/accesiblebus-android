@@ -23,6 +23,8 @@ private val Context.appConfigDataStore by preferencesDataStore(
 class AppConfigRepository(
     private val context: Context
 ) {
+    private val activeProfileKey = stringPreferencesKey("active_profile")
+
     suspend fun getConfig(profile: ConnectionProfile): AppConfig {
         return config(profile).first()
     }
@@ -202,6 +204,26 @@ class AppConfigRepository(
     ) {
         context.appConfigDataStore.edit { preferences ->
             preferences[highContrastEnabledKey(profile)] = enabled
+        }
+    }
+
+    fun activeProfile(): Flow<ConnectionProfile> {
+        return context.appConfigDataStore.data.map { preferences ->
+            val profileName = preferences[activeProfileKey]
+
+            profileName
+                ?.let {
+                    runCatching {
+                        ConnectionProfile.valueOf(it)
+                    }.getOrNull()
+                }
+                ?: ConnectionProfile.LABORATORY
+        }
+    }
+
+    suspend fun saveActiveProfile(profile: ConnectionProfile) {
+        context.appConfigDataStore.edit { preferences ->
+            preferences[activeProfileKey] = profile.name
         }
     }
 }
