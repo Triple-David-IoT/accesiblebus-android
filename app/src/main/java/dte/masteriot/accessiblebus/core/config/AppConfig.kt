@@ -1,7 +1,5 @@
 package dte.masteriot.accessiblebus.core.config
 
-import dte.masteriot.accessiblebus.core.mqtt.BusMqttClient
-
 enum class ConnectionProfile {
     LABORATORY,
     COURSE
@@ -9,7 +7,7 @@ enum class ConnectionProfile {
 
 enum class VoiceMode{
     AUTO,
-    AlWAYS,
+    ALWAYS,
     OFF
 }
 
