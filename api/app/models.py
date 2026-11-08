@@ -57,6 +57,16 @@ class CreateRequestBody(ApiModel):
     assistance_type: Literal["RAMP_BOARDING"]
 
 
+class VersionBody(ApiModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
+
+    expected_version: int = Field(ge=1)
+
+
+class RejectBody(VersionBody):
+    reason: Literal["RAMP_UNAVAILABLE", "UNSAFE_STOP", "OTHER"]
+
+
 class Snapshot(ApiModel):
     trip: Trip | None
     stop_visits: list[StopVisit]
