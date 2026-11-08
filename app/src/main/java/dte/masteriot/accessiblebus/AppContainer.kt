@@ -1,6 +1,8 @@
 package dte.masteriot.accessiblebus
 
 import android.content.Context
+import dte.masteriot.accessiblebus.core.data.AssistanceRepository
+import dte.masteriot.accessiblebus.core.data.PreferencesCommandKeys
 import dte.masteriot.accessiblebus.core.net.ApiClient
 import dte.masteriot.accessiblebus.core.net.ApiSource
 import dte.masteriot.accessiblebus.core.net.SampleApi
@@ -16,6 +18,7 @@ interface AppContainer {
     val networkDataSource: NetworkDataSource
     val fileDataSource: FileDataSource
     val apiSource: ApiSource
+    val assistanceRepository: AssistanceRepository
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -38,5 +41,10 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         } else {
             ApiClient(BuildConfig.API_BASE_URL) { BuildConfig.API_TOKEN }
         }
+    }
+
+    // Passenger scope until the profile (C07) says whether this phone is a passenger or a bus.
+    override val assistanceRepository: AssistanceRepository by lazy {
+        AssistanceRepository(apiSource, PreferencesCommandKeys(context))
     }
 }

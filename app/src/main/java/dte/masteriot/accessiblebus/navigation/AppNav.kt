@@ -5,6 +5,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import dte.masteriot.accessiblebus.ui.passenger.ConfirmScreen
+import dte.masteriot.accessiblebus.ui.passenger.StopsScreen
+import dte.masteriot.accessiblebus.ui.passenger.TrackingScreen
 import dte.masteriot.accessiblebus.ui.screens.PlaceholderScreen
 
 // TODO: Replace placeholders with the actual navigation routes.(A)
@@ -20,15 +23,13 @@ fun AppNav(
         composable(Route.Profile.route) {
             PlaceholderScreen(
                 title = "Profile",
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                links = listOf("Passenger" to { navController.navigate(Route.PassengerStops.route) })
             )
         }
 
         composable(Route.PassengerStops.route) {
-            PlaceholderScreen(
-                title = "Passenger Stops",
-                onBack = { navController.popBackStack() }
-            )
+            StopsScreen(onStop = { navController.navigate(Route.PassengerConfirm.create(it)) })
         }
 
         composable(Route.PassengerStopDetail.route) {
@@ -38,16 +39,21 @@ fun AppNav(
             )
         }
 
-        composable(Route.PassengerConfirm.route) {
-            PlaceholderScreen(
-                title = "Confirm Journey",
+        composable(Route.PassengerConfirm.route) { entry ->
+            ConfirmScreen(
+                stopVisitId = entry.arguments?.getString("stopVisitId").orEmpty(),
+                onTracking = { requestId ->
+                    navController.navigate(Route.PassengerTracking.create(requestId)) {
+                        popUpTo(Route.PassengerStops.route)
+                    }
+                },
                 onBack = { navController.popBackStack() }
             )
         }
 
-        composable(Route.PassengerTracking.route) {
-            PlaceholderScreen(
-                title = "Passenger Tracking",
+        composable(Route.PassengerTracking.route) { entry ->
+            TrackingScreen(
+                requestId = entry.arguments?.getString("requestId").orEmpty(),
                 onBack = { navController.popBackStack() }
             )
         }

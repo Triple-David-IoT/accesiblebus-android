@@ -15,7 +15,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PlaceholderScreen(
     title: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    links: List<Pair<String, () -> Unit>> = emptyList()
 ) {
     Column(
         modifier = Modifier
@@ -28,6 +29,12 @@ fun PlaceholderScreen(
             text = title,
             style = MaterialTheme.typography.headlineMedium
         )
+
+        links.forEach { (label, onClick) ->
+            Button(onClick = onClick, modifier = Modifier.padding(top = 16.dp)) {
+                Text(label)
+            }
+        }
 
         Button(
             onClick = onBack,
