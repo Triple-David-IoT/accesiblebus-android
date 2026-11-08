@@ -70,53 +70,29 @@ class Repository(
     }
 
     fun arrivals(stopId: String): Flow<StopArrivals> = callbackFlow {
-        val currentMqtt = mqtt
-            ?: throw IllegalStateException("MQTT client is not connected")
-
         val topic = "bus/stops/$stopId/arrivals"
-
-        currentMqtt.subscribe(topic) { _, payload ->
+        mqtt?.subscribe(topic) { _, payload ->
             try {
                 trySend(json.decodeFromString<StopArrivals>(payload))
-            } catch (_: Exception) {
-            }
+            } catch (_: Exception) { }
         }
-
         awaitClose { }
     }
 
-    suspend fun sendRequest(r: AssistanceRequest): Boolean {
-        val currentMqtt = mqtt ?: return false
+    suspend fun sendRequest(r: AssistanceRequest): Boolean =
+        mqtt?.publish("bus/requests/${r.requestId}", json.encodeToString(r))?: false
 
-        return currentMqtt.publish(
-            "bus/requests/${r.requestId}",
-            json.encodeToString(r)
-        )
-    }
-
-    fun requestStatus(requestId: String): Flow<AssistanceRequest> =
-        callbackFlow {
-            val currentMqtt = mqtt
-                ?: throw IllegalStateException("MQTT client is not connected")
-
-            val topic = "bus/requests/$requestId/status"
-
-            currentMqtt.subscribe(topic) { _, payload ->
-                try {
-                    trySend(
-                        json.decodeFromString<AssistanceRequest>(payload)
-                    )
-                } catch (_: Exception) {
-                }
-            }
-
-            awaitClose { }
+    fun requestStatus(requestId: String): Flow<AssistanceRequest> = callbackFlow {
+        val topic = "bus/requests/$requestId/status"
+        mqtt?.subscribe(topic) { _, payload ->
+            try {
+                trySend(json.decodeFromString<AssistanceRequest>(payload))
+            } catch (_: Exception) { }
         }
-
-    suspend fun close() {
-        mqtt?.close()
-        mqtt = null
+        awaitClose { }
     }
+
+    suspend fun close() = mqtt?.close()
 
     private companion object {
         const val TAG = "AccessibleBusRepository"
