@@ -16,7 +16,7 @@ fun AppNav(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Route.Profile.route
+        startDestination = Route.DriverHmi.route
     ) {
         composable(Route.Profile.route) {
             PlaceholderScreen(
