@@ -17,7 +17,6 @@ data class AppConfig (
     val mqttHost: String,
     val mqttPort: Int,
     val token: String,
-    val clientId: String,
     val voiceMode: VoiceMode = VoiceMode.AUTO,
     val vibrationEnabled: Boolean = true,
     val highContrastEnabled: Boolean = false
@@ -32,7 +31,6 @@ object AppConfigDefaults {
         mqttHost = "",
         mqttPort = 1883,
         token = "",
-        clientId = "accessiblebus-android-lab"
     )
 
     val course = AppConfig(
@@ -41,6 +39,10 @@ object AppConfigDefaults {
         mqttHost = "",
         mqttPort = 1883,
         token = "",
-        clientId = "accessiblebus-android-course"
     )
+}
+
+object MqttClientIds {
+    const val PASSENGER = "app-passenger-1"
+    const val DRIVER = "hmi-demo-01"
 }
