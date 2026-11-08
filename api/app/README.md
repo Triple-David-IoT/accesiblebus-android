@@ -82,3 +82,11 @@ def enqueue_event(
 - `request_id` is required for `request.*` events and must be `None` for `trip.*` events.
 
 The helper is added in A03. Message formats belong to the MQTT contract (K2).
+
+### Outbox publisher
+
+`OUTBOX_PUBLISH_DELAY_MS` is an optional delay, in milliseconds,
+between selecting an outbox event and publishing it.
+
+It defaults to `0` and can be used in failure scenarios to test
+the outbox behavior while the API or MQTT broker is interrupted.
