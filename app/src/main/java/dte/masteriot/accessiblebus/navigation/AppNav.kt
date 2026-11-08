@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dte.masteriot.accessiblebus.ui.screens.PlaceholderScreen
+import dte.masteriot.accessiblebus.ui.screens.hmi.HmiScreen
 
 // TODO: Replace placeholders with the actual navigation routes.(A)
 
@@ -53,10 +54,7 @@ fun AppNav(
         }
 
         composable(Route.DriverHmi.route) {
-            PlaceholderScreen(
-                title = "Driver HMI",
-                onBack = { navController.popBackStack() }
-            )
+            HmiScreen()
         }
 
         composable(Route.Preferences.route) {
