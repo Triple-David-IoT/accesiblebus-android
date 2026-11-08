@@ -11,6 +11,7 @@ from psycopg import Cursor
 
 from . import db
 from .auth import Actor, Role, current_actor
+from .commands import run_command
 from .errors import ApiError
 from .models import ErrorResponse, ResetResult, StopVisit, Trip
 from .settings import Settings
@@ -85,18 +86,18 @@ def ensure_scenario(settings: Settings) -> None:
     responses={
         401: {"model": ErrorResponse, "description": "Missing or unknown token"},
         403: {"model": ErrorResponse, "description": "Only the operator can reset the demo"},
-        409: {"model": ErrorResponse, "description": "Same key with other content, once A05 adds run_command"},
+        409: {"model": ErrorResponse, "description": "The key was already used for another command"},
     },
 )
 def reset_demo(
     actor: Annotated[Actor, Depends(current_actor)],
-    # Required by K1. A05 makes it prevent duplicates, through run_command.
     idempotency_key: Annotated[str, Header(min_length=1)],
-) -> ResetResult:
+) -> dict:
     if actor.role != Role.OPERATOR:
         raise ApiError(403, "FORBIDDEN", "Only the operator can reset the demo")
     stop_codes = load_stop_codes(Settings.from_env().manifest_path)
-    with db.transaction() as cursor:
+
+    def reset(cursor: Cursor) -> dict:
         # B05 replaces this update with its end-of-trip function, which closes open requests.
         cursor.execute(
             """
@@ -106,4 +107,7 @@ def reset_demo(
             (VEHICLE_ID,),
         )
         trip, visits = create_trip(cursor, stop_codes)
-    return ResetResult(trip=trip, stop_visits=visits)
+        return ResetResult(trip=trip, stop_visits=visits).model_dump(mode="json", by_alias=True)
+
+    result, _ = run_command(actor, idempotency_key, "reset_demo", "/demo/reset", {}, reset)
+    return result
