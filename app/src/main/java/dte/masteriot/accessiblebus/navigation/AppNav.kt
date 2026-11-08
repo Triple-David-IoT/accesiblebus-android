@@ -17,6 +17,7 @@ import dte.masteriot.accessiblebus.ui.screens.PreferencesScreen
 import dte.masteriot.accessiblebus.AccessibleBusApplication
 import dte.masteriot.accessiblebus.data.Repository
 import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 
@@ -42,11 +43,24 @@ fun AppNav(
     ) {
         composable(Route.Profile.route) {
             ProfileScreen(
-                onProfileSelected = { profile ->
-                    coroutineScope.launch {
-                        configRepository.saveActiveProfile(profile)
+                onPassengerSelected = {
+                    navController.navigate(Route.PassengerStops.route)
+                },
+                onDriverSelected = {
+                    navController.navigate(Route.DriverHmi.route)
+                }
+            )
+        }
 
-                        mqttRepository.connectMqtt(profile)
+        composable(Route.PassengerStops.route) {
+            PlaceholderScreen(
+                title = "Passenger Stops",
+                onBack = {
+                    navController.popBackStack()
+                },
+                onPreferences = {
+                    coroutineScope.launch {
+                        val profile = configRepository.activeProfile().first()
 
                         navController.navigate(
                             Route.Preferences.createRoute(profile)
@@ -56,38 +70,57 @@ fun AppNav(
             )
         }
 
-        composable(Route.PassengerStops.route) {
+        composable(Route.DriverHmi.route) {
             PlaceholderScreen(
-                title = "Passenger Stops",
-                onBack = { navController.popBackStack() }
-            )
-        }
+                title = "Driver HMI",
+                onBack = {
+                    navController.popBackStack()
+                },
+                onPreferences = {
+                    coroutineScope.launch {
+                        val profile = configRepository.activeProfile().first()
 
-        composable(Route.PassengerStopDetail.route) {
-            PlaceholderScreen(
-                title = "Stop Details",
-                onBack = { navController.popBackStack() }
+                        navController.navigate(
+                            Route.Preferences.createRoute(profile)
+                        )
+                    }
+                }
             )
         }
 
         composable(Route.PassengerConfirm.route) {
             PlaceholderScreen(
                 title = "Confirm Journey",
-                onBack = { navController.popBackStack() }
+                onBack = {
+                    navController.popBackStack()
+                },
+                onPreferences = {
+                    coroutineScope.launch {
+                        val profile = configRepository.activeProfile().first()
+
+                        navController.navigate(
+                            Route.Preferences.createRoute(profile)
+                        )
+                    }
+                }
             )
         }
 
         composable(Route.PassengerTracking.route) {
             PlaceholderScreen(
                 title = "Passenger Tracking",
-                onBack = { navController.popBackStack() }
-            )
-        }
+                onBack = {
+                    navController.popBackStack()
+                },
+                onPreferences = {
+                    coroutineScope.launch {
+                        val profile = configRepository.activeProfile().first()
 
-        composable(Route.DriverHmi.route) {
-            PlaceholderScreen(
-                title = "Driver HMI",
-                onBack = { navController.popBackStack() }
+                        navController.navigate(
+                            Route.Preferences.createRoute(profile)
+                        )
+                    }
+                }
             )
         }
 
