@@ -26,7 +26,7 @@ def start_receipts(settings: Settings) -> Stoppable: ...
 ### Rules
 
 - **Return quickly.** `start_*` starts the thread and returns. It must not wait for the broker or raise if the broker is down, because the REST API has to keep responding (TD05). The thread retries on its own.
-- **Use your own resources.** Each thread opens its own database connection and MQTT client, with the K7 client IDs `api-outbox` and `api-receipts`.
+- **Use your own resources.** Each thread has its own MQTT client, with the K7 client IDs `api-outbox` and `api-receipts`. The outbox publisher opens its own database connection, because it keeps a transaction open while it waits for each `PUBACK`. The receipts subscriber may use the shared pool (`db.transaction()`), because each receipt is one short transaction. If the pool stays busy past its timeout, the receipt is logged and dropped, and the HMI sends it again after its next `/sync`.
 - **Never touch the event loop.** Use a normal `threading.Thread(daemon=True)`. Waiting for a `PUBACK` must not block REST requests.
 - **Survive errors.** Log the error, roll back and try again. An exception must not end the thread.
 - **Stop within a few seconds.** `stop()` asks the thread to end and waits for it with a timeout, so shutdown never hangs.
