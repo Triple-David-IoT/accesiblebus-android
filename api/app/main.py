@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from . import db
+from .commands import router as commands_router
 from .demo import ensure_scenario
 from .demo import router as demo_router
 from .errors import ApiError, api_error_handler
@@ -40,6 +41,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="AccessibleBus API", version="0.1.0", lifespan=lifespan)
 app.add_exception_handler(ApiError, api_error_handler)
+app.include_router(commands_router)
 app.include_router(demo_router)
 
 
