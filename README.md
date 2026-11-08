@@ -208,6 +208,20 @@ The API container runs Uvicorn with one worker:
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
 ```
 
+### Smoke test
+
+With the stack running, `api/tests/smoke.sh` checks the main flow end to end:
+health, demo reset, request creation, a repeated and a conflicting idempotency key,
+accept, complete and `/sync` with the three demo tokens. It needs `curl` and Python 3.
+
+```bash
+bash api/tests/smoke.sh
+API_URL=http://192.168.1.50:8000 bash api/tests/smoke.sh
+```
+
+It prints one `OK` line per step and `Smoke test passed`, or stops at the first
+`FAIL` with exit code 1. It resets the demo trip, so do not run it during a demo.
+
 This is the initial API skeleton. The project API functionality will be integrated separately.
 
 ## 10. Data Persistence
