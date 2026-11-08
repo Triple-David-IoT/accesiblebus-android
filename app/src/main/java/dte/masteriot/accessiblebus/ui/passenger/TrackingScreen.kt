@@ -31,6 +31,7 @@ fun TrackingScreen(
 ) {
     val snapshot by viewModel.snapshot.collectAsState()
     val commands by viewModel.commands.collectAsState()
+    val live by viewModel.live.collectAsState()
     val request = snapshot.requests.find { it.id == requestId }
 
     Column(
@@ -38,6 +39,7 @@ fun TrackingScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("Seguimiento", style = MaterialTheme.typography.headlineMedium)
+        Text(if (live) "Avisos en vivo activos" else "Sin avisos en vivo: pulsa Actualizar", style = MaterialTheme.typography.bodySmall)
         if (request == null) {
             Text("Cargando la solicitud…")
         } else {

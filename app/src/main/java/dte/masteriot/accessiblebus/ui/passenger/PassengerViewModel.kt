@@ -21,6 +21,7 @@ class PassengerViewModel(private val repository: AssistanceRepository) : ViewMod
 
     val snapshot = repository.snapshot
     val commands = repository.commands
+    val live = repository.live
 
     private val _created = MutableStateFlow<String?>(null)
 
@@ -28,6 +29,7 @@ class PassengerViewModel(private val repository: AssistanceRepository) : ViewMod
     val created: StateFlow<String?> = _created.asStateFlow()
 
     init {
+        repository.startEvents()
         refresh()
     }
 

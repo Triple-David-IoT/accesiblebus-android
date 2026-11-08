@@ -1,18 +1,24 @@
 package dte.masteriot.accessiblebus.core.data
 
+import dte.masteriot.accessiblebus.core.net.ApiJson
 import dte.masteriot.accessiblebus.core.net.ApiResult
 import dte.masteriot.accessiblebus.core.net.ApiSource
 import dte.masteriot.accessiblebus.core.net.AssistanceRequest
+import dte.masteriot.accessiblebus.core.net.Event
 import dte.masteriot.accessiblebus.core.net.RejectReason
 import dte.masteriot.accessiblebus.core.net.Snapshot
 import dte.masteriot.accessiblebus.core.net.Trip
 import dte.masteriot.accessiblebus.core.net.TripState
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /** What the app knows about a command that has not finished cleanly. */
 sealed interface CommandState {
@@ -41,18 +47,27 @@ object CommandIds {
 }
 
 /**
- * Requests and trip state for the screens (K5). Commands go through [ApiSource] with a key saved
- * in [keys] before sending; answers are applied to [snapshot] by version, so an older answer
- * never hides a newer state. A14 adds the MQTT events to the same [snapshot].
+ * Requests and trip state for the screens (K5). Three inputs change [snapshot], always with the
+ * same rules: command answers, GET /sync and the MQTT events of [eventsTopic]. The higher
+ * version of a request wins, received stays true, and a trip only moves forward.
+ *
+ * Commands go through [ApiSource] with a key saved in [keys] before sending. Every decision on
+ * a request (accepted, rejected, completed, expired) reaches [announcer] once, whichever input
+ * brought it, because [announced] remembers "requestId:version" on disk.
  *
  * [syncScope] and [vehicleId] are those of GET /sync: "mine" for the passenger, "vehicle" with
- * the bus for the driver.
+ * the bus for the driver. [scope] runs the /sync that follows a reconnection or a new trip.
  */
 class AssistanceRepository(
     private val api: ApiSource,
     private val keys: CommandKeys,
     private val syncScope: String = "mine",
     private val vehicleId: String? = null,
+    private val events: EventFeed? = null,
+    private val eventsTopic: String? = null,
+    private val announcer: DecisionAnnouncer = DecisionAnnouncer {},
+    private val announced: AnnouncedDecisions = MemoryAnnouncedDecisions(),
+    private val scope: CoroutineScope? = null,
     private val newKey: () -> String = { UUID.randomUUID().toString() },
 ) {
     private val _snapshot = MutableStateFlow(Snapshot())
@@ -64,11 +79,62 @@ class AssistanceRepository(
     )
     val commands: StateFlow<Map<String, CommandState>> = _commands.asStateFlow()
 
+    /** True while the MQTT connection is up; always false without events, as with the sample API. */
+    val live: StateFlow<Boolean> = events?.connected ?: MutableStateFlow(false)
+
+    // QoS 1 can deliver an event twice: each eventId is processed once.
+    private val seenEvents = LinkedHashSet<String>()
+    private val started = AtomicBoolean(false)
+    private val lock = Any()
+
+    // ---- Reads and events
+
     suspend fun refresh(): ApiResult<Snapshot> {
         val result = api.sync(syncScope, vehicleId)
-        if (result is ApiResult.Success) _snapshot.update { merge(it, result.value) }
+        if (result is ApiResult.Success) change { merge(it, result.value) }
         return result
     }
+
+    /**
+     * Connects to the events once per process. Retries the first connection with a growing wait;
+     * after that MQTTastic reconnects by itself and every reconnection runs a /sync.
+     */
+    fun startEvents() {
+        val feed = events ?: return
+        val topic = eventsTopic ?: return
+        val runner = scope ?: return
+        if (!started.compareAndSet(false, true)) return
+        runner.launch {
+            var wait = 2_000L
+            while (!feed.start(topic, ::onEvent) { runner.launch { refresh() } }) {
+                delay(wait)
+                wait = minOf(wait * 2, 30_000L)
+            }
+            refresh()
+        }
+    }
+
+    /** Applies one K2 event. Unknown, repeated or malformed messages are ignored. */
+    fun onEvent(text: String) {
+        val event = runCatching { ApiJson.decodeFromString(Event.serializer(), text) }.getOrNull() ?: return
+        synchronized(lock) {
+            if (!seenEvents.add(event.eventId)) return
+            if (seenEvents.size > 500) seenEvents.remove(seenEvents.first())
+        }
+        val type = event.eventType
+        when {
+            type == "request.receipt_recorded" -> change { snapshot ->
+                snapshot.copy(requests = snapshot.requests.map { if (it.id == event.requestId) it.copy(received = true) else it })
+            }
+            type.startsWith("request.") -> runCatching { event.requestPayload() }.getOrNull()?.let(::applyRequest)
+            type.startsWith("trip.") -> runCatching { event.tripPayload() }.getOrNull()?.let { trip ->
+                // Another trip means new visits: /sync brings them.
+                if (_snapshot.value.trip?.id == trip.id) applyTrip(trip) else scope?.launch { refresh() }
+            }
+        }
+    }
+
+    // ---- Commands
 
     suspend fun create(stopVisitId: String): ApiResult<AssistanceRequest> =
         send(CommandIds.create(stopVisitId), ::applyRequest) { key -> api.createRequest(key, stopVisitId) }
@@ -142,17 +208,30 @@ class AssistanceRepository(
     private fun setState(commandId: String, state: CommandState?) =
         _commands.update { if (state == null) it - commandId else it + (commandId to state) }
 
-    private fun applyRequest(incoming: AssistanceRequest) = _snapshot.update { it.copy(requests = mergeRequests(it.requests, listOf(incoming))) }
+    // ---- Snapshot changes
 
-    private fun applyTrip(incoming: Trip) = _snapshot.update { current ->
+    private fun applyRequest(incoming: AssistanceRequest) = change { it.copy(requests = mergeRequests(it.requests, listOf(incoming))) }
+
+    private fun applyTrip(incoming: Trip) = change { current ->
         val trip = current.trip
         if (trip == null || trip.id != incoming.id) current else current.copy(trip = mergeTrip(trip, incoming))
     }
 
+    /** The only way the snapshot changes, so every new decision is seen and announced once. */
+    private fun change(transform: (Snapshot) -> Snapshot) {
+        val decisions = synchronized(lock) {
+            val before = _snapshot.value
+            val after = transform(before)
+            _snapshot.value = after
+            newDecisions(before, after)
+        }
+        decisions.filter { announced.add("${it.requestId}:${it.version}") }.forEach(announcer::announce)
+    }
+
     companion object {
         /**
-         * Combines what the app has with a /sync answer. Another trip replaces everything; the same
-         * trip keeps the furthest progress and the newest version of each request.
+         * Combines what the app has with a /sync answer. Another trip replaces everything, visits
+         * included; the same trip keeps the furthest progress and the newest version of each request.
          */
         fun merge(current: Snapshot, incoming: Snapshot): Snapshot {
             val trip = current.trip
@@ -185,5 +264,24 @@ class AssistanceRepository(
             }
             return byId.values.toList()
         }
+
+        /**
+         * Requests of the current trip that reached a decision state in a version the app did not
+         * have before. Requests of the previous trip, which /sync also returns, are not announced.
+         */
+        fun newDecisions(before: Snapshot, after: Snapshot): List<DecisionEvent> {
+            val old = before.requests.associateBy { it.id }
+            val trip = after.trip?.id
+            return after.requests
+                .filter { it.tripId == trip && it.state in DECISION_STATES && (old[it.id]?.version ?: 0) < it.version }
+                .map { DecisionEvent(it.id, it.version, it.state, it.closeReason) }
+        }
     }
+}
+
+class MemoryAnnouncedDecisions : AnnouncedDecisions {
+    private val keys = mutableSetOf<String>()
+
+    @Synchronized
+    override fun add(key: String) = keys.add(key)
 }

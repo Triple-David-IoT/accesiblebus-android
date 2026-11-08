@@ -1,6 +1,14 @@
 package dte.masteriot.accessiblebus
 
 import android.content.Context
+import android.util.Log
+import dte.masteriot.accessiblebus.core.data.DecisionAnnouncer
+import dte.masteriot.accessiblebus.core.data.MqttEventFeed
+import dte.masteriot.accessiblebus.core.data.PreferencesAnnouncedDecisions
+import dte.masteriot.accessiblebus.core.mqtt.BusMqttClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import dte.masteriot.accessiblebus.core.data.AssistanceRepository
 import dte.masteriot.accessiblebus.core.data.PreferencesCommandKeys
 import dte.masteriot.accessiblebus.core.net.ApiClient
@@ -43,8 +51,21 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         }
     }
 
-    // Passenger scope until the profile (C07) says whether this phone is a passenger or a bus.
+    // Lives as long as the app: events and the /sync after a reconnection run here.
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    // Passenger identity (K7) until the profile (C07) says whether this phone is a passenger or a bus.
     override val assistanceRepository: AssistanceRepository by lazy {
-        AssistanceRepository(apiSource, PreferencesCommandKeys(context))
+        val live = !BuildConfig.USE_SAMPLE_API
+        AssistanceRepository(
+            api = apiSource,
+            keys = PreferencesCommandKeys(context),
+            events = if (live) MqttEventFeed(BusMqttClient(BuildConfig.MQTT_BROKER, "app-passenger-1", appScope), appScope) else null,
+            eventsTopic = "users/passenger-1/events",
+            // Until the AnnouncementCoordinator (C) exists, decisions only go to the log.
+            announcer = DecisionAnnouncer { Log.i("Announcement", "announce $it") },
+            announced = PreferencesAnnouncedDecisions(context),
+            scope = appScope,
+        )
     }
 }
