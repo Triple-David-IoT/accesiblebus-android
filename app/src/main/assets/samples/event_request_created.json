@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 3,
+  "eventId": "6c03e6e6-d07a-4e68-aa47-aa7cb4483bb5",
+  "eventType": "request.created",
+  "requestId": "ce4944be-eeac-41a6-87b8-43d436af7343",
+  "tripId": "6bb671e7-1190-485b-bab4-8ea35c0c649d",
+  "version": 1,
+  "payload": {
+    "id": "ce4944be-eeac-41a6-87b8-43d436af7343",
+    "tripId": "6bb671e7-1190-485b-bab4-8ea35c0c649d",
+    "vehicleId": "BUS-DEMO-01",
+    "ownerSubject": "passenger-1",
+    "stopVisitId": "c9276891-ace3-49ea-a0b2-af547265f445",
+    "sequence": 2,
+    "physicalStopCode": "459",
+    "assistanceType": "RAMP_BOARDING",
+    "state": "PENDING",
+    "version": 1,
+    "received": false,
+    "createdEventId": "6c03e6e6-d07a-4e68-aa47-aa7cb4483bb5",
+    "closeReason": null,
+    "createdAt": "2026-11-08T10:23:55.064988Z",
+    "updatedAt": "2026-11-08T10:23:55.064988Z"
+  }
+}
