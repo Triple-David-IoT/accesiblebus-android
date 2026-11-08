@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 3,
+  "eventId": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+  "eventType": "request.receipt_recorded",
+  "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  "tripId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "version": 1,
+  "payload": { "received": true }
+}

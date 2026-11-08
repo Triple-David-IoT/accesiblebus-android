@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 3,
+  "eventId": "99999999-9999-4999-8999-999999999999",
+  "eventType": "trip.progressed",
+  "tripId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "payload": {
+    "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "vehicleId": "BUS-DEMO-01",
+    "driverSubject": "driver-1",
+    "state": "ACTIVE",
+    "lastPassedSequence": 1
+  }
+}
