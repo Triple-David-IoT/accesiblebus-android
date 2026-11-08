@@ -1,0 +1,54 @@
+{
+  "trip": {
+    "id": "ff674289-de3e-4ba2-a920-67a9746ce913",
+    "vehicleId": "BUS-DEMO-01",
+    "driverSubject": "driver-1",
+    "state": "ACTIVE",
+    "lastPassedSequence": 0
+  },
+  "stopVisits": [
+    {
+      "id": "d7dfc829-b718-4e75-b494-5892ba92a9dd",
+      "tripId": "ff674289-de3e-4ba2-a920-67a9746ce913",
+      "sequence": 1,
+      "physicalStopCode": "456"
+    },
+    {
+      "id": "ef0c1d37-c14e-4912-b125-33c2a7fb67cd",
+      "tripId": "ff674289-de3e-4ba2-a920-67a9746ce913",
+      "sequence": 2,
+      "physicalStopCode": "459"
+    },
+    {
+      "id": "6bcbf0bd-b3aa-45c8-a7b6-f34f5f71d29c",
+      "tripId": "ff674289-de3e-4ba2-a920-67a9746ce913",
+      "sequence": 3,
+      "physicalStopCode": "460"
+    },
+    {
+      "id": "912d3ea0-e454-45a9-8f30-69d2e585cc3d",
+      "tripId": "ff674289-de3e-4ba2-a920-67a9746ce913",
+      "sequence": 4,
+      "physicalStopCode": "461"
+    }
+  ],
+  "requests": [
+    {
+      "id": "c02bd9ad-cd68-49dc-afd0-dd19f11823dd",
+      "tripId": "ff674289-de3e-4ba2-a920-67a9746ce913",
+      "vehicleId": "BUS-DEMO-01",
+      "ownerSubject": "passenger-1",
+      "stopVisitId": "ef0c1d37-c14e-4912-b125-33c2a7fb67cd",
+      "sequence": 2,
+      "physicalStopCode": "459",
+      "assistanceType": "RAMP_BOARDING",
+      "state": "PENDING",
+      "version": 1,
+      "received": false,
+      "createdEventId": "0be42319-5aa6-4178-9247-a1063878772c",
+      "closeReason": null,
+      "createdAt": "2026-11-08T11:11:59.134962Z",
+      "updatedAt": "2026-11-08T11:11:59.134962Z"
+    }
+  ]
+}

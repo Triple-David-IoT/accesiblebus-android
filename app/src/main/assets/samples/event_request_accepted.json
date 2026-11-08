@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 3,
+  "eventId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+  "eventType": "request.accepted",
+  "requestId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  "tripId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "version": 2,
+  "payload": {
+    "id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "tripId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "vehicleId": "BUS-DEMO-01",
+    "ownerSubject": "passenger-1",
+    "stopVisitId": "22222222-2222-4222-8222-222222222222",
+    "sequence": 2,
+    "physicalStopCode": "293",
+    "assistanceType": "RAMP_BOARDING",
+    "state": "ACCEPTED",
+    "version": 2,
+    "received": true,
+    "createdEventId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "closeReason": null,
+    "createdAt": "2026-11-08T10:00:00Z",
+    "updatedAt": "2026-11-08T10:01:00Z"
+  }
+}

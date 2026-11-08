@@ -1,6 +1,9 @@
 package dte.masteriot.accessiblebus
 
 import android.content.Context
+import dte.masteriot.accessiblebus.core.net.ApiClient
+import dte.masteriot.accessiblebus.core.net.ApiSource
+import dte.masteriot.accessiblebus.core.net.SampleApi
 import dte.masteriot.accessiblebus.data.FileDataSource
 import dte.masteriot.accessiblebus.data.NetworkDataSource
 import dte.masteriot.accessiblebus.data.Repository
@@ -12,6 +15,7 @@ interface AppContainer {
     val repository: Repository
     val networkDataSource: NetworkDataSource
     val fileDataSource: FileDataSource
+    val apiSource: ApiSource
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -26,5 +30,13 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val fileDataSource: FileDataSource by lazy {
         FileDataSource(context)
+    }
+
+    override val apiSource: ApiSource by lazy {
+        if (BuildConfig.USE_SAMPLE_API) {
+            SampleApi { name -> context.assets.open("samples/$name").bufferedReader().use { it.readText() } }
+        } else {
+            ApiClient(BuildConfig.API_BASE_URL) { BuildConfig.API_TOKEN }
+        }
     }
 }
