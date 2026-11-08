@@ -11,7 +11,7 @@ from psycopg import Cursor
 
 from . import db
 from .auth import Actor, Role, current_actor
-from .commands import run_command
+from .commands import change_state, run_command
 from .errors import ApiError
 from .models import ErrorResponse, ResetResult, StopVisit, Trip
 from .settings import Settings
@@ -80,6 +80,30 @@ def ensure_scenario(settings: Settings) -> None:
         logger.info("Created demo trip %s", trip.id)
 
 
+def end_active_trip(cursor: Cursor) -> None:
+    """End the active demo trip like the end of a trip (proposal p. 5).
+
+    Every PENDING or ACCEPTED request of the trip becomes EXPIRED with TRIP_ENDED, with its
+    request.expired event, before the trip is marked ENDED. Same lock order as the commands:
+    the trip first, then its requests. B05 can reuse it for POST /trips/{id}/end.
+    """
+    cursor.execute("SELECT id FROM trip WHERE vehicle_id = %s AND state = 'ACTIVE' FOR UPDATE", (VEHICLE_ID,))
+    for trip in cursor.fetchall():
+        cursor.execute(
+            """
+            SELECT r.id FROM assistance_request r JOIN stop_visit v ON v.id = r.stop_visit_id
+            WHERE v.trip_id = %s AND r.state IN ('PENDING', 'ACCEPTED')
+            ORDER BY r.id
+            FOR UPDATE OF r
+            """,
+            (trip["id"],),
+        )
+        for request in cursor.fetchall():
+            change_state(cursor, request["id"], "EXPIRED", "TRIP_ENDED", "request.expired")
+        cursor.execute("UPDATE trip SET state = 'ENDED', updated_at = now() WHERE id = %s", (trip["id"],))
+        logger.info("Ended demo trip %s", trip["id"])
+
+
 @router.post(
     "/demo/reset",
     response_model=ResetResult,
@@ -98,14 +122,7 @@ def reset_demo(
     stop_codes = load_stop_codes(Settings.from_env().manifest_path)
 
     def reset(cursor: Cursor) -> dict:
-        # B05 replaces this update with its end-of-trip function, which closes open requests.
-        cursor.execute(
-            """
-            UPDATE trip SET state = 'ENDED', updated_at = now()
-            WHERE vehicle_id = %s AND state = 'ACTIVE'
-            """,
-            (VEHICLE_ID,),
-        )
+        end_active_trip(cursor)
         trip, visits = create_trip(cursor, stop_codes)
         return ResetResult(trip=trip, stop_visits=visits).model_dump(mode="json", by_alias=True)
 
