@@ -16,6 +16,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Until I1 the app reads assets/samples instead of the API. The URL and token are
+        // placeholders until the connection profile (C07) provides them.
+        buildConfigField("boolean", "USE_SAMPLE_API", "true")
+        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/\"")
+        buildConfigField("String", "API_TOKEN", "\"demo-pasajero-1\"")
     }
 
     buildTypes {
@@ -31,6 +37,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -46,6 +53,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

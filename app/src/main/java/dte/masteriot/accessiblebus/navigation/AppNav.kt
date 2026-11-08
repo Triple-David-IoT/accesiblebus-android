@@ -1,25 +1,22 @@
 package dte.masteriot.accessiblebus.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import dte.masteriot.accessiblebus.AccessibleBusApplication
 import dte.masteriot.accessiblebus.core.config.ConnectionProfile
 import dte.masteriot.accessiblebus.ui.screens.PlaceholderScreen
-import dte.masteriot.accessiblebus.ui.screens.ProfileScreen
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
-import dte.masteriot.accessiblebus.data.AppConfigRepository
 import dte.masteriot.accessiblebus.ui.screens.PreferencesScreen
-import dte.masteriot.accessiblebus.AccessibleBusApplication
-import dte.masteriot.accessiblebus.data.Repository
-import androidx.compose.runtime.rememberCoroutineScope
+import dte.masteriot.accessiblebus.ui.screens.ProfileScreen
+import dte.masteriot.accessiblebus.ui.screens.hmi.HmiScreen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-
 
 // TODO: Replace placeholders with the actual navigation routes.(A)
 
@@ -36,6 +33,14 @@ fun AppNav(
     val mqttRepository = container.repository
 
     val coroutineScope = rememberCoroutineScope()
+
+    // Opens Preferences with the active connection profile.
+    val openPreferences: () -> Unit = {
+        coroutineScope.launch {
+            val profile = configRepository.activeProfile().first()
+            navController.navigate(Route.Preferences.createRoute(profile))
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -55,73 +60,37 @@ fun AppNav(
         composable(Route.PassengerStops.route) {
             PlaceholderScreen(
                 title = "Passenger Stops",
-                onBack = {
-                    navController.popBackStack()
-                },
-                onPreferences = {
-                    coroutineScope.launch {
-                        val profile = configRepository.activeProfile().first()
-
-                        navController.navigate(
-                            Route.Preferences.createRoute(profile)
-                        )
-                    }
-                }
+                onBack = { navController.popBackStack() },
+                onPreferences = openPreferences
             )
         }
 
-        composable(Route.DriverHmi.route) {
+        composable(Route.PassengerStopDetail.route) {
             PlaceholderScreen(
-                title = "Driver HMI",
-                onBack = {
-                    navController.popBackStack()
-                },
-                onPreferences = {
-                    coroutineScope.launch {
-                        val profile = configRepository.activeProfile().first()
-
-                        navController.navigate(
-                            Route.Preferences.createRoute(profile)
-                        )
-                    }
-                }
+                title = "Stop Details",
+                onBack = { navController.popBackStack() },
+                onPreferences = openPreferences
             )
         }
 
         composable(Route.PassengerConfirm.route) {
             PlaceholderScreen(
                 title = "Confirm Journey",
-                onBack = {
-                    navController.popBackStack()
-                },
-                onPreferences = {
-                    coroutineScope.launch {
-                        val profile = configRepository.activeProfile().first()
-
-                        navController.navigate(
-                            Route.Preferences.createRoute(profile)
-                        )
-                    }
-                }
+                onBack = { navController.popBackStack() },
+                onPreferences = openPreferences
             )
         }
 
         composable(Route.PassengerTracking.route) {
             PlaceholderScreen(
                 title = "Passenger Tracking",
-                onBack = {
-                    navController.popBackStack()
-                },
-                onPreferences = {
-                    coroutineScope.launch {
-                        val profile = configRepository.activeProfile().first()
-
-                        navController.navigate(
-                            Route.Preferences.createRoute(profile)
-                        )
-                    }
-                }
+                onBack = { navController.popBackStack() },
+                onPreferences = openPreferences
             )
+        }
+
+        composable(Route.DriverHmi.route) {
+            HmiScreen()
         }
 
         composable(
