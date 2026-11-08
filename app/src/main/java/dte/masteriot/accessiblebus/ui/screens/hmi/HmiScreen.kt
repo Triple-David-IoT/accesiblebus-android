@@ -32,9 +32,9 @@ fun HmiScreen(viewModel: HmiViewModel = viewModel()) {
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item {
-                Text("LABORATORIO", style = MaterialTheme.typography.labelLarge,
+                Text("LAB", style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary)
-                Text("Vehículo ${ui.vehicleId}", style = MaterialTheme.typography.headlineSmall,
+                Text("Vehicle ${ui.vehicleId}", style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold)
                 Text(ui.tripLabel, style = MaterialTheme.typography.titleMedium)
             }
@@ -42,12 +42,12 @@ fun HmiScreen(viewModel: HmiViewModel = viewModel()) {
             item { StatusStrip(ui.connectionText) }
             ui.error?.let { msg -> item { StatusStrip(msg) } }
 
-            item { SectionTitle("Pendientes (${ui.pending.size})") }
-            if (ui.pending.isEmpty()) item { Text("Sin solicitudes pendientes") }
+            item { SectionTitle("Pending (${ui.pending.size})") }
+            if (ui.pending.isEmpty()) item { Text("No pending requests", style = MaterialTheme.typography.bodyMedium) }
             items(ui.pending, key = { it.id }) { RequestRow(it) }
 
-            item { SectionTitle("En curso (${ui.inProgress.size})") }
-            if (ui.inProgress.isEmpty()) item { Text("Sin asistencias en curso") }
+            item { SectionTitle("In Progress (${ui.inProgress.size})") }
+            if (ui.inProgress.isEmpty()) item { Text("No ongoing assistance", style = MaterialTheme.typography.bodyMedium) }
             items(ui.inProgress, key = { it.id }) { RequestRow(it) }
         }
     }
@@ -67,9 +67,10 @@ private fun StatusStrip(text: String) =
 private fun RequestRow(r: AssistanceRequest) =
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text("Parada ${r.physicalStopCode} · visita ${r.sequence}",
+            Text("Stop ${r.physicalStopCode} · visit ${r.sequence}",
                 style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(if (r.received) "Recibida por el terminal" else "Aún no confirmada por el terminal")
-            Text("Estado: ${r.state}")
+            Text(if (r.received) "Received by terminal" else "Not yet confirmed by terminal",
+                style = MaterialTheme.typography.bodyMedium)
+            Text("Status: ${r.state}", style = MaterialTheme.typography.bodyMedium)
         }
     }

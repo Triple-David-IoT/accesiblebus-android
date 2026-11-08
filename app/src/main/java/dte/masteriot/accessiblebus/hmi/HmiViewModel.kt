@@ -28,7 +28,7 @@ class HmiViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _state.value = when (val r = api.sync("vehicle", VEHICLE_ID)) {
                 is ApiResult.Success -> r.value.toHmiUiState()
-                is ApiResult.Conflict<*> -> HmiUiState(error = "Conflicto: ${r.message}")
+                is ApiResult.Conflict<*> -> HmiUiState(error = "Conflict: ${r.message}")
                 is ApiResult.Failure -> HmiUiState(error = "Error: ${r.message}")
             }
         }
