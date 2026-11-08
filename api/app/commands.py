@@ -212,12 +212,15 @@ def change_state(cursor: Cursor, request_id: UUID, new_state: str, reason: str |
     return resource
 
 
-# Who may run each transition, from which states, and what it produces.
+# Who may run each transition, from which states, and what it produces. "done" is the word
+# used in the INVALID_TRANSITION message.
 TRANSITIONS = {
-    "accept": {"who": "driver", "from": {"PENDING"}, "to": "ACCEPTED", "event": "request.accepted"},
-    "reject": {"who": "driver", "from": {"PENDING"}, "to": "REJECTED", "event": "request.rejected"},
-    "cancel": {"who": "owner", "from": {"PENDING", "ACCEPTED"}, "to": "CANCELLED", "event": "request.cancelled"},
-    "complete": {"who": "driver", "from": {"ACCEPTED"}, "to": "COMPLETED", "event": "request.completed"},
+    "accept": {"who": "driver", "from": {"PENDING"}, "to": "ACCEPTED", "event": "request.accepted", "done": "accepted"},
+    "reject": {"who": "driver", "from": {"PENDING"}, "to": "REJECTED", "event": "request.rejected", "done": "rejected"},
+    "cancel": {
+        "who": "owner", "from": {"PENDING", "ACCEPTED"}, "to": "CANCELLED", "event": "request.cancelled", "done": "cancelled",
+    },
+    "complete": {"who": "driver", "from": {"ACCEPTED"}, "to": "COMPLETED", "event": "request.completed", "done": "completed"},
 }
 
 
@@ -256,7 +259,7 @@ def transition(
         if row["version"] != body.expected_version:
             raise ApiError(409, "VERSION_CONFLICT", "The request has changed", current)
         if row["state"] not in rule["from"]:
-            raise ApiError(409, "INVALID_TRANSITION", f"A {row['state']} request cannot be {operation}ed", current)
+            raise ApiError(409, "INVALID_TRANSITION", f"The request is {row['state']}, so it cannot be {rule['done']}", current)
         return change_state(cursor, request_id, rule["to"], reason, rule["event"])
 
     path = f"/requests/{request_id}/{operation}"
