@@ -57,6 +57,12 @@ class CreateRequestBody(ApiModel):
     assistance_type: Literal["RAMP_BOARDING"]
 
 
+class Snapshot(ApiModel):
+    trip: Trip | None
+    stop_visits: list[StopVisit]
+    requests: list[AssistanceRequest]
+
+
 class ErrorResponse(ApiModel):
     code: str
     message: str
