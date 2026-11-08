@@ -14,6 +14,7 @@ import dte.masteriot.accessiblebus.core.data.PreferencesCommandKeys
 import dte.masteriot.accessiblebus.core.net.ApiClient
 import dte.masteriot.accessiblebus.core.net.ApiSource
 import dte.masteriot.accessiblebus.core.net.SampleApi
+import dte.masteriot.accessiblebus.data.AppConfigRepository
 import dte.masteriot.accessiblebus.data.FileDataSource
 import dte.masteriot.accessiblebus.data.NetworkDataSource
 import dte.masteriot.accessiblebus.data.Repository
@@ -25,6 +26,7 @@ interface AppContainer {
     val repository: Repository
     val networkDataSource: NetworkDataSource
     val fileDataSource: FileDataSource
+    val appConfigRepository: AppConfigRepository
     val apiSource: ApiSource
     val assistanceRepository: AssistanceRepository
 }
@@ -32,7 +34,10 @@ interface AppContainer {
 class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val repository: Repository by lazy {
-        Repository(context)
+        Repository(
+            context = context,
+            appConfigRepository = appConfigRepository
+        )
     }
 
     override val networkDataSource: NetworkDataSource by lazy {
@@ -41,6 +46,10 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val fileDataSource: FileDataSource by lazy {
         FileDataSource(context)
+    }
+
+    override val appConfigRepository: AppConfigRepository by lazy {
+        AppConfigRepository(context)
     }
 
     override val apiSource: ApiSource by lazy {

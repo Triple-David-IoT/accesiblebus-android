@@ -1,12 +1,11 @@
 package dte.masteriot.accessiblebus
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import dte.masteriot.accessiblebus.navigation.AppNav
-import dte.masteriot.accessiblebus.sensors.SensorTestActivity
 import dte.masteriot.accessiblebus.ui.theme.AppTheme
+
 
 class MainActivity : ComponentActivity() {
     private val container: AppContainer
@@ -14,10 +13,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val repository = container.repository
-
-        // Decomment if testing the sensor activity
-        // startActivity(Intent(this, SensorTestActivity::class.java))
 
         setContent {
             AppTheme(useHighContrast = false) {

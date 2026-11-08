@@ -27,6 +27,7 @@ import dte.masteriot.accessiblebus.core.net.TripState
 fun TrackingScreen(
     requestId: String,
     onBack: () -> Unit,
+    onPreferences: () -> Unit = {},
     viewModel: PassengerViewModel = viewModel(factory = PassengerViewModel.Factory),
 ) {
     val snapshot by viewModel.snapshot.collectAsState()
@@ -63,6 +64,7 @@ fun TrackingScreen(
             CommandStatus(cancel?.value, onRetry = { viewModel.cancel(request.id) }, onDismiss = { cancel?.let { viewModel.dismiss(it.key) } })
         }
         OutlinedButton(onClick = viewModel::refresh) { Text("Actualizar") }
+        OutlinedButton(onClick = onPreferences) { Text("Preferencias") }
         OutlinedButton(onClick = onBack) { Text("Volver") }
     }
 }

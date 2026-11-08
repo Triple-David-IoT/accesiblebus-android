@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 fun PlaceholderScreen(
     title: String,
     onBack: () -> Unit,
-    links: List<Pair<String, () -> Unit>> = emptyList()
+    onPreferences: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -30,15 +30,16 @@ fun PlaceholderScreen(
             style = MaterialTheme.typography.headlineMedium
         )
 
-        links.forEach { (label, onClick) ->
-            Button(onClick = onClick, modifier = Modifier.padding(top = 16.dp)) {
-                Text(label)
-            }
+        Button(
+            onClick = onPreferences,
+            modifier = Modifier.padding(top = 16.dp)
+        ) {
+            Text("Preferences")
         }
 
         Button(
             onClick = onBack,
-            modifier = Modifier.padding(top = 16.dp)
+            modifier = Modifier.padding(top = 8.dp)
         ) {
             Text("Back")
         }

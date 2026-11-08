@@ -1,9 +1,11 @@
 package dte.masteriot.accessiblebus.ui.passenger
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,14 +27,21 @@ import androidx.lifecycle.viewmodel.compose.viewModel
  * with the CRTM stop names, the cache and the map.
  */
 @Composable
-fun StopsScreen(onStop: (String) -> Unit, viewModel: PassengerViewModel = viewModel(factory = PassengerViewModel.Factory)) {
+fun StopsScreen(
+    onStop: (String) -> Unit,
+    onPreferences: () -> Unit = {},
+    viewModel: PassengerViewModel = viewModel(factory = PassengerViewModel.Factory),
+) {
     val snapshot by viewModel.snapshot.collectAsState()
     val passed = snapshot.trip?.lastPassedSequence ?: 0
 
     Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
         Text("Paradas", style = MaterialTheme.typography.headlineMedium)
         Text("Viaje de laboratorio, línea 27", style = MaterialTheme.typography.bodyMedium)
-        OutlinedButton(onClick = viewModel::refresh, modifier = Modifier.padding(vertical = 8.dp)) { Text("Actualizar") }
+        Row(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = viewModel::refresh) { Text("Actualizar") }
+            OutlinedButton(onClick = onPreferences) { Text("Preferencias") }
+        }
         if (snapshot.trip == null) Text("Sin viaje activo. Pulsa Actualizar.")
         LazyColumn {
             items(snapshot.stopVisits, key = { it.id }) { visit ->

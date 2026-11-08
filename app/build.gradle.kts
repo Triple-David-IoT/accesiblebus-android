@@ -76,4 +76,5 @@ dependencies {
     implementation(libs.mqtt.client.core)
     implementation(libs.mqtt.client.transport.tcp)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.datastore.preferences)
 }
