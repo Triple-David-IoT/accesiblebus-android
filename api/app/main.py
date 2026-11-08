@@ -15,6 +15,7 @@ from .errors import ApiError, api_error_handler
 from .outbox import start_outbox
 from .receipts import start_receipts
 from .settings import Settings
+from .sync import router as sync_router
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ app = FastAPI(title="AccessibleBus API", version="0.1.0", lifespan=lifespan)
 app.add_exception_handler(ApiError, api_error_handler)
 app.include_router(commands_router)
 app.include_router(demo_router)
+app.include_router(sync_router)
 
 
 @app.get("/health", tags=["Health"])
