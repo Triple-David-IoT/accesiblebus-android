@@ -18,7 +18,7 @@ from psycopg.types.json import Jsonb
 from . import db
 from .auth import Actor, Role, current_actor
 from .errors import ApiError
-from .models import AssistanceRequest, CreateRequestBody, ErrorResponse, StopVisit
+from .models import AssistanceRequest, CreateRequestBody, ErrorResponse, RejectBody, StopVisit, VersionBody
 
 router = APIRouter()
 MESSAGE_SCHEMA_VERSION = 3
@@ -134,19 +134,8 @@ def create_request(cursor: Cursor, actor: Actor, body: CreateRequestBody) -> dic
     )
     cursor.execute(REQUEST_SELECT + " WHERE r.id = %s", (request_id,))
     resource = to_request(cursor.fetchone()).model_dump(mode="json", by_alias=True)
-
-    # The full MQTT message of K2, stored as is and published by the outbox thread.
-    message = {
-        "schemaVersion": MESSAGE_SCHEMA_VERSION,
-        "eventId": str(event_id),
-        "eventType": "request.created",
-        "requestId": str(request_id),
-        "tripId": str(visit["trip_id"]),
-        "version": resource["version"],
-        "payload": resource,
-    }
-    for topic in (f"users/{actor.subject}/events", f"vehicles/{visit['vehicle_id']}/events"):
-        db.enqueue_event(cursor, event_id, "request.created", visit["trip_id"], topic, message, request_id)
+    # The created event reuses created_event_id, which the HMI acknowledges.
+    request_event(cursor, "request.created", resource, event_id)
     return resource
 
 
@@ -185,6 +174,149 @@ def post_request(
     if repeated:
         response.status_code = 200
     return result
+
+
+def request_event(cursor: Cursor, event_type: str, resource: dict, event_id: UUID | None = None) -> None:
+    """Write one request event for the owner and the vehicle, with the full resource (K2)."""
+    event_id = event_id or uuid4()
+    message = {
+        "schemaVersion": MESSAGE_SCHEMA_VERSION,
+        "eventId": str(event_id),
+        "eventType": event_type,
+        "requestId": resource["id"],
+        "tripId": resource["tripId"],
+        "version": resource["version"],
+        "payload": resource,
+    }
+    for topic in (f"users/{resource['ownerSubject']}/events", f"vehicles/{resource['vehicleId']}/events"):
+        db.enqueue_event(cursor, event_id, event_type, resource["tripId"], topic, message, resource["id"])
+
+
+def change_state(cursor: Cursor, request_id: UUID, new_state: str, reason: str | None, event_type: str) -> dict:
+    """Apply a state change that was already validated, raise the version and write its event.
+
+    The caller must hold the trip and request locks. B05 reuses it to close requests on
+    advance and end, with EXPIRED and STOP_PASSED or TRIP_ENDED.
+    """
+    cursor.execute(
+        """
+        UPDATE assistance_request
+        SET state = %s, close_reason = %s, version = version + 1, updated_at = now()
+        WHERE id = %s
+        """,
+        (new_state, reason, request_id),
+    )
+    cursor.execute(REQUEST_SELECT + " WHERE r.id = %s", (request_id,))
+    resource = to_request(cursor.fetchone()).model_dump(mode="json", by_alias=True)
+    request_event(cursor, event_type, resource)
+    return resource
+
+
+# Who may run each transition, from which states, and what it produces.
+TRANSITIONS = {
+    "accept": {"who": "driver", "from": {"PENDING"}, "to": "ACCEPTED", "event": "request.accepted"},
+    "reject": {"who": "driver", "from": {"PENDING"}, "to": "REJECTED", "event": "request.rejected"},
+    "cancel": {"who": "owner", "from": {"PENDING", "ACCEPTED"}, "to": "CANCELLED", "event": "request.cancelled"},
+    "complete": {"who": "driver", "from": {"ACCEPTED"}, "to": "COMPLETED", "event": "request.completed"},
+}
+
+
+def transition(
+    actor: Actor, key: str, request_id: UUID, operation: str, body: VersionBody, reason: str | None = None
+) -> dict:
+    rule = TRANSITIONS[operation]
+
+    def run(cursor: Cursor) -> dict:
+        cursor.execute(
+            """
+            SELECT v.trip_id FROM assistance_request r JOIN stop_visit v ON v.id = r.stop_visit_id
+            WHERE r.id = %s
+            """,
+            (request_id,),
+        )
+        found = cursor.fetchone()
+        if found is None:
+            raise ApiError(404, "NOT_FOUND", "Request not found")
+        # Same lock order as every command: the trip first, then the request.
+        cursor.execute("SELECT state, driver_subject FROM trip WHERE id = %s FOR UPDATE", (found["trip_id"],))
+        trip = cursor.fetchone()
+        cursor.execute("SELECT 1 FROM assistance_request WHERE id = %s FOR UPDATE", (request_id,))
+        cursor.execute(REQUEST_SELECT + " WHERE r.id = %s", (request_id,))
+        row = cursor.fetchone()
+        current = to_request(row).model_dump(mode="json", by_alias=True)
+
+        if rule["who"] == "driver":
+            allowed = actor.role == Role.DRIVER and trip["driver_subject"] == actor.subject
+        else:
+            allowed = actor.role == Role.PASSENGER and row["owner_subject"] == actor.subject
+        if not allowed:
+            raise ApiError(403, "FORBIDDEN", f"You cannot {operation} this request")
+        if trip["state"] != "ACTIVE":
+            raise ApiError(409, "TRIP_NOT_ACTIVE", "The trip has ended", current)
+        if row["version"] != body.expected_version:
+            raise ApiError(409, "VERSION_CONFLICT", "The request has changed", current)
+        if row["state"] not in rule["from"]:
+            raise ApiError(409, "INVALID_TRANSITION", f"A {row['state']} request cannot be {operation}ed", current)
+        return change_state(cursor, request_id, rule["to"], reason, rule["event"])
+
+    path = f"/requests/{request_id}/{operation}"
+    result, _ = run_command(actor, key, operation, path, body.model_dump(mode="json", by_alias=True), run)
+    return result
+
+
+TRANSITION_RESPONSES = {
+    401: UNAUTHORIZED,
+    403: FORBIDDEN,
+    404: NOT_FOUND,
+    409: {
+        "model": ErrorResponse,
+        "description": "Key used for another command, trip ended, stale version or invalid transition",
+    },
+}
+
+
+@router.post("/requests/{request_id}/accept", response_model=AssistanceRequest, tags=["Requests"], responses=TRANSITION_RESPONSES)
+def accept_request(
+    request_id: UUID,
+    body: VersionBody,
+    actor: Annotated[Actor, Depends(current_actor)],
+    idempotency_key: Annotated[str, Header(min_length=1)],
+) -> dict:
+    """Assigned driver only. PENDING to ACCEPTED."""
+    return transition(actor, idempotency_key, request_id, "accept", body)
+
+
+@router.post("/requests/{request_id}/reject", response_model=AssistanceRequest, tags=["Requests"], responses=TRANSITION_RESPONSES)
+def reject_request(
+    request_id: UUID,
+    body: RejectBody,
+    actor: Annotated[Actor, Depends(current_actor)],
+    idempotency_key: Annotated[str, Header(min_length=1)],
+) -> dict:
+    """Assigned driver only. PENDING to REJECTED, with a reason from the fixed list."""
+    return transition(actor, idempotency_key, request_id, "reject", body, body.reason)
+
+
+@router.post("/requests/{request_id}/cancel", response_model=AssistanceRequest, tags=["Requests"], responses=TRANSITION_RESPONSES)
+def cancel_request(
+    request_id: UUID,
+    body: VersionBody,
+    actor: Annotated[Actor, Depends(current_actor)],
+    idempotency_key: Annotated[str, Header(min_length=1)],
+) -> dict:
+    """Owner only. PENDING or ACCEPTED to CANCELLED."""
+    return transition(actor, idempotency_key, request_id, "cancel", body)
+
+
+@router.post("/requests/{request_id}/complete", response_model=AssistanceRequest, tags=["Requests"], responses=TRANSITION_RESPONSES)
+def complete_request(
+    request_id: UUID,
+    body: VersionBody,
+    actor: Annotated[Actor, Depends(current_actor)],
+    idempotency_key: Annotated[str, Header(min_length=1)],
+) -> dict:
+    """Assigned driver only. ACCEPTED to COMPLETED while the trip is active, even if the stop was passed."""
+    return transition(actor, idempotency_key, request_id, "complete", body)
 
 
 @router.get(
