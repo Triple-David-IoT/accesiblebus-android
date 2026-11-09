@@ -12,7 +12,9 @@ data class HmiUiState(
     val inProgress: List<AssistanceRequest> = emptyList(),
     val rampText: String = "Ramp: no data",
     val connectionText: String = "Connection: disconnected (sample data)",
-    val error: String? = null
+    val error: String? = null,
+    val tripActive: Boolean = false,
+    val canAdvance: Boolean = false
 )
 
 fun Snapshot.toHmiUiState(): HmiUiState {
@@ -26,6 +28,8 @@ fun Snapshot.toHmiUiState(): HmiUiState {
             null -> "No trip"
         },
         pending = ofTrip.filter { it.state == RequestState.PENDING }.sortedBy { it.sequence },
-        inProgress = ofTrip.filter { it.state == RequestState.ACCEPTED }.sortedBy { it.sequence }
+        inProgress = ofTrip.filter { it.state == RequestState.ACCEPTED }.sortedBy { it.sequence },
+        tripActive = current?.state == TripState.ACTIVE,
+        canAdvance = current?.state == TripState.ACTIVE && current.lastPassedSequence < stopVisits.size
     )
 }

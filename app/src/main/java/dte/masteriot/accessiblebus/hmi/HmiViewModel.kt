@@ -75,6 +75,8 @@ class HmiViewModel(application: Application) : AndroidViewModel(application) {
     fun accept(requestId: String) = command { repository.accept(requestId) }
     fun reject(requestId: String, reason: RejectReason) = command { repository.reject(requestId, reason) }
     fun complete(requestId: String) = command { repository.complete(requestId) }
+    fun advance() = command { repository.advance() }
+    fun endTrip() = command { repository.end() }
 
     private suspend fun seedDemo() {
         val api = container.apiSource

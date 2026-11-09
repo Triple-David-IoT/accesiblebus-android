@@ -68,6 +68,26 @@ fun HmiScreen(
         )
     }
 
+    var confirmEnd by remember { mutableStateOf(false) }
+    if (confirmEnd) {
+        val open = ui.pending + ui.inProgress
+        AlertDialog(
+            onDismissRequest = { confirmEnd = false },
+            title = { Text("End trip?") },
+            text = {
+                Text(
+                    if (open.isEmpty()) "There are no open assistances."
+                    else "These assistances will be closed:\n" +
+                            open.joinToString("\n") { "Stop ${it.physicalStopCode} (${it.state})" }
+                )
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.endTrip(); confirmEnd = false }) { Text("End trip") }
+            },
+            dismissButton = { TextButton(onClick = { confirmEnd = false }) { Text("Cancel") } },
+        )
+    }
+
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(16.dp).statusBarsPadding(),
@@ -121,6 +141,20 @@ fun HmiScreen(
                     onClick = viewModel::refresh,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
                 ) { Text("Refresh") }
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = viewModel::advance,
+                        enabled = ui.canAdvance,
+                        modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                    ) { Text("Stop passed") }
+                    OutlinedButton(
+                        onClick = { confirmEnd = true },
+                        enabled = ui.tripActive,
+                        modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                    ) { Text("End trip") }
+                }
             }
             ui.error?.let { msg -> item { StatusStrip(msg) } }
 
