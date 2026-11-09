@@ -90,7 +90,7 @@ fun AppNav(
         }
 
         composable(Route.DriverHmi.route) {
-            HmiScreen()
+            HmiScreen(onPreferences = openPreferences)
         }
 
         composable(
