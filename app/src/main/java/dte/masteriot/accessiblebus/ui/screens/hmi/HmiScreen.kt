@@ -26,6 +26,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import dte.masteriot.accessiblebus.hmi.HmiViewModel
 import dte.masteriot.accessiblebus.core.net.AssistanceRequest
 
@@ -73,14 +77,11 @@ fun HmiScreen(
 
                     IconButton(
                         onClick = onPreferences,
-                        modifier = Modifier.semantics {
-                            contentDescription = "Abrir preferencias"
-                        }
                     ) {
-                        Text(
-                            text = "⚙",
-                            fontSize = 28.sp,
-                            color = MaterialTheme.colorScheme.onSurface
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Abrir preferencias",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
