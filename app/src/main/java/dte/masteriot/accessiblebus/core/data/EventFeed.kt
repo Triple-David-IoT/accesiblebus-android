@@ -32,11 +32,8 @@ class MqttEventFeed(private val client: BusMqttClient, scope: CoroutineScope) : 
 
     override suspend fun start(topic: String, onMessage: (String) -> Unit, onReconnected: () -> Unit): Boolean {
         client.onReconnected = onReconnected
-        if (!client.connect()) return false
-        if (!subscribed) {
-            client.subscribe(topic) { _, payload -> onMessage(payload) }
-            subscribed = true
-        }
-        return true
+        if (!connected.value && !client.connect()) return false
+        if (!subscribed) subscribed = client.subscribe(topic) { _, payload -> onMessage(payload) }
+        return subscribed
     }
 }

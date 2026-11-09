@@ -16,6 +16,7 @@ Fechas: 2 y 6 nov 2026.
 - Protocolo: protocolVersion = MqttProtocolVersion.V3_1_1. El log lo muestra como p4 en Mosquitto 2.1.2 y como p2 en 2.0.11 (cambia la numeración, no el protocolo). Control: mosquitto_sub -V mqttv5 aparece como p5 en 2.1.2.
 - QoS: por llamada (QoS.AT_LEAST_ONCE). Retain: parámetro retain al publicar.
 - Will: will { topic, payload(bytes), qos, retain } dentro del MqttClient(...) { }. En el log de 2.0.11: "Will message specified (65 bytes) (r1, q1)".
+- cleanStart: fijado a true de forma explícita. (B08)
 
 ## Resultados
 | Prueba | Broker A (2.1.2) | Broker B (2.0.11) | Evidencia |
@@ -48,6 +49,5 @@ Medida con móvil físico por Wi-Fi: no realizada.
 - Un cierre limpio (disconnect) descarta el Will; para que el dashboard vea offline al salir de forma limpia hay que publicarlo explícitamente (B12).
 
 ## Pendiente
-- Fijar cleanStart = true de forma explícita en BusMqttClient (B08).
 - Repetir con la máquina virtual real del curso (requiere un equipo x86).
 - Medida de caída silenciosa con un móvil físico.
