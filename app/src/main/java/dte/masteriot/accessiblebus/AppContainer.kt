@@ -26,6 +26,8 @@ import dte.masteriot.accessiblebus.data.AppConfigRepository
 import dte.masteriot.accessiblebus.data.FileDataSource
 import dte.masteriot.accessiblebus.data.NetworkDataSource
 import dte.masteriot.accessiblebus.data.Repository
+import dte.masteriot.accessiblebus.hmi.HmiLink
+import dte.masteriot.accessiblebus.hmi.ReceiptSender
 
 /**
  * Container for Dependency Injection holding app-wide data sources and repositories.
@@ -37,6 +39,8 @@ interface AppContainer {
     val appConfigRepository: AppConfigRepository
     val apiSource: ApiSource
     val assistanceRepository: AssistanceRepository
+    val driverRepository: AssistanceRepository
+    val receiptSender: ReceiptSender
     val stopsRepository: StopsRepository
 }
 
@@ -98,5 +102,33 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
             announced = PreferencesAnnouncedDecisions(context),
             scope = appScope,
         )
+    }
+
+    private val hmiLink by lazy { HmiLink(BuildConfig.MQTT_BROKER, "hmi-demo-01", "BUS-DEMO-01", appScope) }
+
+    // Driver token (K7) until the profile (C07) provides it. Sample mode shares the passenger's SampleApi.
+    private val driverApi: ApiSource by lazy {
+        if (BuildConfig.USE_SAMPLE_API) apiSource else ApiClient(BuildConfig.API_BASE_URL) { "demo-conductor-1" }
+    }
+
+    override val driverRepository: AssistanceRepository by lazy {
+        AssistanceRepository(
+            api = driverApi,
+            keys = PreferencesCommandKeys(context, name = "driver_command_keys"),
+            syncScope = "vehicle",
+            vehicleId = "BUS-DEMO-01",
+            events = if (!BuildConfig.USE_SAMPLE_API) hmiLink.feed else null,
+            eventsTopic = "vehicles/BUS-DEMO-01/events",
+            scope = appScope,
+        ).also { repository ->
+            hmiLink.afterReconnect = {
+                repository.refresh()
+                receiptSender.check(forgetSent = true)
+            }
+        }
+    }
+
+    override val receiptSender: ReceiptSender by lazy {
+        ReceiptSender(driverRepository.snapshot, hmiLink, appScope, enabled = !BuildConfig.USE_SAMPLE_API)
     }
 }

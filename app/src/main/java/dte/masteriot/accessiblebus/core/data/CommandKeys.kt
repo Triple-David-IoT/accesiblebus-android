@@ -19,9 +19,9 @@ interface CommandKeys {
     fun all(): Set<String>
 }
 
-class PreferencesCommandKeys(context: Context) : CommandKeys {
+class PreferencesCommandKeys(context: Context, name: String = "command_keys") : CommandKeys {
 
-    private val preferences = context.getSharedPreferences("command_keys", Context.MODE_PRIVATE)
+    private val preferences = context.getSharedPreferences(name, Context.MODE_PRIVATE)
 
     override fun get(commandId: String): String? = preferences.getString(commandId, null)
 

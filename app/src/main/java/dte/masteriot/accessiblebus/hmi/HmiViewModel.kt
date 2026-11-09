@@ -7,34 +7,50 @@ import dte.masteriot.accessiblebus.AccessibleBusApplication
 import dte.masteriot.accessiblebus.BuildConfig
 import dte.masteriot.accessiblebus.core.net.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class HmiViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val api = (application as AccessibleBusApplication).container.apiSource
-    private val _state = MutableStateFlow(HmiUiState())
-    val state: StateFlow<HmiUiState> = _state
+    private val container = (application as AccessibleBusApplication).container
+    private val repository = container.driverRepository
+    private val receipts = container.receiptSender
+    private val error = MutableStateFlow<String?>(null)
+
+    val state: StateFlow<HmiUiState> =
+        combine(repository.snapshot, repository.live, error) { snapshot, live, error ->
+            snapshot.toHmiUiState().copy(
+                connectionText = if (live) "Connection: live" else "Connection: no live notices (use Refresh)",
+                error = error,
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HmiUiState())
 
     init {
+        repository.startEvents()
         viewModelScope.launch {
             // TODO(I1): remove with SampleApi.
             if (BuildConfig.USE_SAMPLE_API) seedDemo()
-            load()
+            refresh()
         }
     }
 
-    fun load() {
+    /** Pull the snapshot, then acknowledge any request the API still shows as not received. */
+    fun refresh() {
         viewModelScope.launch {
-            _state.value = when (val r = api.sync("vehicle", VEHICLE_ID)) {
-                is ApiResult.Success -> r.value.toHmiUiState()
-                is ApiResult.Conflict<*> -> HmiUiState(error = "Conflict: ${r.message}")
-                is ApiResult.Failure -> HmiUiState(error = "Error: ${r.message}")
+            error.value = when (val r = repository.refresh()) {
+                is ApiResult.Success -> null
+                is ApiResult.Conflict<*> -> "Conflict: ${r.message}"
+                is ApiResult.Failure -> "Error: ${r.message}"
             }
+            receipts.check(forgetSent = true)
         }
     }
 
     private suspend fun seedDemo() {
+        val api = container.apiSource
         val snap = (api.sync("vehicle", VEHICLE_ID) as? ApiResult.Success)?.value ?: return
         val trip = snap.trip ?: return
         val visits = snap.stopVisits.sortedBy { it.sequence }

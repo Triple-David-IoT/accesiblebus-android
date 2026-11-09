@@ -20,6 +20,7 @@ class BusMqttClient(
         protocolVersion = MqttProtocolVersion.V3_1_1
         autoReconnect = true
         keepAliveSeconds = 15
+        cleanStart = true
         if (will != null) {
             will {
                 topic = will.topic
@@ -54,11 +55,13 @@ class BusMqttClient(
         true
     } catch (e: Exception) { Log.e(TAG, "connect: ${e.message}"); false }
 
-    suspend fun subscribe(topic: String, handler: (String, String) -> Unit) {
-        try {
-            client.subscribe(topic, QoS.AT_LEAST_ONCE)
-            scope.launch { client.messagesMatching(topic).collect { handler(it.topic, it.payloadAsString()) } }
-        } catch (e: Exception) { Log.e(TAG, "subscribe $topic: ${e.message}") }
+    suspend fun subscribe(topic: String, handler: (String, String) -> Unit): Boolean = try {
+        client.subscribe(topic, QoS.AT_LEAST_ONCE)
+        scope.launch { client.messagesMatching(topic).collect { handler(it.topic, it.payloadAsString()) } }
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "subscribe $topic: ${e.message}")
+        false
     }
 
     suspend fun publish(topic: String, payload: String, retain: Boolean = false): Boolean = try {

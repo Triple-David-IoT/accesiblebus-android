@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import dte.masteriot.accessiblebus.hmi.HmiViewModel
 import dte.masteriot.accessiblebus.core.net.AssistanceRequest
+import androidx.compose.foundation.layout.heightIn
 
 @Composable
 fun HmiScreen(
@@ -88,6 +89,12 @@ fun HmiScreen(
             }
             item { StatusStrip(ui.rampText) }
             item { StatusStrip(ui.connectionText) }
+            item {
+                Button(
+                    onClick = viewModel::refresh,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                ) { Text("Refresh") }
+            }
             ui.error?.let { msg -> item { StatusStrip(msg) } }
 
             item { SectionTitle("Pending (${ui.pending.size})") }
