@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import dte.masteriot.accessiblebus.core.net.RejectReason
+import dte.masteriot.accessiblebus.core.net.RequestState
 
 class HmiViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -19,6 +21,7 @@ class HmiViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = container.driverRepository
     private val receipts = container.receiptSender
     private val error = MutableStateFlow<String?>(null)
+    private val alerts = NewRequestAlert(application)
 
     val state: StateFlow<HmiUiState> =
         combine(repository.snapshot, repository.live, error) { snapshot, live, error ->
@@ -35,6 +38,15 @@ class HmiViewModel(application: Application) : AndroidViewModel(application) {
             if (BuildConfig.USE_SAMPLE_API) seedDemo()
             refresh()
         }
+        viewModelScope.launch {
+            repository.snapshot.collect { snapshot ->
+                val tripId = snapshot.trip?.id ?: return@collect
+                val fresh = snapshot.requests.filter {
+                    it.tripId == tripId && it.state == RequestState.PENDING && alerts.firstTime(it.id)
+                }
+                if (fresh.isNotEmpty()) alerts.alert()
+            }
+        }
     }
 
     /** Pull the snapshot, then acknowledge any request the API still shows as not received. */
@@ -48,6 +60,21 @@ class HmiViewModel(application: Application) : AndroidViewModel(application) {
             receipts.check(forgetSent = true)
         }
     }
+
+    /** Accept a pending request. The repository applies the answer, or the current resource on a conflict. */
+    private fun command(call: suspend () -> ApiResult<*>) {
+        viewModelScope.launch {
+            error.value = when (val r = call()) {
+                is ApiResult.Success -> null
+                is ApiResult.Conflict<*> -> "Conflict: ${r.message}"
+                is ApiResult.Failure -> "Error: ${r.message}"
+            }
+        }
+    }
+
+    fun accept(requestId: String) = command { repository.accept(requestId) }
+    fun reject(requestId: String, reason: RejectReason) = command { repository.reject(requestId, reason) }
+    fun complete(requestId: String) = command { repository.complete(requestId) }
 
     private suspend fun seedDemo() {
         val api = container.apiSource
