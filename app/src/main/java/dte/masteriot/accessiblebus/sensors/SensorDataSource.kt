@@ -5,25 +5,27 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.SystemClock
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-
-data class SensorReading (
+import java.util.concurrent.atomic.AtomicInteger
+import android.util.Log
+data class SensorSnapshot(
     val lightLux: Float? = null,
     val proximity: Float? = null,
-    val lightTimestamp: Long? = null,
-    val proximityTimestamp: Long? = null
+    val lightTimestampNanos: Long? = null,
+    val proximityTimestampNanos: Long? = null,
+
+    val lightRegistered: Boolean = false,
+    val proximityRegistered: Boolean = false
 )
 
-class SensorDataSource(
-    context: Context
-) {
+class SensorDataSource(context: Context) {
 
     private val sensorManager =
-        context.applicationContext.getSystemService(
-            Context.SENSOR_SERVICE
-        ) as SensorManager
+        context.applicationContext.getSystemService(Context.SENSOR_SERVICE)
+                as SensorManager
 
     private val lightSensor: Sensor? =
         sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
@@ -37,88 +39,164 @@ class SensorDataSource(
     val hasProximitySensor: Boolean
         get() = proximitySensor != null
 
-    val proximityMaximumRange: Float
-        get() = proximitySensor?.maximumRange ?: 0f
+    /*
+     * Instrumentación para la prueba de cierre.
+     *
+     * Cuenta observaciones activas, no el número de sensores físicos.
+     * Cada observación usa un listener que puede estar registrado
+     * para uno o para ambos sensores.
+     */
+    private val activeListenerCount = AtomicInteger(0)
 
-    fun isNear(value: Float): Boolean {
-
-        if (proximitySensor == null) {
-            return false
-        }
-
-        return value < proximityMaximumRange
+    companion object {
+        private const val TAG = "C08"
     }
 
-    fun observeReadings(): Flow<SensorReading> = callbackFlow {
+    internal fun activeListenersForTest(): Int =
+        activeListenerCount.get()
 
-        var lightLux: Float? = null
-        var proximity: Float? = null
 
-        var lightTimestamp: Long? = null
-        var proximityTimestamp: Long? = null
+    fun logSensorAvailability() {
+        Log.i(TAG, "----- Disponibilidad de sensores -----")
 
-        val registrationTime = System.nanoTime()
+        Log.i(
+            TAG,
+            "Sensor de luz: ${lightSensor != null}" +
+                    if (lightSensor != null) {
+                        " | ${lightSensor.name}"
+                    } else {
+                        " | INEXISTENTE"
+                    }
+        )
+
+        Log.i(
+            TAG,
+            "Sensor de proximidad: ${proximitySensor != null}" +
+                    if (proximitySensor != null) {
+                        " | ${proximitySensor.name}" +
+                                " | maximumRange=${proximitySensor.maximumRange}"
+                    } else {
+                        " | INEXISTENTE"
+                    }
+        )
+    }
+    fun observeReadings(): Flow<SensorSnapshot> = callbackFlow {
+        val registrationTimeNanos = SystemClock.elapsedRealtimeNanos()
+
+        var current = SensorSnapshot()
 
         val listener = object : SensorEventListener {
-
             override fun onSensorChanged(event: SensorEvent) {
+                // Ignorar eventos anteriores al inicio de esta observación.
+                if (event.timestamp < registrationTimeNanos) return
+                if (event.values.isEmpty()) return
 
-                // Ignorar eventos anteriores al registro.
-                if (event.timestamp < registrationTime) {
-                    return
-                }
-
-                when (event.sensor.type) {
-
+                current = when (event.sensor.type) {
                     Sensor.TYPE_LIGHT -> {
-                        lightLux = event.values[0]
-                        lightTimestamp = event.timestamp
+                        val lux = event.values[0]
+
+                        Log.d(
+                            TAG,
+                            "Lectura de luz: $lux lux"
+                        )
+
+                        current.copy(
+                            lightLux = lux,
+                            lightTimestampNanos = event.timestamp
+                        )
                     }
 
                     Sensor.TYPE_PROXIMITY -> {
-                        proximity = event.values[0]
-                        proximityTimestamp = event.timestamp
+                        val proximity = event.values[0]
+
+                        val proximityState = when (proximity) {
+                            0f -> "CERCA"
+                            5f -> "LEJOS"
+                            else -> "VALOR INTERMEDIO"
+                        }
+
+                        Log.d(
+                            TAG,
+                            "Lectura de proximidad: $proximity ($proximityState)"
+                        )
+
+                        current.copy(
+                            proximity = proximity,
+                            proximityTimestampNanos = event.timestamp
+                        )
                     }
+
+                    else -> current
                 }
 
-                trySend(
-                    SensorReading(
-                        lightLux = lightLux,
-                        proximity = proximity,
-                        lightTimestamp = lightTimestamp,
-                        proximityTimestamp = proximityTimestamp
-                    )
-                )
+                trySend(current)
             }
 
             override fun onAccuracyChanged(
                 sensor: Sensor?,
                 accuracy: Int
-            ) {
-                // No necesitamos modificar el contexto
-                // por un cambio de precisión.
-            }
+            ) = Unit
         }
 
-        // Registrar solamente los sensores existentes.
-        lightSensor?.let {
+        val lightRegistered = lightSensor?.let {
             sensorManager.registerListener(
                 listener,
                 it,
                 SensorManager.SENSOR_DELAY_NORMAL
             )
-        }
+        } ?: false
 
-        proximitySensor?.let {
+        val proximityRegistered = proximitySensor?.let {
             sensorManager.registerListener(
                 listener,
                 it,
                 SensorManager.SENSOR_DELAY_NORMAL
             )
+        } ?: false
+
+        current = current.copy(
+            lightRegistered = lightRegistered,
+            proximityRegistered = proximityRegistered
+        )
+
+        val anyRegistered = lightRegistered || proximityRegistered
+
+        Log.i(
+            TAG,
+            "Registro de listeners: " +
+                    "luz=$lightRegistered, " +
+                    "proximidad=$proximityRegistered"
+        )
+
+        if (anyRegistered) {
+            activeListenerCount.incrementAndGet()
         }
+
+        trySend(current)
 
         awaitClose {
+            Log.i(TAG, "Liberando listeners...")
+
             sensorManager.unregisterListener(listener)
+
+            if (anyRegistered) {
+                activeListenerCount.decrementAndGet()
+            }
+
+            Log.i(
+                TAG,
+                "Listeners activos tras liberar: ${activeListenerCount.get()}"
+            )
         }
     }
+
+    /**
+     * Calibración confirmada para este dispositivo:
+     * 0 = cerca, 5 = lejos.
+     *
+     * Se usa una comparación explícita con el máximo del sensor como
+     * protección si el valor reportado no es exactamente 0 o 5.
+     */
+    fun isNear(proximityValue: Float): Boolean =
+        proximityValue < (proximitySensor?.maximumRange ?: 5f)
 }

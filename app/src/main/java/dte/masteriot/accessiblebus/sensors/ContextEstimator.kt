@@ -2,99 +2,200 @@ package dte.masteriot.accessiblebus.sensors
 
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onEach
+import kotlin.time.Duration.Companion.milliseconds
+import android.util.Log
 
 class ContextEstimator(
-    private val sensorDataSource: SensorDataSource,
-    private val lightDarkThreshold: Float = 5f,
-    private val lightBrightThreshold: Float = 20f
+    private val sensorDataSource: SensorDataSource
 ) {
 
+
+    companion object {
+        private const val TAG = "C08"
+        private const val SENSOR_TIMEOUT_MS = 1_500L
+
+        // Umbrales acordados para el proyecto.
+        private const val L_OSC = 5f
+        private const val L_LUZ = 20f
+
+        // Calibración confirmada: 0 cerca, 5 lejos.
+        private const val PROXIMITY_NEAR = 0f
+        private const val PROXIMITY_FAR = 5f
+    }
+
     suspend fun estimate(): PhoneContext {
+        Log.i(TAG, "========== estimate() INICIO ==========")
 
-        var latestReading = SensorReading()
+        sensorDataSource.logSensorAvailability()
 
-        return try {
+        var latestSnapshot = SensorSnapshot()
 
-            // Esperar hasta 1,5 segundos.
-            // Si llegan ambas lecturas, podemos decidir antes.
-            withTimeoutOrNull(1500L) {
+        try {
+            val result = withTimeoutOrNull(SENSOR_TIMEOUT_MS.milliseconds) {
+                sensorDataSource.observeReadings().first { snapshot ->
+                    latestSnapshot = snapshot
 
-                sensorDataSource.observeReadings()
-                    .onEach { reading ->
-                        latestReading = reading
-                    }
-                    .first { reading ->
-                        reading.lightLux != null &&
-                                reading.proximity != null
-                    }
+                    Log.d(
+                        TAG,
+                        "Estado de lecturas: " +
+                                "lux=${snapshot.lightLux}, " +
+                                "proximity=${snapshot.proximity}, " +
+                                "lightRegistered=${snapshot.lightRegistered}, " +
+                                "proximityRegistered=${snapshot.proximityRegistered}"
+                    )
+
+                    hasEnoughEvidence(snapshot)
+                }
             }
 
-            decideContext(latestReading)
+            val snapshot = result ?: latestSnapshot
+            val timedOut = result == null
 
-        } catch (e: Exception) {
+            if (timedOut) {
+                Log.w(
+                    TAG,
+                    "TIMEOUT: no se obtuvo evidencia suficiente " +
+                            "en ${SENSOR_TIMEOUT_MS} ms"
+                )
+            } else {
+                Log.i(TAG, "Evidencia suficiente recibida")
+            }
 
-            // Si ocurre un error inesperado,
-            // no debemos bloquear el flujo de avisos.
-            PhoneContext.UNKNOWN
+// Comprobar si algún sensor registrado no ha proporcionado
+// una lectura durante la ventana de adquisición.
+            val missingExpectedReading =
+                (snapshot.lightRegistered && snapshot.lightLux == null) ||
+                        (snapshot.proximityRegistered && snapshot.proximity == null)
+
+            val decision = when {
+                timedOut && missingExpectedReading -> {
+                    Log.w(
+                        TAG,
+                        "Evidencia parcial tras timeout. " +
+                                "Se devuelve UNKNOWN."
+                    )
+
+                    PhoneContext.UNKNOWN
+                }
+
+                else -> decide(snapshot)
+            }
+
+            Log.i(
+                TAG,
+                "DECISIÓN: $decision | " +
+                        "lux=${snapshot.lightLux} | " +
+                        "proximity=${snapshot.proximity} | " +
+                        "timedOut=$timedOut"
+            )
+
+            return decision
+        } finally {
+            Log.i(TAG, "estimate() finalizado")
+
+            Log.i(
+                TAG,
+                "Listeners activos al finalizar: " +
+                        sensorDataSource.activeListenersForTest()
+            )
+
+            Log.i(TAG, "======================================")
         }
     }
 
-    private fun decideContext(
-        reading: SensorReading
+    private fun hasEnoughEvidence(
+        snapshot: SensorSnapshot
+    ): Boolean {
+        val lightExpected = snapshot.lightRegistered
+        val proximityExpected = snapshot.proximityRegistered
+
+        // No se pudo registrar ningún sensor.
+        if (!lightExpected && !proximityExpected) {
+            return true
+        }
+
+        val lightReady =
+            !lightExpected || snapshot.lightLux != null
+
+        val proximityReady =
+            !proximityExpected || snapshot.proximity != null
+
+        return lightReady && proximityReady
+    }
+
+    private fun decide(
+        snapshot: SensorSnapshot
     ): PhoneContext {
+        val lightAvailable = snapshot.lightRegistered
+        val proximityAvailable = snapshot.proximityRegistered
 
-        val light = reading.lightLux
-        val proximity = reading.proximity
+        val lux = snapshot.lightLux
+        val proximity = snapshot.proximity
 
-        // Caso 1: ambos sensores disponibles y con lecturas.
-        if (light != null && proximity != null) {
+        val hasLightReading = lightAvailable && lux != null
+        val hasProximityReading =
+            proximityAvailable && proximity != null
 
-            val isNear = sensorDataSource.isNear(proximity)
+        // Ningún sensor registrado o ninguna lectura válida.
+        if (!hasLightReading && !hasProximityReading) {
+            return PhoneContext.UNKNOWN
+        }
 
-            val isDark = light < lightDarkThreshold
-            val isBright = light > lightBrightThreshold
+        /*
+         * Ambos sensores aportan lectura:
+         * se aplican las reglas combinadas del proyecto.
+         */
+        if (hasLightReading && hasProximityReading) {
+            return decideWithBoth(
+                lux = lux!!,
+                proximity = proximity!!
+            )
+        }
 
+        /*
+         * Solo luz: se usa el umbral de oscuridad y el de luz.
+         * La zona intermedia no aporta evidencia suficiente.
+         */
+        if (hasLightReading) {
             return when {
+                lux!! < L_OSC -> PhoneContext.COVERED
+                lux > L_LUZ -> PhoneContext.UNCOVERED
+                else -> PhoneContext.UNKNOWN
+            }
+        }
 
-                isNear && isDark ->
+        /*
+         * Solo proximidad:
+         * 0 = cerca, 5 = lejos.
+         */
+        if (hasProximityReading) {
+            return when {
+                proximity!! == PROXIMITY_NEAR ->
                     PhoneContext.COVERED
 
-                !isNear || isBright ->
+                proximity == PROXIMITY_FAR ->
                     PhoneContext.UNCOVERED
 
-                else ->
-                    PhoneContext.UNKNOWN
+                else -> PhoneContext.UNKNOWN
             }
         }
 
-        // Caso 2: solamente proximidad.
-        if (proximity != null) {
-
-            return if (sensorDataSource.isNear(proximity)) {
-                PhoneContext.COVERED
-            } else {
-                PhoneContext.UNCOVERED
-            }
-        }
-
-        // Caso 3: solamente luz.
-        if (light != null) {
-
-            return when {
-
-                light < lightDarkThreshold ->
-                    PhoneContext.COVERED
-
-                light > lightBrightThreshold ->
-                    PhoneContext.UNCOVERED
-
-                else ->
-                    PhoneContext.UNKNOWN
-            }
-        }
-
-        // Caso 4: no tenemos lecturas.
         return PhoneContext.UNKNOWN
+    }
+
+    private fun decideWithBoth(
+        lux: Float,
+        proximity: Float
+    ): PhoneContext {
+        return when {
+            proximity == PROXIMITY_NEAR && lux < L_OSC ->
+                PhoneContext.COVERED
+
+            proximity == PROXIMITY_FAR || lux > L_LUZ ->
+                PhoneContext.UNCOVERED
+
+            else ->
+                PhoneContext.UNKNOWN
+        }
     }
 }
