@@ -16,6 +16,7 @@ from .outbox import start_outbox
 from .receipts import start_receipts
 from .settings import Settings
 from .sync import router as sync_router
+from .trips import router as trips_router
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -45,6 +46,7 @@ app.add_exception_handler(ApiError, api_error_handler)
 app.include_router(commands_router)
 app.include_router(demo_router)
 app.include_router(sync_router)
+app.include_router(trips_router)
 
 
 @app.get("/health", tags=["Health"])

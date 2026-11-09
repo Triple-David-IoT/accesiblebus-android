@@ -67,6 +67,12 @@ class RejectBody(VersionBody):
     reason: Literal["RAMP_UNAVAILABLE", "UNSAFE_STOP", "OTHER"]
 
 
+class AdvanceBody(ApiModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
+
+    from_sequence: int = Field(ge=0)
+
+
 class Snapshot(ApiModel):
     trip: Trip | None
     stop_visits: list[StopVisit]
