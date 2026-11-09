@@ -61,5 +61,4 @@ Samples: `presence_online.json`, `presence_offline.json`.
 ## Open points for review
 
 1. Payload of `request.receipt_recorded`.
-2. Topics that receive `trip.progressed` and `trip.ended` (decided in B05).
 3. Fields of the projection and presence messages (proposed by B).
