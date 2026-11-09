@@ -9,9 +9,13 @@ sealed class Route(val route: String) {
 
     object PassengerStopDetail : Route("passenger/stop-detail")
 
-    object PassengerConfirm : Route("passenger/confirm")
+    object PassengerConfirm : Route("passenger/confirm/{stopVisitId}") {
+        fun create(stopVisitId: String) = "passenger/confirm/$stopVisitId"
+    }
 
-    object PassengerTracking : Route("passenger/tracking")
+    object PassengerTracking : Route("passenger/tracking/{requestId}") {
+        fun create(requestId: String) = "passenger/tracking/$requestId"
+    }
 
     object DriverHmi : Route("driver/hmi")
 

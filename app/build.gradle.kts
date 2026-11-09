@@ -18,10 +18,16 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Until I1 the app reads assets/samples instead of the API. The URL and token are
-        // placeholders until the connection profile (C07) provides them.
-        buildConfigField("boolean", "USE_SAMPLE_API", "true")
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/\"")
+        // placeholders until the connection profile (C07) provides them. To use a running API:
+        // ./gradlew installDebug -PuseSampleApi=false -PapiBaseUrl=http://192.168.1.50:8000/
+        //   -PmqttBroker=tcp://192.168.1.50:1883
+        val useSampleApi = (project.findProperty("useSampleApi") as String?) ?: "true"
+        val apiBaseUrl = (project.findProperty("apiBaseUrl") as String?) ?: "http://10.0.2.2:8000/"
+        buildConfigField("boolean", "USE_SAMPLE_API", useSampleApi)
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("String", "API_TOKEN", "\"demo-pasajero-1\"")
+        val mqttBroker = (project.findProperty("mqttBroker") as String?) ?: "tcp://10.0.2.2:1883"
+        buildConfigField("String", "MQTT_BROKER", "\"$mqttBroker\"")
     }
 
     buildTypes {

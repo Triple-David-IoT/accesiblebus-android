@@ -11,6 +11,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dte.masteriot.accessiblebus.AccessibleBusApplication
 import dte.masteriot.accessiblebus.core.config.ConnectionProfile
+import dte.masteriot.accessiblebus.ui.passenger.ConfirmScreen
+import dte.masteriot.accessiblebus.ui.passenger.StopsScreen
+import dte.masteriot.accessiblebus.ui.passenger.TrackingScreen
 import dte.masteriot.accessiblebus.ui.screens.PlaceholderScreen
 import dte.masteriot.accessiblebus.ui.screens.PreferencesScreen
 import dte.masteriot.accessiblebus.ui.screens.ProfileScreen
@@ -58,9 +61,8 @@ fun AppNav(
         }
 
         composable(Route.PassengerStops.route) {
-            PlaceholderScreen(
-                title = "Passenger Stops",
-                onBack = { navController.popBackStack() },
+            StopsScreen(
+                onStop = { navController.navigate(Route.PassengerConfirm.create(it)) },
                 onPreferences = openPreferences
             )
         }
@@ -73,17 +75,21 @@ fun AppNav(
             )
         }
 
-        composable(Route.PassengerConfirm.route) {
-            PlaceholderScreen(
-                title = "Confirm Journey",
-                onBack = { navController.popBackStack() },
-                onPreferences = openPreferences
+        composable(Route.PassengerConfirm.route) { entry ->
+            ConfirmScreen(
+                stopVisitId = entry.arguments?.getString("stopVisitId").orEmpty(),
+                onTracking = { requestId ->
+                    navController.navigate(Route.PassengerTracking.create(requestId)) {
+                        popUpTo(Route.PassengerStops.route)
+                    }
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 
-        composable(Route.PassengerTracking.route) {
-            PlaceholderScreen(
-                title = "Passenger Tracking",
+        composable(Route.PassengerTracking.route) { entry ->
+            TrackingScreen(
+                requestId = entry.arguments?.getString("requestId").orEmpty(),
                 onBack = { navController.popBackStack() },
                 onPreferences = openPreferences
             )

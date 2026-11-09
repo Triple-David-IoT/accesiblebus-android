@@ -117,8 +117,13 @@ class SampleApi(private val read: (String) -> String) : ApiSource {
     }
 
     override suspend fun resetDemo(key: String): ApiResult<ResetResult> = command(key) {
-        snapshot = load().copy(requests = emptyList())
-        ApiResult.Success(ResetResult(snapshot.trip!!, snapshot.stopVisits))
+        // Like the API: a new trip with new visits, starting at the first stop.
+        val base = load()
+        val tripId = UUID.randomUUID().toString()
+        val trip = base.trip!!.copy(id = tripId, state = TripState.ACTIVE, lastPassedSequence = 0)
+        val visits = base.stopVisits.map { it.copy(id = UUID.randomUUID().toString(), tripId = tripId) }
+        snapshot = Snapshot(trip, visits, emptyList())
+        ApiResult.Success(ResetResult(trip, visits))
     }
 
     private suspend fun transition(
