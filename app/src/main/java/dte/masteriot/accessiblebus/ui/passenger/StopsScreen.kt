@@ -18,6 +18,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -34,7 +38,7 @@ import java.util.TimeZone
 /**
  * The four stops of the demo line, with their CRTM code and name, in the order of the line.
  * Without network it shows the saved copy and says so. A stop opens Confirm for its visit in
- * the laboratory trip. The map (A11) and the stop detail (A12) come next.
+ * the laboratory trip. "Ver mapa" shows the same stops on a map (A11); the stop detail (A12) comes next.
  */
 @Composable
 fun StopsScreen(
@@ -44,6 +48,7 @@ fun StopsScreen(
 ) {
     val stops by viewModel.stops.collectAsState()
     val snapshot by viewModel.snapshot.collectAsState()
+    var showMap by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.loadStops() }
 
@@ -55,8 +60,9 @@ fun StopsScreen(
         Text("Línea 27 · Plaza de Castilla → Glorieta de Embajadores", style = MaterialTheme.typography.bodyLarge)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { viewModel.loadStops(); viewModel.refresh() }) { Text("Actualizar") }
-            OutlinedButton(onClick = onPreferences) { Text("Preferencias") }
+            OutlinedButton(onClick = { showMap = !showMap }) { Text(if (showMap) "Ver lista" else "Ver mapa") }
         }
+        OutlinedButton(onClick = onPreferences) { Text("Preferencias") }
 
         when (val state = stops) {
             StopsState.Loading -> Text("Cargando paradas…")
@@ -75,10 +81,15 @@ fun StopsScreen(
                         style = MaterialTheme.typography.titleSmall,
                     )
                 }
-                LazyColumn {
-                    items(state.copy.stops, key = { it.code }) { stop ->
-                        StopRow(stop, snapshot, onStop)
-                        HorizontalDivider()
+                if (showMap) {
+                    Text("Toca una parada para ver su nombre y otra vez para pedir asistencia.", style = MaterialTheme.typography.bodyMedium)
+                    StopsMap(state.copy.stops, snapshot, onStop, Modifier.fillMaxWidth().weight(1f))
+                } else {
+                    LazyColumn {
+                        items(state.copy.stops, key = { it.code }) { stop ->
+                            StopRow(stop, snapshot, onStop)
+                            HorizontalDivider()
+                        }
                     }
                 }
             }
