@@ -20,6 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.sp
 import dte.masteriot.accessiblebus.hmi.HmiViewModel
 import dte.masteriot.accessiblebus.core.net.AssistanceRequest
 
@@ -36,16 +42,47 @@ fun HmiScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item {
-                Text("LAB", style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary)
-                Text("Vehicle ${ui.vehicleId}", style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold)
-                Text(ui.tripLabel, style = MaterialTheme.typography.titleMedium)
-                Button(
-                    onClick = onPreferences,
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Preferencias")
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+
+                        Text(
+                            "LAB",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        Text(
+                            "Vehicle ${ui.vehicleId}",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            ui.tripLabel,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onPreferences,
+                        modifier = Modifier.semantics {
+                            contentDescription = "Abrir preferencias"
+                        }
+                    ) {
+                        Text(
+                            text = "⚙",
+                            fontSize = 28.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
             item { StatusStrip(ui.rampText) }
