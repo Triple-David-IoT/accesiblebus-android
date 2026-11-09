@@ -5,6 +5,14 @@ import android.util.Log
 import dte.masteriot.accessiblebus.core.data.DecisionAnnouncer
 import dte.masteriot.accessiblebus.core.data.MqttEventFeed
 import dte.masteriot.accessiblebus.core.data.PreferencesAnnouncedDecisions
+import dte.masteriot.accessiblebus.core.data.StopsManifest
+import dte.masteriot.accessiblebus.core.data.StopsRepository
+import dte.masteriot.accessiblebus.core.net.ApiJson
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import dte.masteriot.accessiblebus.core.mqtt.BusMqttClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +41,7 @@ interface AppContainer {
     val assistanceRepository: AssistanceRepository
     val driverRepository: AssistanceRepository
     val receiptSender: ReceiptSender
+    val stopsRepository: StopsRepository
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -62,6 +71,19 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         } else {
             ApiClient(BuildConfig.API_BASE_URL) { BuildConfig.API_TOKEN }
         }
+    }
+
+    override val stopsRepository: StopsRepository by lazy {
+        val manifest = context.assets.open("manifest.json").bufferedReader().use { it.readText() }
+        StopsRepository(
+            manifest = ApiJson.decodeFromString(StopsManifest.serializer(), manifest),
+            cacheFile = File(context.filesDir, "stops_cache.json"),
+            now = {
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+                    .apply { timeZone = TimeZone.getTimeZone("UTC") }
+                    .format(Date())
+            },
+        )
     }
 
     // Lives as long as the app: events and the /sync after a reconnection run here.
