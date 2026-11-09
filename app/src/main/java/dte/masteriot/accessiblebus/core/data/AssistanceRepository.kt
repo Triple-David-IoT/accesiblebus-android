@@ -176,7 +176,16 @@ class AssistanceRepository(
         if (_commands.value[commandId] == CommandState.Sending) {
             return ApiResult.Failure("Ya se está enviando", retryable = true)
         }
-        val key = keys.get(commandId) ?: newKey().also { keys.put(commandId, it) }
+        // A key that could not be removed after an answer belongs to a finished command: never reuse it.
+        val key = keys.get(commandId)?.takeUnless { commandId in staleKeys } ?: newKey().also { key ->
+            if (!keys.put(commandId, key)) {
+                // Without the key on disk a retry after closing the app could run the command twice.
+                val failure = ApiResult.Failure("No se pudo guardar el comando en el teléfono; no se ha enviado", retryable = true)
+                setState(commandId, CommandState.Unconfirmed(failure.message))
+                return failure
+            }
+            staleKeys.remove(commandId)
+        }
         setState(commandId, CommandState.Sending)
         val result = try {
             call(key)
@@ -187,22 +196,29 @@ class AssistanceRepository(
         when (result) {
             is ApiResult.Success -> {
                 apply(result.value)
-                keys.remove(commandId)
+                forget(commandId)
                 setState(commandId, null)
             }
             is ApiResult.Conflict -> {
                 result.current?.let(apply)
-                keys.remove(commandId)
+                forget(commandId)
                 setState(commandId, CommandState.Refused(result.code, result.message))
             }
             is ApiResult.Failure -> if (result.retryable) {
                 setState(commandId, CommandState.Unconfirmed(result.message))
             } else {
-                keys.remove(commandId)
+                forget(commandId)
                 setState(commandId, CommandState.Refused("HTTP_${result.httpStatus ?: 0}", result.message))
             }
         }
         return result
+    }
+
+    /** Commands whose key is still on disk because removing it failed. */
+    private val staleKeys = mutableSetOf<String>()
+
+    private fun forget(commandId: String) {
+        if (!keys.remove(commandId)) staleKeys += commandId
     }
 
     private fun setState(commandId: String, state: CommandState?) =

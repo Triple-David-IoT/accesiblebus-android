@@ -37,8 +37,8 @@ private class FakeFeed : EventFeed {
 private class Keys : CommandKeys {
     val map = mutableMapOf<String, String>()
     override fun get(commandId: String) = map[commandId]
-    override fun put(commandId: String, key: String) { map[commandId] = key }
-    override fun remove(commandId: String) { map.remove(commandId) }
+    override fun put(commandId: String, key: String): Boolean { map[commandId] = key; return true }
+    override fun remove(commandId: String): Boolean { map.remove(commandId); return true }
     override fun all() = map.keys.toSet()
 }
 

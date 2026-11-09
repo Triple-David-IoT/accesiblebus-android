@@ -10,16 +10,28 @@ import dte.masteriot.accessiblebus.core.net.TripState
 import java.io.File
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+/** Keys in memory; the writes can fail like a full or broken disk. */
 private class MemoryKeys : CommandKeys {
     val map = mutableMapOf<String, String>()
+    var putFails = false
+    var removeFails = false
     override fun get(commandId: String) = map[commandId]
-    override fun put(commandId: String, key: String) { map[commandId] = key }
-    override fun remove(commandId: String) { map.remove(commandId) }
+    override fun put(commandId: String, key: String): Boolean {
+        if (putFails) return false
+        map[commandId] = key
+        return true
+    }
+    override fun remove(commandId: String): Boolean {
+        if (removeFails) return false
+        map.remove(commandId)
+        return true
+    }
     override fun all() = map.keys.toSet()
 }
 
@@ -141,5 +153,37 @@ class AssistanceRepositoryTest {
 
         val other = Snapshot(trip = start.trip!!.copy(id = "another-trip"))
         assertEquals(other, AssistanceRepository.merge(start, other))
+    }
+
+    @Test
+    fun aKeyThatCannotBeSavedIsNeverSent() = runTest {
+        keys.putFails = true
+        val result = repository.create(visit) as ApiResult.Failure
+        assertTrue(result.retryable)
+        assertTrue(api.createKeys.isEmpty())
+        assertTrue(serverRequests().isEmpty())
+        val id = CommandIds.create(visit)
+        assertTrue(repository.commands.value[id] is CommandState.Unconfirmed)
+
+        keys.putFails = false
+        repository.create(visit) as ApiResult.Success
+        assertEquals(listOf("key-2"), api.createKeys)
+        assertEquals(1, serverRequests().size)
+    }
+
+    @Test
+    fun aKeyThatCannotBeRemovedIsNotReused() = runTest {
+        keys.removeFails = true
+        val first = (repository.create(visit) as ApiResult.Success).value
+        assertEquals("key-1", keys.get(CommandIds.create(visit)))
+        repository.cancel(first.id) as ApiResult.Success
+
+        keys.removeFails = false
+        // Same stop again: the old key would bring back the cancelled request.
+        val second = (repository.create(visit) as ApiResult.Success).value
+        assertNotEquals(first.id, second.id)
+        assertEquals(RequestState.PENDING, second.state)
+        assertEquals("key-3", api.createKeys.last())
+        assertNull(keys.get(CommandIds.create(visit)))
     }
 }

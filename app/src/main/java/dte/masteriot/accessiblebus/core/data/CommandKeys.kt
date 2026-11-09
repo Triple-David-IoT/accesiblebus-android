@@ -10,9 +10,11 @@ import android.content.Context
 interface CommandKeys {
     fun get(commandId: String): String?
 
-    fun put(commandId: String, key: String)
+    /** True once the key is on disk. A command whose key could not be saved must not be sent. */
+    fun put(commandId: String, key: String): Boolean
 
-    fun remove(commandId: String)
+    /** True once the key is gone from disk. */
+    fun remove(commandId: String): Boolean
 
     fun all(): Set<String>
 }
@@ -24,13 +26,9 @@ class PreferencesCommandKeys(context: Context) : CommandKeys {
     override fun get(commandId: String): String? = preferences.getString(commandId, null)
 
     // commit, not apply: the key must be on disk before the command leaves the phone.
-    override fun put(commandId: String, key: String) {
-        preferences.edit().putString(commandId, key).commit()
-    }
+    override fun put(commandId: String, key: String): Boolean = preferences.edit().putString(commandId, key).commit()
 
-    override fun remove(commandId: String) {
-        preferences.edit().remove(commandId).commit()
-    }
+    override fun remove(commandId: String): Boolean = preferences.edit().remove(commandId).commit()
 
     override fun all(): Set<String> = preferences.all.keys.toSet()
 }
