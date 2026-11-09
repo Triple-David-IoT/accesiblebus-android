@@ -33,6 +33,13 @@ import androidx.compose.material3.IconButton
 import dte.masteriot.accessiblebus.hmi.HmiViewModel
 import dte.masteriot.accessiblebus.core.net.AssistanceRequest
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import dte.masteriot.accessiblebus.core.net.RejectReason
 
 @Composable
 fun HmiScreen(
@@ -40,6 +47,46 @@ fun HmiScreen(
     onPreferences: () -> Unit
 ) {
     val ui by viewModel.state.collectAsState()
+
+    var rejectingId by remember { mutableStateOf<String?>(null) }
+    rejectingId?.let { id ->
+        AlertDialog(
+            onDismissRequest = { rejectingId = null },
+            title = { Text("Reject request") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    RejectReason.entries.forEach { reason ->
+                        OutlinedButton(
+                            onClick = { viewModel.reject(id, reason); rejectingId = null },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                        ) { Text(reasonLabel(reason)) }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { rejectingId = null }) { Text("Cancel") } },
+        )
+    }
+
+    var confirmEnd by remember { mutableStateOf(false) }
+    if (confirmEnd) {
+        val open = ui.pending + ui.inProgress
+        AlertDialog(
+            onDismissRequest = { confirmEnd = false },
+            title = { Text("End trip?") },
+            text = {
+                Text(
+                    if (open.isEmpty()) "There are no open assistances."
+                    else "These assistances will be closed:\n" +
+                            open.joinToString("\n") { "Stop ${it.physicalStopCode} (${it.state})" }
+                )
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.endTrip(); confirmEnd = false }) { Text("End trip") }
+            },
+            dismissButton = { TextButton(onClick = { confirmEnd = false }) { Text("Cancel") } },
+        )
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         LazyColumn(
@@ -95,15 +142,49 @@ fun HmiScreen(
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
                 ) { Text("Refresh") }
             }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = viewModel::advance,
+                        enabled = ui.canAdvance,
+                        modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                    ) { Text("Stop passed") }
+                    OutlinedButton(
+                        onClick = { confirmEnd = true },
+                        enabled = ui.tripActive,
+                        modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                    ) { Text("End trip") }
+                }
+            }
             ui.error?.let { msg -> item { StatusStrip(msg) } }
 
             item { SectionTitle("Pending (${ui.pending.size})") }
             if (ui.pending.isEmpty()) item { Text("No pending requests", style = MaterialTheme.typography.bodyMedium) }
-            items(ui.pending, key = { it.id }) { RequestRow(it) }
+            items(ui.pending, key = { it.id }) { request ->
+                RequestRow(request) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { viewModel.accept(request.id) },
+                            modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                        ) { Text("Accept") }
+                        OutlinedButton(
+                            onClick = { rejectingId = request.id },
+                            modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                        ) { Text("Reject") }
+                    }
+                }
+            }
 
             item { SectionTitle("In Progress (${ui.inProgress.size})") }
             if (ui.inProgress.isEmpty()) item { Text("No ongoing assistance", style = MaterialTheme.typography.bodyMedium) }
-            items(ui.inProgress, key = { it.id }) { RequestRow(it) }
+            items(ui.inProgress, key = { it.id }) { request ->
+                RequestRow(request) {
+                    Button(
+                        onClick = { viewModel.complete(request.id) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                    ) { Text("Complete") }
+                }
+            }
         }
     }
 }
@@ -119,13 +200,20 @@ private fun StatusStrip(text: String) =
     }
 
 @Composable
-private fun RequestRow(r: AssistanceRequest) =
+private fun RequestRow(r: AssistanceRequest, actions: @Composable () -> Unit = {}) =
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Stop ${r.physicalStopCode} · visit ${r.sequence}",
                 style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(if (r.received) "Received by terminal" else "Not yet confirmed by terminal",
                 style = MaterialTheme.typography.bodyMedium)
             Text("Status: ${r.state}", style = MaterialTheme.typography.bodyMedium)
+            actions()
         }
     }
+
+private fun reasonLabel(reason: RejectReason): String = when (reason) {
+    RejectReason.RAMP_UNAVAILABLE -> "Ramp unavailable"
+    RejectReason.UNSAFE_STOP -> "Unsafe stop"
+    RejectReason.OTHER -> "Other"
+}
