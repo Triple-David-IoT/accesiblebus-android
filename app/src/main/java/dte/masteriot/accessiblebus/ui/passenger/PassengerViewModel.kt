@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dte.masteriot.accessiblebus.AccessibleBusApplication
 import dte.masteriot.accessiblebus.core.data.AssistanceRepository
+import dte.masteriot.accessiblebus.core.data.StopsRepository
 import dte.masteriot.accessiblebus.core.net.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,11 +18,15 @@ import kotlinx.coroutines.launch
  * Passenger screens. Commands run in viewModelScope, which survives a rotation, and the key is
  * saved by the repository before sending, so turning the phone never sends a command twice.
  */
-class PassengerViewModel(private val repository: AssistanceRepository) : ViewModel() {
+class PassengerViewModel(
+    private val repository: AssistanceRepository,
+    private val stopsRepository: StopsRepository,
+) : ViewModel() {
 
     val snapshot = repository.snapshot
     val commands = repository.commands
     val live = repository.live
+    val stops = stopsRepository.state
 
     private val _created = MutableStateFlow<String?>(null)
 
@@ -35,6 +40,11 @@ class PassengerViewModel(private val repository: AssistanceRepository) : ViewMod
 
     fun refresh() {
         viewModelScope.launch { repository.refresh() }
+    }
+
+    /** Downloads the stops again, or falls back to the local copy. */
+    fun loadStops() {
+        viewModelScope.launch { stopsRepository.load() }
     }
 
     fun create(stopVisitId: String) {
@@ -57,7 +67,8 @@ class PassengerViewModel(private val repository: AssistanceRepository) : ViewMod
     companion object {
         val Factory = viewModelFactory {
             initializer {
-                PassengerViewModel((this[APPLICATION_KEY] as AccessibleBusApplication).container.assistanceRepository)
+                val container = (this[APPLICATION_KEY] as AccessibleBusApplication).container
+                PassengerViewModel(container.assistanceRepository, container.stopsRepository)
             }
         }
     }
