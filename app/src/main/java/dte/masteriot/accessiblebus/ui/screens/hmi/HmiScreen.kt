@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,7 +24,10 @@ import dte.masteriot.accessiblebus.hmi.HmiViewModel
 import dte.masteriot.accessiblebus.core.net.AssistanceRequest
 
 @Composable
-fun HmiScreen(viewModel: HmiViewModel = viewModel()) {
+fun HmiScreen(
+    viewModel: HmiViewModel = viewModel(),
+    onPreferences: () -> Unit
+) {
     val ui by viewModel.state.collectAsState()
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -37,6 +41,12 @@ fun HmiScreen(viewModel: HmiViewModel = viewModel()) {
                 Text("Vehicle ${ui.vehicleId}", style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold)
                 Text(ui.tripLabel, style = MaterialTheme.typography.titleMedium)
+                Button(
+                    onClick = onPreferences,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Preferencias")
+                }
             }
             item { StatusStrip(ui.rampText) }
             item { StatusStrip(ui.connectionText) }
