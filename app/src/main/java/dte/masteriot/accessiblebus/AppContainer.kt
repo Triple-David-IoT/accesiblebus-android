@@ -28,6 +28,8 @@ import dte.masteriot.accessiblebus.data.NetworkDataSource
 import dte.masteriot.accessiblebus.data.Repository
 import dte.masteriot.accessiblebus.hmi.HmiLink
 import dte.masteriot.accessiblebus.hmi.ReceiptSender
+import dte.masteriot.accessiblebus.sensors.ContextEstimator
+import dte.masteriot.accessiblebus.sensors.SensorDataSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,6 +41,8 @@ interface AppContainer {
     val repository: Repository
     val networkDataSource: NetworkDataSource
     val fileDataSource: FileDataSource
+    val sensorDataSource: SensorDataSource
+    val contextEstimator: ContextEstimator
     val appConfigRepository: AppConfigRepository
     val apiSource: ApiSource
     val assistanceRepository: AssistanceRepository
@@ -47,6 +51,7 @@ interface AppContainer {
     val stopsRepository: StopsRepository
 
     val announcementAvailability: StateFlow<Boolean>
+
 
     fun setAnnouncementAvailability(isAvailable: Boolean)
 }
@@ -146,5 +151,13 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override fun setAnnouncementAvailability(isAvailable: Boolean) {
         _announcementAvailability.value = isAvailable
+    }
+
+    override val sensorDataSource by lazy {
+        SensorDataSource(context.applicationContext)
+    }
+
+    override val contextEstimator by lazy {
+        ContextEstimator(sensorDataSource)
     }
 }
