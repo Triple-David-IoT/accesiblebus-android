@@ -37,8 +37,8 @@ import java.util.TimeZone
 
 /**
  * The four stops of the demo line, with their CRTM code and name, in the order of the line.
- * Without network it shows the saved copy and says so. A stop opens Confirm for its visit in
- * the laboratory trip. "Ver mapa" shows the same stops on a map (A11); the stop detail (A12) comes next.
+ * Without network it shows the saved copy and says so. A stop opens its detail; [onStop]
+ * receives the CRTM code. "Ver mapa" shows the same stops on a map (A11); the stop detail (A12) comes next.
  */
 @Composable
 fun StopsScreen(
@@ -82,8 +82,8 @@ fun StopsScreen(
                     )
                 }
                 if (showMap) {
-                    Text("Toca una parada para ver su nombre y otra vez para pedir asistencia.", style = MaterialTheme.typography.bodyMedium)
-                    StopsMap(state.copy.stops, snapshot, onStop, Modifier.fillMaxWidth().weight(1f))
+                    Text("Toca una parada para ver su nombre y otra vez para abrirla.", style = MaterialTheme.typography.bodyMedium)
+                    StopsMap(state.copy.stops, onStop, Modifier.fillMaxWidth().weight(1f))
                 } else {
                     LazyColumn {
                         items(state.copy.stops, key = { it.code }) { stop ->
@@ -102,10 +102,7 @@ private fun StopRow(stop: Stop, snapshot: Snapshot, onStop: (String) -> Unit) {
     val visit = snapshot.stopVisits.find { it.physicalStopCode == stop.code }
     val passed = visit != null && visit.sequence <= (snapshot.trip?.lastPassedSequence ?: 0)
     val open = visit != null && snapshot.requests.any { it.stopVisitId == visit.id && it.isOpen }
-    val row = Modifier.fillMaxWidth()
-    Column(
-        (if (visit != null) row.clickable(role = Role.Button) { onStop(visit.id) } else row).padding(vertical = 16.dp),
-    ) {
+    Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { onStop(stop.code) }.padding(vertical = 16.dp)) {
         Text(stop.name, style = MaterialTheme.typography.titleLarge)
         Text("Parada ${stop.code}", style = MaterialTheme.typography.bodyLarge)
         Text(
