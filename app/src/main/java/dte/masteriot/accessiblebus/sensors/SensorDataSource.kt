@@ -49,10 +49,11 @@ class SensorDataSource(context: Context) {
         get() = proximitySensor != null
 
     fun observeReadings(): Flow<SensorSnapshot> = callbackFlow {
-        val registrationTimeNanos =
-            SystemClock.elapsedRealtimeNanos()
+        val registrationTimeNanos = SystemClock.elapsedRealtimeNanos()
 
         var current = SensorSnapshot()
+
+        val lock = Any()
 
         val listener = object : SensorEventListener {
 
@@ -60,25 +61,32 @@ class SensorDataSource(context: Context) {
                 if (event.timestamp < registrationTimeNanos) return
                 if (event.values.isEmpty()) return
 
-                current = when (event.sensor.type) {
-                    Sensor.TYPE_LIGHT -> {
-                        current.copy(
-                            lightLux = event.values[0],
-                            lightTimestampNanos = event.timestamp
-                        )
+                val snapshot = synchronized(lock) {
+                    current = when (event.sensor.type) {
+
+                        Sensor.TYPE_LIGHT -> {
+                            current.copy(
+                                lightLux = event.values[0],
+                                lightTimestampNanos = event.timestamp
+                            )
+                        }
+
+                        Sensor.TYPE_PROXIMITY -> {
+                            current.copy(
+                                proximity = event.values[0],
+                                proximityTimestampNanos = event.timestamp
+                            )
+                        }
+
+                        else -> current
                     }
 
-                    Sensor.TYPE_PROXIMITY -> {
-                        current.copy(
-                            proximity = event.values[0],
-                            proximityTimestampNanos = event.timestamp
-                        )
-                    }
-
-                    else -> current
+                    current
                 }
 
-                trySend(current)
+                Log.d(TAG, "Sensor event: type=${event.sensor.type}, " + "value=${event.values[0]}")
+
+                trySend(snapshot)
             }
 
             override fun onAccuracyChanged(
@@ -103,18 +111,26 @@ class SensorDataSource(context: Context) {
             )
         } ?: false
 
-        current = current.copy(
-            lightRegistered = lightRegistered,
-            proximityRegistered = proximityRegistered
-        )
-
         val anyRegistered = lightRegistered || proximityRegistered
+
+        synchronized(lock) {
+            current = current.copy(
+                lightRegistered = lightRegistered,
+                proximityRegistered = proximityRegistered
+            )
+        }
+
+        Log.d(TAG, "Registration result: light=$lightRegistered, proximity=$proximityRegistered")
 
         if (anyRegistered) {
             activeListenerCount.incrementAndGet()
         }
 
-        trySend(current)
+        trySend(
+            synchronized(lock) {
+                current
+            }
+        )
 
         awaitClose {
             sensorManager.unregisterListener(listener)
@@ -122,18 +138,15 @@ class SensorDataSource(context: Context) {
             if (anyRegistered) {
                 activeListenerCount.decrementAndGet()
             }
-        }
-
-        trySend(current)
-
-        awaitClose {
-            sensorManager.unregisterListener(listener)
+            Log.d(TAG, "Sensor listener released")
         }
     }
 
     fun isNear(proximityValue: Float): Boolean {
         val maximumRange = proximitySensor?.maximumRange
             ?: return false
+
+        Log.d(TAG, "Proximity value=$proximityValue, maximumRange=$maximumRange")
 
         return proximityValue < maximumRange
     }

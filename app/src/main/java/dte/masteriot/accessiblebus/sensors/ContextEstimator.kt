@@ -1,5 +1,6 @@
 package dte.masteriot.accessiblebus.sensors
 
+import android.util.Log
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.milliseconds
@@ -119,6 +120,8 @@ class ContextEstimator(
         proximity: Float
     ): PhoneContext {
         val near = sensorDataSource.isNear(proximity)
+
+        Log.d("C08", "lux=$lux, proximity=$proximity, near=$near")
 
         return when {
             near && lux < L_OSC ->
