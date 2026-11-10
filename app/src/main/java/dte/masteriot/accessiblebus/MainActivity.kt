@@ -20,4 +20,14 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        container.setAnnouncementAvailability(true)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        container.setAnnouncementAvailability(false)
+    }
 }

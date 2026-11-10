@@ -28,6 +28,9 @@ import dte.masteriot.accessiblebus.data.NetworkDataSource
 import dte.masteriot.accessiblebus.data.Repository
 import dte.masteriot.accessiblebus.hmi.HmiLink
 import dte.masteriot.accessiblebus.hmi.ReceiptSender
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Container for Dependency Injection holding app-wide data sources and repositories.
@@ -42,6 +45,10 @@ interface AppContainer {
     val driverRepository: AssistanceRepository
     val receiptSender: ReceiptSender
     val stopsRepository: StopsRepository
+
+    val announcementAvailability: StateFlow<Boolean>
+
+    fun setAnnouncementAvailability(isAvailable: Boolean)
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -130,5 +137,14 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val receiptSender: ReceiptSender by lazy {
         ReceiptSender(driverRepository.snapshot, hmiLink, appScope, enabled = !BuildConfig.USE_SAMPLE_API)
+    }
+
+    private val _announcementAvailability = MutableStateFlow(false)
+
+    override val announcementAvailability: StateFlow<Boolean> =
+        _announcementAvailability.asStateFlow()
+
+    override fun setAnnouncementAvailability(isAvailable: Boolean) {
+        _announcementAvailability.value = isAvailable
     }
 }
