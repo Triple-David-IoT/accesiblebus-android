@@ -1,0 +1,886 @@
+[
+    {
+        "id": "sim_tab",
+        "type": "tab",
+        "label": "Ramp simulators and ingestion",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "sim_init_inj",
+        "type": "inject",
+        "z": "sim_tab",
+        "name": "init on deploy",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 60,
+        "wires": [
+            [
+                "sim_init_fn"
+            ]
+        ]
+    },
+    {
+        "id": "sim_init_fn",
+        "type": "function",
+        "z": "sim_tab",
+        "name": "init state and UNKNOWN",
+        "func": "function uuid() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {\n    const r = Math.random() * 16 | 0;\n    return (c === 'x' ? r : (r & 3 | 8)).toString(16);\n  });\n}\nconst VEHICLES = [['BUS-DEMO-01', 'ramp-node-01'], ['BUS-DEMO-02', 'ramp-node-02']];\nconst expected = {};\nconst out = [];\nfor (const pair of VEHICLES) {\n  const vehicleId = pair[0];\n  const nodeId = pair[1];\n  const sessionId = uuid();\n  const runId = uuid();\n  expected[nodeId] = sessionId;\n  flow.set('sim_' + vehicleId, { nodeId: nodeId, vehicleId: vehicleId, sessionId: sessionId, sequence: 0, stowed: true, deployed: false, steps: [], cut: false, last: null, prev: null });\n  flow.set('proj_' + vehicleId, { runId: runId, projectionSequence: 1 });\n  flow.set('ingest_' + nodeId, undefined);\n  out.push({\n    topic: 'vehicles/' + vehicleId + '/ramp/state',\n    payload: { schemaVersion: 3, vehicleId: vehicleId, projectionRunId: runId, projectionSequence: 1, sourceSequence: 0, position: 'UNKNOWN', quality: 'STALE' }\n  });\n}\nflow.set('expected', expected);\nreturn [out];",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 60,
+        "wires": [
+            [
+                "sim_pub_proj"
+            ]
+        ]
+    },
+    {
+        "id": "sim_pub_proj",
+        "type": "mqtt out",
+        "z": "sim_tab",
+        "name": "projection (retained)",
+        "topic": "",
+        "qos": "0",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "sim_broker",
+        "x": 600,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "sim_tick1",
+        "type": "inject",
+        "z": "sim_tab",
+        "name": "tick BUS-DEMO-01 (5 s)",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "tick",
+                "vt": "str"
+            },
+            {
+                "p": "vehicleId",
+                "v": "BUS-DEMO-01",
+                "vt": "str"
+            }
+        ],
+        "repeat": "5",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 160,
+        "y": 150,
+        "wires": [
+            [
+                "sim_fn"
+            ]
+        ]
+    },
+    {
+        "id": "sim_tick2",
+        "type": "inject",
+        "z": "sim_tab",
+        "name": "tick BUS-DEMO-02 (5 s)",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "tick",
+                "vt": "str"
+            },
+            {
+                "p": "vehicleId",
+                "v": "BUS-DEMO-02",
+                "vt": "str"
+            }
+        ],
+        "repeat": "5",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 160,
+        "y": 200,
+        "wires": [
+            [
+                "sim_fn"
+            ]
+        ]
+    },
+    {
+        "id": "sim_fn",
+        "type": "function",
+        "z": "sim_tab",
+        "name": "simulate",
+        "func": "const VEHICLES = { 'BUS-DEMO-01': 'ramp-node-01', 'BUS-DEMO-02': 'ramp-node-02' };\nconst vehicleId = msg.vehicleId;\nconst nodeId = VEHICLES[vehicleId];\nconst s = flow.get('sim_' + vehicleId);\nif (!nodeId || !s) { return null; }\n\nfunction uuid() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {\n    const r = Math.random() * 16 | 0;\n    return (c === 'x' ? r : (r & 3 | 8)).toString(16);\n  });\n}\nfunction toMsg(sample) {\n  return { topic: 'telemetry/vehicles/' + vehicleId + '/ramp', payload: sample };\n}\nfunction fresh(stowed, deployed) {\n  s.stowed = stowed;\n  s.deployed = deployed;\n  s.sequence += 1;\n  const sample = {\n    schemaVersion: 3, nodeId: nodeId, vehicleId: vehicleId, sessionId: s.sessionId,\n    sequence: s.sequence, sourceMode: 'SIMULATED', stowedLimit: stowed, deployedLimit: deployed\n  };\n  s.prev = s.last;\n  s.last = sample;\n  return toMsg(sample);\n}\n\nconst out = [];\nconst events = [];\nconst cmd = msg.cmd;\nif (cmd === 'cut') {\n  s.cut = !s.cut;\n} else if (cmd === 'restart') {\n  s.sessionId = uuid();\n  s.sequence = 0;\n  s.stowed = true;\n  s.deployed = false;\n  s.steps = [];\n  s.cut = false;\n  s.last = null;\n  s.prev = null;\n  const expected = flow.get('expected') || {};\n  expected[nodeId] = s.sessionId;\n  flow.set('expected', expected);\n  flow.set('ingest_' + nodeId, undefined);\n  events.push({ topic: vehicleId, payload: 'restart' });\n} else if (!s.cut) {\n  if (cmd === 'tick') {\n    if (s.steps.length > 0) {\n      const next = s.steps.shift();\n      out.push(fresh(next[0], next[1]));\n    } else {\n      out.push(fresh(s.stowed, s.deployed));\n    }\n  } else if (cmd === 'normal') {\n    if (s.stowed && !s.deployed) { s.steps = [[false, false], [false, true]]; }\n    else if (!s.stowed && s.deployed) { s.steps = [[false, false], [true, false]]; }\n    else { s.steps = [[false, true]]; }\n    const first = s.steps.shift();\n    out.push(fresh(first[0], first[1]));\n  } else if (cmd === 'incomplete') {\n    s.steps = [];\n    out.push(fresh(false, false));\n  } else if (cmd === 'contradiction') {\n    s.steps = [];\n    out.push(fresh(true, true));\n  } else if (cmd === 'duplicate') {\n    if (s.last) { out.push(toMsg(s.last)); }\n  } else if (cmd === 'out_of_order') {\n    if (s.prev) { out.push(toMsg(s.prev)); }\n  }\n}\n\nflow.set('sim_' + vehicleId, s);\nnode.status({ fill: s.cut ? 'red' : 'green', shape: 'dot', text: vehicleId + (s.cut ? ' CUT' : ' seq ' + s.sequence) });\nreturn [out.length > 0 ? out : null, events.length > 0 ? events : null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 175,
+        "wires": [
+            [
+                "sim_pub_tel",
+                "sim_dbg_sample"
+            ],
+            [
+                "sim_dbg_restart"
+            ]
+        ]
+    },
+    {
+        "id": "sim_pub_tel",
+        "type": "mqtt out",
+        "z": "sim_tab",
+        "name": "telemetry",
+        "topic": "",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "sim_broker",
+        "x": 640,
+        "y": 150,
+        "wires": []
+    },
+    {
+        "id": "sim_dbg_sample",
+        "type": "debug",
+        "z": "sim_tab",
+        "name": "sample",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 630,
+        "y": 195,
+        "wires": []
+    },
+    {
+        "id": "sim_dbg_restart",
+        "type": "debug",
+        "z": "sim_tab",
+        "name": "restart (for B03)",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 650,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "sim_t_normal",
+        "type": "inject",
+        "z": "sim_tab",
+        "name": "test: normal",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "normal",
+                "vt": "str"
+            },
+            {
+                "p": "vehicleId",
+                "v": "BUS-DEMO-01",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 140,
+        "y": 320,
+        "wires": [
+            [
+                "sim_fn"
+            ]
+        ]
+    },
+    {
+        "id": "sim_t_incomplete",
+        "type": "inject",
+        "z": "sim_tab",
+        "name": "test: incomplete",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "incomplete",
+                "vt": "str"
+            },
+            {
+                "p": "vehicleId",
+                "v": "BUS-DEMO-01",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 150,
+        "y": 360,
+        "wires": [
+            [
+                "sim_fn"
+            ]
+        ]
+    },
+    {
+        "id": "sim_t_contra",
+        "type": "inject",
+        "z": "sim_tab",
+        "name": "test: contradiction",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "contradiction",
+                "vt": "str"
+            },
+            {
+                "p": "vehicleId",
+                "v": "BUS-DEMO-01",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 150,
+        "y": 400,
+        "wires": [
+            [
+                "sim_fn"
+            ]
+        ]
+    },
+    {
+        "id": "sim_t_dup",
+        "type": "inject",
+        "z": "sim_tab",
+        "name": "test: duplicate",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "duplicate",
+                "vt": "str"
+            },
+            {
+                "p": "vehicleId",
+                "v": "BUS-DEMO-01",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 140,
+        "y": 440,
+        "wires": [
+            [
+                "sim_fn"
+            ]
+        ]
+    },
+    {
+        "id": "sim_t_ooo",
+        "type": "inject",
+        "z": "sim_tab",
+        "name": "test: out of order",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "out_of_order",
+                "vt": "str"
+            },
+            {
+                "p": "vehicleId",
+                "v": "BUS-DEMO-01",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 150,
+        "y": 480,
+        "wires": [
+            [
+                "sim_fn"
+            ]
+        ]
+    },
+    {
+        "id": "sim_t_cut",
+        "type": "inject",
+        "z": "sim_tab",
+        "name": "test: cut / resume",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "cut",
+                "vt": "str"
+            },
+            {
+                "p": "vehicleId",
+                "v": "BUS-DEMO-01",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 150,
+        "y": 520,
+        "wires": [
+            [
+                "sim_fn"
+            ]
+        ]
+    },
+    {
+        "id": "sim_t_restart",
+        "type": "inject",
+        "z": "sim_tab",
+        "name": "test: restart simulator",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "restart",
+                "vt": "str"
+            },
+            {
+                "p": "vehicleId",
+                "v": "BUS-DEMO-01",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 160,
+        "y": 560,
+        "wires": [
+            [
+                "sim_fn"
+            ]
+        ]
+    },
+    {
+        "id": "sim_ui_cmd",
+        "type": "function",
+        "z": "sim_tab",
+        "name": "dashboard button to command",
+        "func": "msg.cmd = msg.payload;\nmsg.vehicleId = flow.get('target') || 'BUS-DEMO-01';\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 440,
+        "wires": [
+            [
+                "sim_fn"
+            ]
+        ]
+    },
+    {
+        "id": "sim_ui_target",
+        "type": "function",
+        "z": "sim_tab",
+        "name": "dashboard selector to target",
+        "func": "flow.set('target', msg.payload);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 480,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b320346ffb2ee88a",
+        "type": "ui-button",
+        "z": "sim_tab",
+        "group": "48e5e96c325fdb8c",
+        "name": "Contradiction",
+        "label": "Contradiction",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "contradiction",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 440,
+        "y": 440,
+        "wires": [
+            [
+                "sim_ui_cmd"
+            ]
+        ]
+    },
+    {
+        "id": "1eab5e095018786e",
+        "type": "ui-button",
+        "z": "sim_tab",
+        "group": "48e5e96c325fdb8c",
+        "name": "Normal",
+        "label": "Normal",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "normal",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 420,
+        "y": 360,
+        "wires": [
+            [
+                "sim_ui_cmd"
+            ]
+        ]
+    },
+    {
+        "id": "497c6924a30bed45",
+        "type": "ui-button",
+        "z": "sim_tab",
+        "group": "48e5e96c325fdb8c",
+        "name": "Duplicate",
+        "label": "Duplicate",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "duplicate",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 420,
+        "y": 480,
+        "wires": [
+            [
+                "sim_ui_cmd"
+            ]
+        ]
+    },
+    {
+        "id": "7bdfdd01758e03ce",
+        "type": "ui-button",
+        "z": "sim_tab",
+        "group": "48e5e96c325fdb8c",
+        "name": "Out of order",
+        "label": "Out of order",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "out_of_order",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 430,
+        "y": 520,
+        "wires": [
+            [
+                "sim_ui_cmd"
+            ]
+        ]
+    },
+    {
+        "id": "73acc672c59c7126",
+        "type": "ui-button",
+        "z": "sim_tab",
+        "group": "48e5e96c325fdb8c",
+        "name": "Cut / resume",
+        "label": "Cut / resume",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "cut",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 430,
+        "y": 560,
+        "wires": [
+            [
+                "sim_ui_cmd"
+            ]
+        ]
+    },
+    {
+        "id": "81106ede91c5883a",
+        "type": "ui-button",
+        "z": "sim_tab",
+        "group": "48e5e96c325fdb8c",
+        "name": "Incomplete",
+        "label": "Incomplete",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "incomplete",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 430,
+        "y": 400,
+        "wires": [
+            [
+                "sim_ui_cmd"
+            ]
+        ]
+    },
+    {
+        "id": "7d0dfc6004931d8a",
+        "type": "ui-button",
+        "z": "sim_tab",
+        "group": "48e5e96c325fdb8c",
+        "name": "Restart",
+        "label": "Restart",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "restart",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 420,
+        "y": 600,
+        "wires": [
+            [
+                "sim_ui_cmd"
+            ]
+        ]
+    },
+    {
+        "id": "d773e588ed178938",
+        "type": "ui-dropdown",
+        "z": "sim_tab",
+        "group": "48e5e96c325fdb8c",
+        "name": "",
+        "label": "Select Option:",
+        "tooltip": "",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "multiple": false,
+        "chips": false,
+        "clearable": false,
+        "options": [
+            {
+                "label": "BUS-DEMO-01",
+                "value": "BUS-DEMO-01",
+                "type": "str"
+            },
+            {
+                "label": "BUS-DEMO-02",
+                "value": "BUS-DEMO-02",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "typeIsComboBox": true,
+        "msgTrigger": "onChange",
+        "x": 720,
+        "y": 560,
+        "wires": [
+            [
+                "sim_ui_target"
+            ]
+        ]
+    },
+    {
+        "id": "sim_broker",
+        "type": "mqtt-broker",
+        "name": "Mosquitto (compose)",
+        "broker": "mosquitto",
+        "port": "1883",
+        "clientid": "nodered",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "15",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "closeTopic": "",
+        "willTopic": "",
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "48e5e96c325fdb8c",
+        "type": "ui-group",
+        "name": "Operation",
+        "page": "f07cf00afdce6610",
+        "width": 6,
+        "height": 1,
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "f07cf00afdce6610",
+        "type": "ui-page",
+        "name": "Simulators",
+        "ui": "71c4b08b00e1297f",
+        "path": "/page1",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "28770f0ba13aa9bc",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "71c4b08b00e1297f",
+        "type": "ui-base",
+        "name": "My Dashboard",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "default",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": 1,
+        "showDisconnectNotification": true,
+        "allowInstall": false
+    },
+    {
+        "id": "28770f0ba13aa9bc",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "fc4c10724cbd0f3c",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "@flowfuse/node-red-dashboard": "1.29.0"
+        }
+    }
+]
