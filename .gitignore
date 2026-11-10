@@ -2,6 +2,7 @@
 .gradle
 .kotlin
 
+.idea
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -11,7 +12,7 @@
 
 .DS_Store
 Thumbs.db
-**/build
+**/build/
 /captures
 .externalNativeBuild
 .cxx
