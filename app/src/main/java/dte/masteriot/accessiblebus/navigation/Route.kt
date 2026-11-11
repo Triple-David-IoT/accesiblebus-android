@@ -7,7 +7,9 @@ sealed class Route(val route: String) {
 
     object PassengerStops : Route("passenger/stops")
 
-    object PassengerStopDetail : Route("passenger/stop-detail")
+    object PassengerStopDetail : Route("passenger/stop-detail/{stopCode}") {
+        fun create(stopCode: String) = "passenger/stop-detail/$stopCode"
+    }
 
     object PassengerConfirm : Route("passenger/confirm/{stopVisitId}") {
         fun create(stopVisitId: String) = "passenger/confirm/$stopVisitId"

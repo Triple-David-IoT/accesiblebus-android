@@ -14,7 +14,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import dte.masteriot.accessiblebus.core.data.Stop
-import dte.masteriot.accessiblebus.core.net.Snapshot
 import java.io.File
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -31,7 +30,7 @@ import org.osmdroid.views.overlay.Marker
  * is still there with the same information.
  */
 @Composable
-fun StopsMap(stops: List<Stop>, snapshot: Snapshot, onStop: (String) -> Unit, modifier: Modifier = Modifier) {
+fun StopsMap(stops: List<Stop>, onStop: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val map = rememberMapView(context)
@@ -59,7 +58,7 @@ fun StopsMap(stops: List<Stop>, snapshot: Snapshot, onStop: (String) -> Unit, mo
         modifier = modifier.clipToBounds().semantics {
             contentDescription = "Mapa con ${stops.size} paradas. La lista tiene la misma información."
         },
-        update = { view -> showStops(view, stops, snapshot, onStop) },
+        update = { view -> showStops(view, stops, onStop) },
     )
 }
 
@@ -88,19 +87,18 @@ private fun configureOsmdroid(context: Context) {
     configuration.osmdroidTileCache = File(base, "tiles")
 }
 
-private fun showStops(map: MapView, stops: List<Stop>, snapshot: Snapshot, onStop: (String) -> Unit) {
+private fun showStops(map: MapView, stops: List<Stop>, onStop: (String) -> Unit) {
     map.overlays.removeAll { it is Marker }
     stops.forEach { stop ->
-        val visit = snapshot.stopVisits.find { it.physicalStopCode == stop.code }
         map.overlays.add(
             Marker(map).apply {
                 position = GeoPoint(stop.latitude, stop.longitude)
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                 title = "${stop.sequence}. ${stop.name}"
                 snippet = "Parada ${stop.code}"
-                // First tap shows the name; tapping the open bubble's marker again opens Confirm.
+                // First tap shows the name; tapping the marker again opens the stop detail.
                 setOnMarkerClickListener { marker, _ ->
-                    if (marker.isInfoWindowShown && visit != null) onStop(visit.id) else marker.showInfoWindow()
+                    if (marker.isInfoWindowShown) onStop(stop.code) else marker.showInfoWindow()
                     true
                 }
             },

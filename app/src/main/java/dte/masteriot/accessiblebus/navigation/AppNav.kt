@@ -12,9 +12,9 @@ import androidx.navigation.navArgument
 import dte.masteriot.accessiblebus.AccessibleBusApplication
 import dte.masteriot.accessiblebus.core.config.ConnectionProfile
 import dte.masteriot.accessiblebus.ui.passenger.ConfirmScreen
+import dte.masteriot.accessiblebus.ui.passenger.StopDetailScreen
 import dte.masteriot.accessiblebus.ui.passenger.StopsScreen
 import dte.masteriot.accessiblebus.ui.passenger.TrackingScreen
-import dte.masteriot.accessiblebus.ui.screens.PlaceholderScreen
 import dte.masteriot.accessiblebus.ui.screens.PreferencesScreen
 import dte.masteriot.accessiblebus.ui.screens.ProfileScreen
 import dte.masteriot.accessiblebus.ui.screens.hmi.HmiScreen
@@ -62,14 +62,16 @@ fun AppNav(
 
         composable(Route.PassengerStops.route) {
             StopsScreen(
-                onStop = { navController.navigate(Route.PassengerConfirm.create(it)) },
+                onStop = { navController.navigate(Route.PassengerStopDetail.create(it)) },
                 onPreferences = openPreferences
             )
         }
 
-        composable(Route.PassengerStopDetail.route) {
-            PlaceholderScreen(
-                title = "Stop Details",
+        composable(Route.PassengerStopDetail.route) { entry ->
+            StopDetailScreen(
+                stopCode = entry.arguments?.getString("stopCode").orEmpty(),
+                onConfirm = { navController.navigate(Route.PassengerConfirm.create(it)) },
+                onTracking = { navController.navigate(Route.PassengerTracking.create(it)) },
                 onBack = { navController.popBackStack() },
                 onPreferences = openPreferences
             )
