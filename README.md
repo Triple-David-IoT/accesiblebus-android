@@ -34,6 +34,7 @@ AccessibleBus/
 │   ├── app/                     # API code; see api/app/README.md
 │   ├── requirements.txt
 │   └── tests/
+│       ├── export_openapi.sh
 │       └── smoke.sh
 ├── mosquitto/
 │   └── mosquitto.conf
@@ -222,7 +223,19 @@ API_URL=http://192.168.1.50:8000 bash api/tests/smoke.sh
 It prints one `OK` line per step and `Smoke test passed`, or stops at the first
 `FAIL` with exit code 1. It resets the demo trip, so do not run it during a demo.
 
-This is the initial API skeleton. The project API functionality will be integrated separately.
+### REST contract
+
+`contracts/openapi.yaml` is exported from the running API, so it always matches the code.
+After changing a route or a model, start the stack and run:
+
+```bash
+bash api/tests/export_openapi.sh
+API_URL=http://192.168.1.50:8000 bash api/tests/export_openapi.sh
+```
+
+It needs `curl` and Python 3 with PyYAML. Do not edit the file by hand. Real example
+responses for each resource are in `contracts/samples`. The interactive version is at
+`http://localhost:8000/docs`.
 
 ## 10. Data Persistence
 

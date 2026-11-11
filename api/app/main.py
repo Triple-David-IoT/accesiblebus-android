@@ -41,7 +41,26 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         db.close_pool()
 
 
-app = FastAPI(title="AccessibleBus API", version="0.1.0", lifespan=lifespan)
+# Shown in /docs and exported to contracts/openapi.yaml (api/tests/export_openapi.sh).
+CLIENT_RULES = """\
+REST contract K1, generated from this API. Real example responses are in `contracts/samples`.
+
+Rules for every client:
+
+- Send `Authorization: Bearer <token>` with one of the fixed K7 demo tokens.
+- Send `Idempotency-Key` on every POST. Reuse the key when retrying the same command,
+  including after a timeout, and use a new key for each new intention.
+- A repeated command returns the stored response with status 200.
+- A rejected command is not stored. Retrying its key evaluates the command again.
+"""
+
+app = FastAPI(
+    title="AccessibleBus API",
+    version="0.1.0",
+    description=CLIENT_RULES,
+    servers=[{"url": "http://localhost:8000", "description": "Local laboratory"}],
+    lifespan=lifespan,
+)
 app.add_exception_handler(ApiError, api_error_handler)
 app.include_router(commands_router)
 app.include_router(demo_router)
