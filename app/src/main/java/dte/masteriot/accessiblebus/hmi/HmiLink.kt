@@ -80,7 +80,7 @@ class HmiLink(
         if (!ensureConnected()) return false
         if (!rampSubscribed) {
             rampSubscribed = client.subscribe(rampTelemetryTopic) { _, payload ->
-                PhysicalRamp.parseTelemetry(payload, vehicleId, SystemClock.elapsedRealtime())
+                PhysicalRamp.parseTelemetry(payload, vehicleId, RAMP_NODE_ID, SystemClock.elapsedRealtime())
                     ?.let { _rampReading.value = it }
             } && client.subscribe(rampActuatorTopic) { _, payload ->
                 PhysicalRamp.parseActuator(payload)?.let { _rampActuator.value = it }

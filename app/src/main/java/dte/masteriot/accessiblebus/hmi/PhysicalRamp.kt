@@ -42,9 +42,14 @@ object PhysicalRamp {
     const val STALE_AFTER_MS = 15_000L
     private const val SCHEMA_VERSION = 3
 
-    fun parseTelemetry(json: String, vehicleId: String, nowMs: Long): RampReading? {
+    /**
+     * Accepts only the samples of [nodeId]: the Node-RED simulator publishes on the same topic
+     * (ramp-node-01) and its samples must not mix with the physical node's.
+     */
+    fun parseTelemetry(json: String, vehicleId: String, nodeId: String, nowMs: Long): RampReading? {
         val o = parse(json) ?: return null
-        if (o.int("schemaVersion") != SCHEMA_VERSION || o.string("vehicleId") != vehicleId) return null
+        if (o.int("schemaVersion") != SCHEMA_VERSION) return null
+        if (o.string("vehicleId") != vehicleId || o.string("nodeId") != nodeId) return null
         val stowed = o.bool("stowedLimit") ?: return null
         val deployed = o.bool("deployedLimit") ?: return null
         return RampReading(stowed, deployed, o.string("sourceMode") ?: "UNKNOWN", nowMs)

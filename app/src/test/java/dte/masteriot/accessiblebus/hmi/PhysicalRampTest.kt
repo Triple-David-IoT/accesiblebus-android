@@ -14,14 +14,24 @@ class PhysicalRampTest {
 
     @Test
     fun parsesTelemetryOfItsVehicleOnly() {
-        val reading = PhysicalRamp.parseTelemetry(telemetry, "BUS-DEMO-01", nowMs = 100)
+        val reading = PhysicalRamp.parseTelemetry(telemetry, "BUS-DEMO-01", "ramp-phys-01", nowMs = 100)
         assertNotNull(reading)
         assertTrue(reading!!.stowed)
         assertFalse(reading.deployed)
         assertEquals(100L, reading.receivedAtMs)
-        assertNull(PhysicalRamp.parseTelemetry(telemetry, "BUS-DEMO-02", nowMs = 100))
-        assertNull(PhysicalRamp.parseTelemetry(telemetry.replace("\"schemaVersion\":3", "\"schemaVersion\":2"), "BUS-DEMO-01", 0))
-        assertNull(PhysicalRamp.parseTelemetry("not json", "BUS-DEMO-01", 0))
+        assertNull(PhysicalRamp.parseTelemetry(telemetry, "BUS-DEMO-02", "ramp-phys-01", nowMs = 100))
+        assertNull(
+            PhysicalRamp.parseTelemetry(
+                telemetry.replace("\"schemaVersion\":3", "\"schemaVersion\":2"), "BUS-DEMO-01", "ramp-phys-01", 0,
+            )
+        )
+        assertNull(PhysicalRamp.parseTelemetry("not json", "BUS-DEMO-01", "ramp-phys-01", 0))
+    }
+
+    @Test
+    fun ignoresTheSimulatorOnTheSameTopic() {
+        val simulated = telemetry.replace("ramp-phys-01", "ramp-node-01").replace("PHYSICAL", "SIMULATED")
+        assertNull(PhysicalRamp.parseTelemetry(simulated, "BUS-DEMO-01", "ramp-phys-01", nowMs = 100))
     }
 
     @Test
