@@ -36,7 +36,7 @@ Envelope: `schemaVersion`, `eventId`, `eventType`, `tripId`, `payload`. `request
 | `eventType` | `payload` |
 | --- | --- |
 | `request.created`, `request.accepted`, `request.rejected`, `request.cancelled`, `request.completed`, `request.expired` | `AssistanceRequest` from K1 after the change. `request.expired` carries `closeReason` `STOP_PASSED` or `TRIP_ENDED` |
-| `request.receipt_recorded` (proposal) | `{"received": true}`. Owner topic only. `version` is the current one, not incremented |
+| `request.receipt_recorded` (proposal) | `{"received": true}`. Owner and vehicle topics, so the HMI also learns that its receipt was recorded. `version` is the current one, not incremented |
 | `trip.progressed`, `trip.ended` (proposal) | `Trip` from K1 |
 
 Samples: `event_request_accepted.json`, `event_receipt_recorded.json`, `event_trip_progressed.json`.

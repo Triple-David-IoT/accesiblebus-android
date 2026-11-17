@@ -1,4 +1,4 @@
-"""Receipts subscriber thread: records HMI receipts and tells the passenger (B06, K2)."""
+"""Receipts subscriber thread: records HMI receipts and tells the passenger and the HMI (B06, K2)."""
 
 import json
 import logging
@@ -77,23 +77,26 @@ def record_receipt(topic: str, payload: bytes) -> bool:
             return False
 
         new_event_id = uuid4()
-        db.enqueue_event(
-            cursor,
-            event_id=new_event_id,
-            event_type="request.receipt_recorded",
-            trip_id=request["trip_id"],
-            topic=f"users/{request['owner_subject']}/events",
-            payload={
-                "schemaVersion": _SCHEMA_VERSION,
-                "eventId": str(new_event_id),
-                "eventType": "request.receipt_recorded",
-                "requestId": str(request_id),
-                "tripId": str(request["trip_id"]),
-                "version": request["version"],
-                "payload": {"received": True},
-            },
-            request_id=request_id,
-        )
+        message = {
+            "schemaVersion": _SCHEMA_VERSION,
+            "eventId": str(new_event_id),
+            "eventType": "request.receipt_recorded",
+            "requestId": str(request_id),
+            "tripId": str(request["trip_id"]),
+            "version": request["version"],
+            "payload": {"received": True},
+        }
+        # The passenger sees the receipt in Tracking, and the HMI marks its own card as received.
+        for event_topic in (f"users/{request['owner_subject']}/events", f"vehicles/{request['vehicle_id']}/events"):
+            db.enqueue_event(
+                cursor,
+                event_id=new_event_id,
+                event_type="request.receipt_recorded",
+                trip_id=request["trip_id"],
+                topic=event_topic,
+                payload=message,
+                request_id=request_id,
+            )
     logger.info("receipts.recorded event_id=%s terminal=%s", event_id, terminal_id)
     return True
 
