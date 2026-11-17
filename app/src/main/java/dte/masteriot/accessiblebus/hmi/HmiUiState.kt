@@ -10,7 +10,6 @@ data class HmiUiState(
     val tripLabel: String = "No trip",
     val pending: List<AssistanceRequest> = emptyList(),
     val inProgress: List<AssistanceRequest> = emptyList(),
-    val rampText: String = "Ramp: no data",
     val connectionText: String = "Connection: disconnected (sample data)",
     val error: String? = null,
     val tripActive: Boolean = false,

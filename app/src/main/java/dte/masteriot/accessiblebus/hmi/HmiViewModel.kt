@@ -44,11 +44,7 @@ class HmiViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /**
-     * Physical ramp for the screen: text plus which maneuvers are allowed now. Not shown yet.
-     * In HmiScreen: `val ramp by viewModel.ramp.collectAsState()`, buttons enabled by
-     * `ramp.canDeploy`, `ramp.canStow`, `ramp.canStop`, each calling `viewModel.ramp(RampAction.X)`.
-     */
+    /** Physical ramp for the HMI ramp card: what to show and which maneuvers are allowed now. */
     val ramp: StateFlow<RampView> =
         combine(link.rampReading, link.rampActuator, clock) { reading, actuator, now ->
             PhysicalRamp.describe(reading, actuator, now)
