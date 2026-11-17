@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 3,
+  "deviceId": "ramp-esp32-01",
+  "nodeId": "ramp-phys-01",
+  "sessionId": "90760659-89e0-4b33-8ece-e156454c9c4e",
+  "position": "DEPLOYED",
+  "motion": "STOWING",
+  "fault": "NONE",
+  "lastCommandId": "b8aeadac-76fe-40a1-984c-120cb8d0c18b",
+  "lastResult": "STARTED",
+  "deployUs": 1560,
+  "stowUs": 1440,
+  "timeoutMs": 6000
+}

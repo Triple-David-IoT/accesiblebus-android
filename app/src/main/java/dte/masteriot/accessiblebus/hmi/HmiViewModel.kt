@@ -1,6 +1,7 @@
 package dte.masteriot.accessiblebus.hmi
 
 import android.app.Application
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dte.masteriot.accessiblebus.AccessibleBusApplication
@@ -9,7 +10,9 @@ import dte.masteriot.accessiblebus.core.net.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import dte.masteriot.accessiblebus.core.net.RejectReason
@@ -31,8 +34,31 @@ class HmiViewModel(application: Application) : AndroidViewModel(application) {
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HmiUiState())
 
+    private val link = container.hmiLink
+
+    // Re-evaluated every second so that a silent ramp node turns stale.
+    private val clock = flow {
+        while (true) {
+            emit(SystemClock.elapsedRealtime())
+            delay(1_000)
+        }
+    }
+
+    /**
+     * Physical ramp for the screen: text plus which maneuvers are allowed now. Not shown yet.
+     * In HmiScreen: `val ramp by viewModel.ramp.collectAsState()`, buttons enabled by
+     * `ramp.canDeploy`, `ramp.canStow`, `ramp.canStop`, each calling `viewModel.ramp(RampAction.X)`.
+     */
+    val ramp: StateFlow<RampView> =
+        combine(link.rampReading, link.rampActuator, clock) { reading, actuator, now ->
+            PhysicalRamp.describe(reading, actuator, now)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RampView("Ramp: no data"))
+
     init {
         repository.startEvents()
+        viewModelScope.launch {
+            while (!link.startRamp()) delay(5_000)
+        }
         viewModelScope.launch {
             // TODO(I1): remove with SampleApi.
             if (BuildConfig.USE_SAMPLE_API) seedDemo()
@@ -77,6 +103,13 @@ class HmiViewModel(application: Application) : AndroidViewModel(application) {
     fun complete(requestId: String) = command { repository.complete(requestId) }
     fun advance() = command { repository.advance() }
     fun endTrip() = command { repository.end() }
+
+    /** Publishes DEPLOY, STOW or STOP to the physical ramp node of this vehicle. */
+    fun ramp(action: RampAction) {
+        viewModelScope.launch {
+            if (!link.sendRampCommand(action)) error.value = "Error: ramp command not sent (broker unreachable)"
+        }
+    }
 
     private suspend fun seedDemo() {
         val api = container.apiSource

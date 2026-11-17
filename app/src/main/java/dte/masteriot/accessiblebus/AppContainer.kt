@@ -42,6 +42,7 @@ interface AppContainer {
     val driverRepository: AssistanceRepository
     val receiptSender: ReceiptSender
     val stopsRepository: StopsRepository
+    val hmiLink: HmiLink
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -104,7 +105,7 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         )
     }
 
-    private val hmiLink by lazy { HmiLink(BuildConfig.MQTT_BROKER, "hmi-demo-01", "BUS-DEMO-01", appScope) }
+    override val hmiLink by lazy { HmiLink(BuildConfig.MQTT_BROKER, "hmi-demo-01", "BUS-DEMO-01", appScope) }
 
     // Driver token (K7) until the profile (C07) provides it. Sample mode shares the passenger's SampleApi.
     private val driverApi: ApiSource by lazy {
