@@ -1,6 +1,9 @@
 package dte.masteriot.accessiblebus.navigation
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
@@ -20,8 +23,12 @@ import dte.masteriot.accessiblebus.ui.screens.ProfileScreen
 import dte.masteriot.accessiblebus.ui.screens.hmi.HmiScreen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-
-// TODO: Replace placeholders with the actual navigation routes.(A)
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
 
 @Composable
 fun AppNav(
@@ -31,6 +38,14 @@ fun AppNav(
 
     val container =
         (context.applicationContext as AccessibleBusApplication).container
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(container) {
+        container.announcementCoordinator.uiEvents.collect { event ->
+            snackbarHostState.showSnackbar(event.message)
+        }
+    }
 
     val configRepository = container.appConfigRepository
     val mqttRepository = container.repository
@@ -45,84 +60,95 @@ fun AppNav(
         }
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = Route.Profile.route
-    ) {
-        composable(Route.Profile.route) {
-            ProfileScreen(
-                onPassengerSelected = {
-                    navController.navigate(Route.PassengerStops.route)
-                },
-                onDriverSelected = {
-                    navController.navigate(Route.DriverHmi.route)
-                }
-            )
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
+    ) { innerPadding ->
 
-        composable(Route.PassengerStops.route) {
-            StopsScreen(
-                onStop = { navController.navigate(Route.PassengerConfirm.create(it)) },
-                onPreferences = openPreferences
-            )
-        }
-
-        composable(Route.PassengerStopDetail.route) {
-            PlaceholderScreen(
-                title = "Stop Details",
-                onBack = { navController.popBackStack() },
-                onPreferences = openPreferences
-            )
-        }
-
-        composable(Route.PassengerConfirm.route) { entry ->
-            ConfirmScreen(
-                stopVisitId = entry.arguments?.getString("stopVisitId").orEmpty(),
-                onTracking = { requestId ->
-                    navController.navigate(Route.PassengerTracking.create(requestId)) {
-                        popUpTo(Route.PassengerStops.route)
+        NavHost(
+            navController = navController,
+            startDestination = Route.Profile.route,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable(Route.Profile.route) {
+                ProfileScreen(
+                    onPassengerSelected = {
+                        navController.navigate(Route.PassengerStops.route)
+                    },
+                    onDriverSelected = {
+                        navController.navigate(Route.DriverHmi.route)
                     }
-                },
-                onBack = { navController.popBackStack() }
-            )
-        }
+                )
+            }
 
-        composable(Route.PassengerTracking.route) { entry ->
-            TrackingScreen(
-                requestId = entry.arguments?.getString("requestId").orEmpty(),
-                onBack = { navController.popBackStack() },
-                onPreferences = openPreferences
-            )
-        }
+            composable(Route.PassengerStops.route) {
+                StopsScreen(
+                    onStop = { navController.navigate(Route.PassengerConfirm.create(it)) },
+                    onPreferences = openPreferences
+                )
+            }
 
-        composable(Route.DriverHmi.route) {
-            HmiScreen(onPreferences = openPreferences)
-        }
+            composable(Route.PassengerStopDetail.route) {
+                PlaceholderScreen(
+                    title = "Stop Details",
+                    onBack = { navController.popBackStack() },
+                    onPreferences = openPreferences
+                )
+            }
 
-        composable(
-            route = Route.Preferences.route,
-            arguments = listOf(
-                navArgument("profile") {
-                    type = NavType.StringType
-                }
-            )
-        ) { backStackEntry ->
+            composable(Route.PassengerConfirm.route) { entry ->
+                ConfirmScreen(
+                    stopVisitId = entry.arguments?.getString("stopVisitId").orEmpty(),
+                    onTracking = { requestId ->
+                        navController.navigate(Route.PassengerTracking.create(requestId)) {
+                            popUpTo(Route.PassengerStops.route)
+                        }
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            }
 
-            val profileName =
-                backStackEntry.arguments?.getString("profile")
+            composable(Route.PassengerTracking.route) { entry ->
+                TrackingScreen(
+                    requestId = entry.arguments?.getString("requestId").orEmpty(),
+                    onBack = { navController.popBackStack() },
+                    onPreferences = openPreferences
+                )
+            }
 
-            val profile = ConnectionProfile.valueOf(
-                profileName ?: ConnectionProfile.LABORATORY.name
-            )
+            composable(Route.DriverHmi.route) {
+                HmiScreen(onPreferences = openPreferences)
+            }
 
-            PreferencesScreen(
-                profile = profile,
-                repository = configRepository,
-                mqttRepository = mqttRepository,
-                onBack = {
-                    navController.popBackStack()
-                }
-            )
+            composable(
+                route = Route.Preferences.route,
+                arguments = listOf(
+                    navArgument("profile") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+
+                val profileName =
+                    backStackEntry.arguments?.getString("profile")
+
+                val profile = ConnectionProfile.valueOf(
+                    profileName ?: ConnectionProfile.LABORATORY.name
+                )
+
+                PreferencesScreen(
+                    profile = profile,
+                    repository = configRepository,
+                    mqttRepository = mqttRepository,
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onTestVoice = {
+                        container.announcementCoordinator.announceTest()
+                    }
+                )
+            }
         }
     }
 }

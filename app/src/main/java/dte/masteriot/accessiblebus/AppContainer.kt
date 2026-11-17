@@ -52,6 +52,7 @@ interface AppContainer {
     val stopsRepository: StopsRepository
 
     val announcementAvailability: StateFlow<Boolean>
+    val announcementCoordinator: AnnouncementCoordinator
 
 
     fun setAnnouncementAvailability(isAvailable: Boolean)
@@ -162,12 +163,13 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         ContextEstimator(sensorDataSource)
     }
 
-    private val announcementCoordinator by lazy {
+    override val announcementCoordinator by lazy {
         AnnouncementCoordinator(
             configRepository = appConfigRepository,
             contextEstimator = contextEstimator,
             availability = announcementAvailability,
-            scope = appScope
+            scope = appScope,
+            context = context.applicationContext
         )
     }
 }

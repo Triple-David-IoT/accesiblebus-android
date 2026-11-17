@@ -56,7 +56,8 @@ fun PreferencesScreen(
     profile: ConnectionProfile,
     repository: AppConfigRepository,
     mqttRepository: Repository,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onTestVoice: () -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -365,17 +366,7 @@ fun PreferencesScreen(
 
             // Probar voz.
             Button(
-                onClick = {
-                    if (ttsReady) {
-                        textToSpeech?.speak(
-                            "Voice announcements are working.",
-                            TextToSpeech.QUEUE_FLUSH,
-                            null,
-                            "accessiblebus_test"
-                        )
-                    }
-                },
-                enabled = ttsReady,
+                onClick = onTestVoice,
                 colors = ButtonDefaults.outlinedButtonColors(),
                 border = BorderStroke(
                     1.dp,

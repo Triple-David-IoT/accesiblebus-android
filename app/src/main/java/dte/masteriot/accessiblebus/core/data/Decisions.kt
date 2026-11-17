@@ -9,6 +9,7 @@ data class DecisionEvent(
     val version: Int,
     val state: RequestState,
     val reason: String?,
+    val isTest: Boolean = false,
 )
 
 /** Receives the decisions. The AnnouncementCoordinator (C) implements it. */
