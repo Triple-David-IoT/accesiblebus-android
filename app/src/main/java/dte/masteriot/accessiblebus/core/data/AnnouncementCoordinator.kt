@@ -1,6 +1,7 @@
 package dte.masteriot.accessiblebus.core.data
 
 import dte.masteriot.accessiblebus.core.config.VoiceMode
+import dte.masteriot.accessiblebus.core.net.RequestState
 import dte.masteriot.accessiblebus.data.AppConfigRepository
 import dte.masteriot.accessiblebus.sensors.ContextEstimator
 import dte.masteriot.accessiblebus.sensors.PhoneContext
@@ -113,19 +114,39 @@ class AnnouncementCoordinator(
                         // Se anunciará mediante TTS.
                     }
 
-                    PhoneContext.UNCOVERED -> {
+                    PhoneContext.UNCOVERED,
+                    PhoneContext.UNKNOWN -> {
                         // El teléfono está descubierto.
                         // Se anunciará mediante texto y vibración.
-                    }
-
-                    PhoneContext.UNKNOWN -> {
-                        // Contexto no concluyente.
-                        // No se debe inventar una clasificación.
                     }
                 }
 
                 return true
             }
+        }
+    }
+
+    private fun messageFor(decision: DecisionEvent): String? {
+        return when (decision.state) {
+            RequestState.ACCEPTED ->
+                "The driver has accepted your request."
+
+            RequestState.REJECTED ->
+                "Your request could not be accepted."
+
+            RequestState.EXPIRED -> when (decision.reason) {
+                "STOP_PASSED" ->
+                    "The stop has already passed without confirmation; request closed."
+
+                "TRIP_ENDED" ->
+                    "The trip has already ended."
+
+                else -> null
+            }
+
+            RequestState.COMPLETED -> null
+
+            else -> null
         }
     }
 }

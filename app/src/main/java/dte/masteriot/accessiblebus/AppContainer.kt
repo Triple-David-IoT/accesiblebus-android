@@ -2,6 +2,7 @@ package dte.masteriot.accessiblebus
 
 import android.content.Context
 import android.util.Log
+import dte.masteriot.accessiblebus.core.data.AnnouncementCoordinator
 import dte.masteriot.accessiblebus.core.data.DecisionAnnouncer
 import dte.masteriot.accessiblebus.core.data.MqttEventFeed
 import dte.masteriot.accessiblebus.core.data.PreferencesAnnouncedDecisions
@@ -110,7 +111,7 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
             events = if (live) MqttEventFeed(BusMqttClient(BuildConfig.MQTT_BROKER, "app-passenger-1", appScope), appScope) else null,
             eventsTopic = "users/passenger-1/events",
             // Until the AnnouncementCoordinator (C) exists, decisions only go to the log.
-            announcer = DecisionAnnouncer { Log.i("Announcement", "announce $it") },
+            announcer = announcementCoordinator,
             announced = PreferencesAnnouncedDecisions(context),
             scope = appScope,
         )
@@ -159,5 +160,14 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val contextEstimator by lazy {
         ContextEstimator(sensorDataSource)
+    }
+
+    private val announcementCoordinator by lazy {
+        AnnouncementCoordinator(
+            configRepository = appConfigRepository,
+            contextEstimator = contextEstimator,
+            availability = announcementAvailability,
+            scope = appScope
+        )
     }
 }
