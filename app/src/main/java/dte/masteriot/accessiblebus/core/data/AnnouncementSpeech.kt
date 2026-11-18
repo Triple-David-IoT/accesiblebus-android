@@ -25,6 +25,9 @@ class AnnouncementSpeech(context: Context) {
     private val speechMutex = Mutex()
     private val utteranceCounter = AtomicLong(0)
 
+    @Volatile
+    private var activeUtteranceId: String? = null
+
     private val initialization = CompletableDeferred<Boolean>()
 
     private lateinit var tts: TextToSpeech
@@ -32,6 +35,7 @@ class AnnouncementSpeech(context: Context) {
 
     @Volatile
     private var closed = false
+
 
     private val focusListener =
         AudioManager.OnAudioFocusChangeListener { change ->
@@ -118,6 +122,8 @@ class AnnouncementSpeech(context: Context) {
             val utteranceId =
                 "announcement_${utteranceCounter.incrementAndGet()}"
 
+            activeUtteranceId = utteranceId
+
             val result = CompletableDeferred<Boolean>()
             utteranceResults[utteranceId] = result
 
@@ -139,6 +145,7 @@ class AnnouncementSpeech(context: Context) {
 
             } finally {
                 utteranceResults.remove(utteranceId)
+                activeUtteranceId = null
                 abandonAudioFocus()
             }
         }
@@ -189,6 +196,18 @@ class AnnouncementSpeech(context: Context) {
         } else {
             @Suppress("DEPRECATION")
             audioManager.abandonAudioFocus(focusListener)
+        }
+    }
+
+    fun stopCurrent() {
+        val utteranceId = activeUtteranceId
+
+        if (::tts.isInitialized && !closed) {
+            tts.stop()
+
+            utteranceId?.let { id ->
+                utteranceResults[id]?.complete(false)
+            }
         }
     }
 

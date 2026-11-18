@@ -59,6 +59,8 @@ class AnnouncementCoordinator(
             availability.collect { isAvailable ->
                 if (isAvailable) {
                     processPending()
+                } else {
+                    speech.stopCurrent()
                 }
             }
         }
@@ -136,6 +138,8 @@ class AnnouncementCoordinator(
             VoiceMode.ALWAYS -> {
                 val spoken = speech.speak(message)
 
+                if (!availability.value) return false
+
                 if (!spoken) {
                     Log.w(
                         "C09",
@@ -152,6 +156,8 @@ class AnnouncementCoordinator(
 
                         feedback.vibrate(preferences.vibrationEnabled)
                         val spoken = speech.speak(message)
+
+                        if (!availability.value) return false
 
                         if (!spoken) {
                             Log.w(
