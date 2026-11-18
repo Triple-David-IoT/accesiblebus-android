@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onPause() {
-        super.onPause()
         container.setAnnouncementAvailability(false)
+        super.onPause()
     }
 }

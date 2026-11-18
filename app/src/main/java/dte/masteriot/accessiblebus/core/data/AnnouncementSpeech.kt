@@ -51,6 +51,8 @@ class AnnouncementSpeech(context: Context) {
                 initialization.complete(false)
                 return@TextToSpeech
             }
+            tts.setSpeechRate(0.85f)
+            tts.setPitch(1.0f)
 
             val languageResult = tts.setLanguage(
                 Locale("en", "US")
@@ -89,7 +91,10 @@ class AnnouncementSpeech(context: Context) {
     }
 
     private val utteranceResults =
-        mutableMapOf<String, CompletableDeferred<Boolean>>()
+        java.util.concurrent.ConcurrentHashMap<
+                String,
+                CompletableDeferred<Boolean>
+                >()
 
     suspend fun speak(message: String): Boolean =
         speechMutex.withLock {

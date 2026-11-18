@@ -1,6 +1,7 @@
 package dte.masteriot.accessiblebus.core.data
 
 import android.content.Context
+import android.util.Log
 import dte.masteriot.accessiblebus.core.config.VoiceMode
 import dte.masteriot.accessiblebus.core.net.RequestState
 import dte.masteriot.accessiblebus.data.AppConfigRepository
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -34,11 +36,10 @@ class AnnouncementCoordinator(
     private val processingMutex = Mutex()
 
     private val feedback = AnnouncementFeedback(context)
-    private val _uiEvents = MutableSharedFlow<AnnouncementUiEvent>(
-        extraBufferCapacity = 10
-    )
+    private val uiEventsChannel =
+        Channel<AnnouncementUiEvent>(Channel.UNLIMITED)
 
-    val uiEvents: SharedFlow<AnnouncementUiEvent> = _uiEvents.asSharedFlow()
+    val uiEvents = uiEventsChannel.receiveAsFlow()
 
     init {
         // Recibe las decisiones del repositorio.
@@ -118,16 +119,29 @@ class AnnouncementCoordinator(
 
         if (!availability.value) return false
 
+        if (decision.isTest) {
+            speech.speak(message)
+            return true
+        }
+
         when (preferences.voiceMode) {
 
             VoiceMode.OFF -> {
-                _uiEvents.tryEmit(
+                feedback.vibrate(preferences.vibrationEnabled)
+                uiEventsChannel.trySend(
                     AnnouncementUiEvent(message)
                 )
             }
 
             VoiceMode.ALWAYS -> {
-                speech.speak(message)
+                val spoken = speech.speak(message)
+
+                if (!spoken) {
+                    Log.w(
+                        "C09",
+                        "Voice announcement could not be completed"
+                    )
+                }
             }
 
             VoiceMode.AUTO -> {
@@ -137,12 +151,20 @@ class AnnouncementCoordinator(
                         if (!availability.value) return false
 
                         feedback.vibrate(preferences.vibrationEnabled)
-                        speech.speak(message)
+                        val spoken = speech.speak(message)
+
+                        if (!spoken) {
+                            Log.w(
+                                "C09",
+                                "Voice announcement could not be completed"
+                            )
+                        }
                     }
 
                     PhoneContext.UNCOVERED,
                     PhoneContext.UNKNOWN -> {
-                        _uiEvents.tryEmit(
+                        feedback.vibrate(preferences.vibrationEnabled)
+                        uiEventsChannel.trySend(
                             AnnouncementUiEvent(message)
                         )
                     }
