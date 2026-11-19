@@ -56,6 +56,7 @@ class AnnouncementCoordinator(
         // Cuando la aplicación vuelve a estar disponible,
         // intenta procesar las decisiones retenidas.
         scope.launch {
+            processPending()
             availability.collect { isAvailable ->
                 if (isAvailable) {
                     processPending()
@@ -138,8 +139,6 @@ class AnnouncementCoordinator(
             VoiceMode.ALWAYS -> {
                 val spoken = speech.speak(message)
 
-                if (!availability.value) return false
-
                 if (!spoken) {
                     Log.w(
                         "C09",
@@ -149,15 +148,21 @@ class AnnouncementCoordinator(
             }
 
             VoiceMode.AUTO -> {
-                when (contextEstimator.estimate()) {
+                val contextEstimated = contextEstimator.estimate()
+
+                Log.d(
+                    "C09",
+                    "AUTO context estimated: $contextEstimated"
+                )
+
+                when (contextEstimated) {
 
                     PhoneContext.COVERED -> {
                         if (!availability.value) return false
 
                         feedback.vibrate(preferences.vibrationEnabled)
-                        val spoken = speech.speak(message)
 
-                        if (!availability.value) return false
+                        val spoken = speech.speak(message)
 
                         if (!spoken) {
                             Log.w(

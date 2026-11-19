@@ -29,6 +29,22 @@ interface AnnouncedDecisions {
     fun add(key: String): Boolean
 }
 
+/**
+ * Decisions already sent to the coordinator, kept only while the app process lives.
+ *
+ * After a process restart, /sync can rediscover decisions that still need
+ * to be announced.
+ */
+class MemoryAnnouncedDecisions : AnnouncedDecisions {
+
+    private val keys = mutableSetOf<String>()
+
+    @Synchronized
+    override fun add(key: String): Boolean {
+        return keys.add(key)
+    }
+}
+
 class PreferencesAnnouncedDecisions(context: Context) : AnnouncedDecisions {
 
     private val preferences = context.getSharedPreferences("announced_decisions", Context.MODE_PRIVATE)
