@@ -9,6 +9,7 @@ data class DecisionEvent(
     val version: Int,
     val state: RequestState,
     val reason: String?,
+    val isTest: Boolean = false,
 )
 
 /** Receives the decisions. The AnnouncementCoordinator (C) implements it. */
@@ -26,6 +27,22 @@ val DECISION_STATES = setOf(RequestState.ACCEPTED, RequestState.REJECTED, Reques
 interface AnnouncedDecisions {
     /** Adds the key and returns true if it was not there yet. */
     fun add(key: String): Boolean
+}
+
+/**
+ * Decisions already sent to the coordinator, kept only while the app process lives.
+ *
+ * After a process restart, /sync can rediscover decisions that still need
+ * to be announced.
+ */
+class MemoryAnnouncedDecisions : AnnouncedDecisions {
+
+    private val keys = mutableSetOf<String>()
+
+    @Synchronized
+    override fun add(key: String): Boolean {
+        return keys.add(key)
+    }
 }
 
 class PreferencesAnnouncedDecisions(context: Context) : AnnouncedDecisions {
