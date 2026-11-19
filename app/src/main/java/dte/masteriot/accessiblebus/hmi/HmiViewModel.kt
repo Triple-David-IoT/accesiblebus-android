@@ -15,6 +15,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.scan
 import dte.masteriot.accessiblebus.core.net.RejectReason
 import dte.masteriot.accessiblebus.core.net.RequestState
 
@@ -50,10 +54,37 @@ class HmiViewModel(application: Application) : AndroidViewModel(application) {
             PhysicalRamp.describe(reading, actuator, now)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RampView("Ramp: no data"))
 
+    private sealed interface FlowEvent {
+        object Connected : FlowEvent
+        data class Projection(val stamp: RampStamp) : FlowEvent
+    }
+
+    /**
+     * B13: is the projection of the ramp still flowing? UNKNOWN on every connection, on a new
+     * projectionRunId and after 10 s without a newer projection (see RampFlow.kt).
+     */
+    val rampFlow: StateFlow<RampFlowView> =
+        combine(
+            merge(
+                link.feed.connected.filter { it }.map<Boolean, FlowEvent> { FlowEvent.Connected },
+                link.projections.map<RampStamp, FlowEvent> { FlowEvent.Projection(it) },
+            ).scan(RampFlowState()) { state, event ->
+                when (event) {
+                    FlowEvent.Connected -> RampFlowState()
+                    is FlowEvent.Projection -> state.accept(event.stamp)
+                }
+            },
+            clock,
+        ) { state, now -> state.view(now) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, RampFlowView("Ramp: unknown · Waiting for the ramp flow"))
+
     init {
         repository.startEvents()
         viewModelScope.launch {
             while (!link.startRamp()) delay(5_000)
+        }
+        viewModelScope.launch {
+            while (!link.startProjection()) delay(5_000)
         }
         viewModelScope.launch {
             // TODO(I1): remove with SampleApi.

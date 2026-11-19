@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import org.meshtastic.mqtt.ConnectionState
 
 class HmiLink(
@@ -91,6 +93,28 @@ class HmiLink(
 
     suspend fun sendRampCommand(action: RampAction): Boolean =
         client.publish(rampCommandTopic, PhysicalRamp.commandPayload(action, UUID.randomUUID().toString()))
+
+    // ---- Ramp projection (B13): vehicles/{id}/ramp/state, written by the Node-RED ingestion ----
+
+    private val projectionTopic = "vehicles/$vehicleId/ramp/state"
+    private val _projections = MutableSharedFlow<RampStamp>(extraBufferCapacity = 16)
+
+    /** Every projection received, stamped with the monotonic clock when it arrived. */
+    val projections: SharedFlow<RampStamp> = _projections
+    private var projectionSubscribed = false
+
+    /** Connects if needed and subscribes to the projection. Returns false while the broker is unreachable. */
+    suspend fun startProjection(): Boolean {
+        if (!ensureConnected()) return false
+        if (!projectionSubscribed) {
+            projectionSubscribed = client.subscribe(projectionTopic) { _, payload ->
+                RampFlow.parseProjection(payload, vehicleId)?.let {
+                    _projections.tryEmit(RampStamp(it, SystemClock.elapsedRealtime()))
+                }
+            }
+        }
+        return projectionSubscribed
+    }
 
     /** Explicit offline on a clean exit; the Will covers the dirty ones. */
     suspend fun close() {
