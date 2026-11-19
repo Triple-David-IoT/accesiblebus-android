@@ -23,7 +23,7 @@ fun Snapshot.toHmiUiState(): HmiUiState {
     return HmiUiState(
         vehicleId = current?.vehicleId ?: "—",
         tripLabel = when (current?.state) {
-            TripState.ACTIVE -> "Active trip"
+            TripState.ACTIVE -> "Active trip · " + nextStopText(current.lastPassedSequence)
             TripState.ENDED -> "Trip ended"
             null -> "No trip"
         },
@@ -32,4 +32,12 @@ fun Snapshot.toHmiUiState(): HmiUiState {
         tripActive = current?.state == TripState.ACTIVE,
         canAdvance = current?.state == TripState.ACTIVE && current.lastPassedSequence < stopVisits.size
     )
+}
+
+/** Where the bus goes next, so the driver sees each "Stop passed" land: "next stop 459 (2 of 4)". */
+private fun Snapshot.nextStopText(lastPassed: Int): String {
+    val visits = stopVisits.filter { it.tripId == trip?.id }.sortedBy { it.sequence }
+    val next = visits.firstOrNull { it.sequence > lastPassed }
+    return if (next == null) "all ${visits.size} stops passed"
+    else "next stop ${next.physicalStopCode} (${next.sequence} of ${visits.size})"
 }
