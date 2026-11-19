@@ -47,6 +47,7 @@ fun HmiScreen(
     onPreferences: () -> Unit
 ) {
     val ui by viewModel.state.collectAsState()
+    val ramp by viewModel.ramp.collectAsState()
 
     var rejectingId by remember { mutableStateOf<String?>(null) }
     rejectingId?.let { id ->
@@ -134,7 +135,7 @@ fun HmiScreen(
                     }
                 }
             }
-            item { StatusStrip(ui.rampText) }
+            item { RampCard(ramp, onAction = viewModel::ramp) }
             item { StatusStrip(ui.connectionText) }
             item {
                 Button(

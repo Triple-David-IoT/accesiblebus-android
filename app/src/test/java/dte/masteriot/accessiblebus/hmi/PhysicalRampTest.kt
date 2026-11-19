@@ -75,6 +75,59 @@ class PhysicalRampTest {
     }
 
     @Test
+    fun cardFieldsFollowTheState() {
+        val stowed = PhysicalRamp.describe(RampReading(true, false, "PHYSICAL", 0), null, nowMs = 1_000)
+        assertEquals("Stowed", stowed.title)
+        assertEquals("Stowed limit ON · Deployed limit OFF", stowed.detail)
+        assertEquals("Physical sensor", stowed.source)
+        assertNull(stowed.alarm)
+        assertEquals(RampTone.NORMAL, stowed.tone)
+
+        val moving = PhysicalRamp.describe(
+            RampReading(false, false, "PHYSICAL", 0), RampActuator("STOWING", "NONE", "STARTED"), nowMs = 1_000,
+        )
+        assertEquals("Stowing…", moving.title)
+        assertEquals(RampTone.MOVING, moving.tone)
+        assertNull(moving.alarm)
+
+        val stopped = PhysicalRamp.describe(
+            RampReading(false, false, "PHYSICAL", 0), RampActuator("IDLE", "NONE", "STOPPED"), nowMs = 1_000,
+        )
+        assertEquals("Between limits", stopped.title)
+        assertEquals("Stowed limit OFF · Deployed limit OFF", stopped.detail)
+        assertNull(stopped.alarm)
+    }
+
+    @Test
+    fun alarmsExplainWhatIsWrong() {
+        val fault = PhysicalRamp.describe(
+            RampReading(false, false, "PHYSICAL", 0), RampActuator("FAULT", "TIMEOUT", "STARTED"), nowMs = 1_000,
+        )
+        assertEquals("Between limits", fault.title)
+        assertEquals("Fault: TIMEOUT. Check the ramp area before retrying.", fault.alarm)
+        assertEquals(RampTone.ALERT, fault.tone)
+
+        val both = PhysicalRamp.describe(RampReading(true, true, "PHYSICAL", 0), null, nowMs = 1_000)
+        assertEquals("Sensor conflict", both.title)
+        assertEquals("Both limit switches ON. Controls locked.", both.alarm)
+
+        val stale = PhysicalRamp.describe(RampReading(true, false, "SIMULATED", 0), null, nowMs = 20_000)
+        assertEquals("No live data", stale.title)
+        assertEquals("Last sample 20s ago", stale.detail)
+        assertEquals("Simulated sample", stale.source)
+        assertEquals("No recent data from the ramp node. Controls locked.", stale.alarm)
+        assertEquals(RampTone.ALERT, stale.tone)
+    }
+
+    @Test
+    fun noSampleYetLocksEverythingWithoutAnAlarm() {
+        val none = PhysicalRamp.describe(null, null, nowMs = 1_000)
+        assertEquals("No data", none.title)
+        assertNull(none.alarm)
+        assertFalse(none.canDeploy || none.canStow || none.canStop)
+    }
+
+    @Test
     fun commandCarriesSchemaIdAndAction() {
         assertEquals(
             """{"schemaVersion":3,"commandId":"abc","action":"STOW"}""",

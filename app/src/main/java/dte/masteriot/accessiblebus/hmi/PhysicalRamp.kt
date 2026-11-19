@@ -10,8 +10,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /*
  * Physical ramp node (ESP32) driven from the HMI (K2 proposal: commands, node status and
- * actuator state). The HMI screen is not wired yet: HmiViewModel.ramp and HmiViewModel.ramp(action)
- * are ready for it.
+ * actuator state). HmiScreen shows HmiViewModel.ramp in its ramp card and sends HmiViewModel.ramp(action).
  *
  * Until the projection (B03/B13) exists, the position comes straight from the K2 telemetry, with
  * no session or sequence validation. When B13 lands, feed describe() from the projection instead;
@@ -31,8 +30,24 @@ data class RampActuator(val motion: String, val fault: String, val lastResult: S
 
 enum class RampAction { DEPLOY, STOW, STOP }
 
+/** How the ramp card colours its title. The words carry the meaning; the colour only backs them. */
+enum class RampTone { NORMAL, MOVING, ALERT }
+
+/**
+ * Everything the ramp card shows. The screen only draws these fields: it never decides from the
+ * text, a timer or the position whether a button is enabled.
+ *
+ * [text] is the one-line summary (logs and accessibility). [title] is the state in a few words,
+ * [detail] the two limit switches, [source] where the sample comes from, and [alarm] what is wrong
+ * and why the controls are locked, or null when nothing is.
+ */
 data class RampView(
     val text: String,
+    val title: String = "No data",
+    val detail: String = "No sample from the ramp node yet",
+    val source: String = "",
+    val alarm: String? = null,
+    val tone: RampTone = RampTone.NORMAL,
     val canDeploy: Boolean = false,
     val canStow: Boolean = false,
     val canStop: Boolean = false,
@@ -70,11 +85,18 @@ object PhysicalRamp {
 
     fun describe(reading: RampReading?, actuator: RampActuator?, nowMs: Long): RampView {
         if (reading == null) return RampView("Ramp: no data from the ramp node")
+        val source = if (reading.sourceMode == "PHYSICAL") "Physical sensor" else "Simulated sample"
         val ageS = (nowMs - reading.receivedAtMs) / 1000
         if (nowMs - reading.receivedAtMs > STALE_AFTER_MS) {
-            return RampView("Ramp: no recent data (last sample ${ageS}s ago)")
+            return RampView(
+                text = "Ramp: no recent data (last sample ${ageS}s ago)",
+                title = "No live data",
+                detail = "Last sample ${ageS}s ago",
+                source = source,
+                alarm = "No recent data from the ramp node. Controls locked.",
+                tone = RampTone.ALERT,
+            )
         }
-        val source = if (reading.sourceMode == "PHYSICAL") "physical sensor" else "simulated sample"
         val motion = actuator?.motion
         val moving = motion == "DEPLOYING" || motion == "STOWING"
         val contradictory = reading.stowed && reading.deployed
@@ -90,15 +112,39 @@ object PhysicalRamp {
         val text = buildString {
             append("Ramp: ").append(position)
             if (fault != null) append(" · FAULT ").append(fault)
-            append(" · ").append(source)
+            append(" · ").append(source.lowercase())
+        }
+        val title = when {
+            contradictory -> "Sensor conflict"
+            motion == "DEPLOYING" -> "Deploying…"
+            motion == "STOWING" -> "Stowing…"
+            reading.stowed -> "Stowed"
+            reading.deployed -> "Deployed"
+            else -> "Between limits"
+        }
+        val alarm = when {
+            contradictory -> "Both limit switches ON. Controls locked."
+            fault != null -> "Fault: $fault. Check the ramp area before retrying."
+            else -> null
         }
         return RampView(
             text = text,
+            title = title,
+            detail = "Stowed limit ${onOff(reading.stowed)} · Deployed limit ${onOff(reading.deployed)}",
+            source = source,
+            alarm = alarm,
+            tone = when {
+                alarm != null -> RampTone.ALERT
+                moving -> RampTone.MOVING
+                else -> RampTone.NORMAL
+            },
             canDeploy = !moving && !contradictory && !reading.deployed,
             canStow = !moving && !contradictory && !reading.stowed,
             canStop = moving,
         )
     }
+
+    private fun onOff(on: Boolean) = if (on) "ON" else "OFF"
 
     private fun parse(json: String): JsonObject? =
         runCatching { Json.parseToJsonElement(json).jsonObject }.getOrNull()
