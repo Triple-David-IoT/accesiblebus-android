@@ -149,7 +149,8 @@
                 "sim_dbg_sample"
             ],
             [
-                "sim_dbg_restart"
+                "sim_dbg_restart",
+                "ing_fn"
             ]
         ]
     },
@@ -427,8 +428,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 750,
-        "y": 440,
+        "x": 430,
+        "y": 700,
         "wires": [
             [
                 "sim_fn"
@@ -447,8 +448,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 740,
-        "y": 480,
+        "x": 420,
+        "y": 740,
         "wires": [
             []
         ]
@@ -484,8 +485,8 @@
         "enablePointerup": false,
         "pointerupPayload": "",
         "pointerupPayloadType": "str",
-        "x": 440,
-        "y": 440,
+        "x": 120,
+        "y": 700,
         "wires": [
             [
                 "sim_ui_cmd"
@@ -523,8 +524,8 @@
         "enablePointerup": false,
         "pointerupPayload": "",
         "pointerupPayloadType": "str",
-        "x": 420,
-        "y": 360,
+        "x": 100,
+        "y": 620,
         "wires": [
             [
                 "sim_ui_cmd"
@@ -562,8 +563,8 @@
         "enablePointerup": false,
         "pointerupPayload": "",
         "pointerupPayloadType": "str",
-        "x": 420,
-        "y": 480,
+        "x": 100,
+        "y": 740,
         "wires": [
             [
                 "sim_ui_cmd"
@@ -601,8 +602,8 @@
         "enablePointerup": false,
         "pointerupPayload": "",
         "pointerupPayloadType": "str",
-        "x": 430,
-        "y": 520,
+        "x": 110,
+        "y": 780,
         "wires": [
             [
                 "sim_ui_cmd"
@@ -640,8 +641,8 @@
         "enablePointerup": false,
         "pointerupPayload": "",
         "pointerupPayloadType": "str",
-        "x": 430,
-        "y": 560,
+        "x": 110,
+        "y": 820,
         "wires": [
             [
                 "sim_ui_cmd"
@@ -679,8 +680,8 @@
         "enablePointerup": false,
         "pointerupPayload": "",
         "pointerupPayloadType": "str",
-        "x": 430,
-        "y": 400,
+        "x": 110,
+        "y": 660,
         "wires": [
             [
                 "sim_ui_cmd"
@@ -718,8 +719,8 @@
         "enablePointerup": false,
         "pointerupPayload": "",
         "pointerupPayloadType": "str",
-        "x": 420,
-        "y": 600,
+        "x": 100,
+        "y": 860,
         "wires": [
             [
                 "sim_ui_cmd"
@@ -759,13 +760,117 @@
         "className": "",
         "typeIsComboBox": true,
         "msgTrigger": "onChange",
-        "x": 720,
-        "y": 560,
+        "x": 400,
+        "y": 820,
         "wires": [
             [
                 "sim_ui_target"
             ]
         ]
+    },
+    {
+        "id": "ing_in",
+        "type": "mqtt in",
+        "z": "sim_tab",
+        "name": "telemetry in",
+        "topic": "telemetry/vehicles/+/ramp",
+        "qos": "0",
+        "datatype": "utf8",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 530,
+        "y": 340,
+        "wires": [
+            [
+                "ing_fn"
+            ]
+        ]
+    },
+    {
+        "id": "ing_tick",
+        "type": "inject",
+        "z": "sim_tab",
+        "name": "tick 1 s",
+        "props": [
+            {
+                "p": "kind",
+                "v": "tick",
+                "vt": "str"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 520,
+        "y": 390,
+        "wires": [
+            [
+                "ing_fn"
+            ]
+        ]
+    },
+    {
+        "id": "ing_fn",
+        "type": "function",
+        "z": "sim_tab",
+        "name": "ingest and project",
+        "func": "const NODES = { 'BUS-DEMO-01': 'ramp-node-01', 'BUS-DEMO-02': 'ramp-node-02' };\nconst expected = flow.get('expected');\nif (!expected) { return null; }\n\nfunction freshState() {\n  return { lastSeq: 0, age: 0, hasSample: false, stowed: false, deployed: false, position: 'UNKNOWN', quality: 'STALE', sincePublish: 0, discards: { schema: 0, session: 0, duplicate: 0, order: 0 } };\n}\nfunction getState(nodeId) {\n  return flow.get('ingest_' + nodeId) || freshState();\n}\nfunction derive(st) {\n  if (!st.hasSample || st.age >= 15) { return ['UNKNOWN', 'STALE']; }\n  if (st.stowed && st.deployed) { return ['UNKNOWN', 'INVALID']; }\n  if (st.stowed) { return ['STOWED', 'VALID']; }\n  if (st.deployed) { return ['DEPLOYED', 'VALID']; }\n  return ['INTERMEDIATE', 'VALID'];\n}\nfunction publish(vehicleId, nodeId, st) {\n  const p = flow.get('proj_' + vehicleId);\n  if (!p) { return null; }\n  const d = derive(st);\n  st.position = d[0];\n  st.quality = d[1];\n  st.sincePublish = 0;\n  p.projectionSequence += 1;\n  flow.set('proj_' + vehicleId, p);\n  flow.set('ingest_' + nodeId, st);\n  return { topic: 'vehicles/' + vehicleId + '/ramp/state', payload: { schemaVersion: 3, vehicleId: vehicleId, projectionRunId: p.runId, projectionSequence: p.projectionSequence, sourceSequence: st.lastSeq, position: st.position, quality: st.quality } };\n}\n\nconst out = [];\nconst events = [];\n\nif (msg.kind === 'tick') {\n  for (const vehicleId in NODES) {\n    const nodeId = NODES[vehicleId];\n    const st = getState(nodeId);\n    if (st.hasSample) { st.age += 1; }\n    st.sincePublish += 1;\n    const d = derive(st);\n    if (d[0] !== st.position || d[1] !== st.quality || st.sincePublish >= 5) {\n      const m = publish(vehicleId, nodeId, st);\n      if (m) { out.push(m); }\n    } else {\n      flow.set('ingest_' + nodeId, st);\n    }\n  }\n} else if (msg.payload === 'restart') {\n  const nodeId = NODES[msg.topic];\n  if (nodeId) {\n    const m = publish(msg.topic, nodeId, freshState());\n    if (m) { out.push(m); }\n  }\n} else if (typeof msg.topic === 'string' && msg.topic.indexOf('telemetry/vehicles/') === 0) {\n  const topicVehicle = msg.topic.split('/')[2];\n  const nodeId = NODES[topicVehicle];\n  let s = msg.payload;\n  if (typeof s === 'string') {\n    try { s = JSON.parse(s); } catch (e) { s = null; }\n  }\n  const discard = function (reason) {\n    if (nodeId) {\n      const st0 = getState(nodeId);\n      st0.discards[reason] += 1;\n      flow.set('ingest_' + nodeId, st0);\n    }\n    events.push({ topic: msg.topic, payload: { discarded: reason, sample: s } });\n  };\n  const wellFormed = s !== null && typeof s === 'object' && s.schemaVersion === 3 &&\n    typeof s.nodeId === 'string' && typeof s.vehicleId === 'string' && typeof s.sessionId === 'string' &&\n    Number.isInteger(s.sequence) && s.sequence > 0 && typeof s.sourceMode === 'string' &&\n    typeof s.stowedLimit === 'boolean' && typeof s.deployedLimit === 'boolean';\n  if (!nodeId || !wellFormed || s.vehicleId !== topicVehicle || s.nodeId !== nodeId) {\n    discard('schema');\n  } else if (s.sessionId !== expected[nodeId]) {\n    discard('session');\n  } else {\n    const st = getState(nodeId);\n    if (s.sequence === st.lastSeq) {\n      discard('duplicate');\n    } else if (s.sequence < st.lastSeq) {\n      discard('order');\n    } else {\n      st.lastSeq = s.sequence;\n      st.age = 0;\n      st.hasSample = true;\n      st.stowed = s.stowedLimit;\n      st.deployed = s.deployedLimit;\n      const d = derive(st);\n      if (d[0] !== st.position || d[1] !== st.quality) {\n        const m = publish(topicVehicle, nodeId, st);\n        if (m) { out.push(m); }\n      } else {\n        flow.set('ingest_' + nodeId, st);\n      }\n    }\n  }\n}\nreturn [out.length > 0 ? out : null, events.length > 0 ? events : null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 360,
+        "wires": [
+            [
+                "ing_pub"
+            ],
+            [
+                "ing_dbg"
+            ]
+        ]
+    },
+    {
+        "id": "ing_pub",
+        "type": "mqtt out",
+        "z": "sim_tab",
+        "name": "projection (retained)",
+        "topic": "",
+        "qos": "0",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "sim_broker",
+        "x": 1020,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "ing_dbg",
+        "type": "debug",
+        "z": "sim_tab",
+        "name": "discarded",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1010,
+        "y": 390,
+        "wires": []
     },
     {
         "id": "sim_broker",
@@ -876,7 +981,7 @@
         }
     },
     {
-        "id": "fc4c10724cbd0f3c",
+        "id": "0a0462dc690d74f0",
         "type": "global-config",
         "env": [],
         "modules": {
