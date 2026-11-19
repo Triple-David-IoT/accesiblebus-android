@@ -28,20 +28,20 @@ class ContextEstimator(
             }
         }
 
+
         val snapshot = result ?: latestSnapshot
-        val timedOut = result == null
 
-        val missingExpectedReading =
-            (snapshot.lightRegistered && snapshot.lightLux == null) ||
-                    (snapshot.proximityRegistered && snapshot.proximity == null)
+        Log.d(
+            "C08",
+            "Sensor snapshot: lightRegistered=${snapshot.lightRegistered}, " +
+                    "lightLux=${snapshot.lightLux}, " +
+                    "proximityRegistered=${snapshot.proximityRegistered}, " +
+                    "proximity=${snapshot.proximity}, " +
+                    "timedOut=${result == null}"
+        )
 
-        return when {
-            timedOut && missingExpectedReading ->
-                PhoneContext.UNKNOWN
+        return decide(snapshot)
 
-            else ->
-                decide(snapshot)
-        }
     }
 
     private fun hasEnoughEvidence(

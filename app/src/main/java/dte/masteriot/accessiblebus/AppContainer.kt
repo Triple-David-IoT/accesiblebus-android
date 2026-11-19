@@ -2,7 +2,9 @@ package dte.masteriot.accessiblebus
 
 import android.content.Context
 import android.util.Log
+import dte.masteriot.accessiblebus.core.data.AnnouncementCoordinator
 import dte.masteriot.accessiblebus.core.data.DecisionAnnouncer
+import dte.masteriot.accessiblebus.core.data.MemoryAnnouncedDecisions
 import dte.masteriot.accessiblebus.core.data.MqttEventFeed
 import dte.masteriot.accessiblebus.core.data.PreferencesAnnouncedDecisions
 import dte.masteriot.accessiblebus.core.data.StopsManifest
@@ -28,6 +30,11 @@ import dte.masteriot.accessiblebus.data.NetworkDataSource
 import dte.masteriot.accessiblebus.data.Repository
 import dte.masteriot.accessiblebus.hmi.HmiLink
 import dte.masteriot.accessiblebus.hmi.ReceiptSender
+import dte.masteriot.accessiblebus.sensors.ContextEstimator
+import dte.masteriot.accessiblebus.sensors.SensorDataSource
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Container for Dependency Injection holding app-wide data sources and repositories.
@@ -36,6 +43,8 @@ interface AppContainer {
     val repository: Repository
     val networkDataSource: NetworkDataSource
     val fileDataSource: FileDataSource
+    val sensorDataSource: SensorDataSource
+    val contextEstimator: ContextEstimator
     val appConfigRepository: AppConfigRepository
     val apiSource: ApiSource
     val assistanceRepository: AssistanceRepository
@@ -43,6 +52,12 @@ interface AppContainer {
     val receiptSender: ReceiptSender
     val stopsRepository: StopsRepository
     val hmiLink: HmiLink
+
+    val announcementAvailability: StateFlow<Boolean>
+    val announcementCoordinator: AnnouncementCoordinator
+
+
+    fun setAnnouncementAvailability(isAvailable: Boolean)
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -99,7 +114,7 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
             events = if (live) MqttEventFeed(BusMqttClient(BuildConfig.MQTT_BROKER, "app-passenger-1", appScope), appScope) else null,
             eventsTopic = "users/passenger-1/events",
             // Until the AnnouncementCoordinator (C) exists, decisions only go to the log.
-            announcer = DecisionAnnouncer { Log.i("Announcement", "announce $it") },
+            announcer = announcementCoordinator,
             announced = PreferencesAnnouncedDecisions(context),
             scope = appScope,
         )
@@ -131,5 +146,32 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val receiptSender: ReceiptSender by lazy {
         ReceiptSender(driverRepository.snapshot, hmiLink, appScope, enabled = !BuildConfig.USE_SAMPLE_API)
+    }
+
+    private val _announcementAvailability = MutableStateFlow(false)
+
+    override val announcementAvailability: StateFlow<Boolean> =
+        _announcementAvailability.asStateFlow()
+
+    override fun setAnnouncementAvailability(isAvailable: Boolean) {
+        _announcementAvailability.value = isAvailable
+    }
+
+    override val sensorDataSource by lazy {
+        SensorDataSource(context.applicationContext)
+    }
+
+    override val contextEstimator by lazy {
+        ContextEstimator(sensorDataSource)
+    }
+
+    override val announcementCoordinator by lazy {
+        AnnouncementCoordinator(
+            configRepository = appConfigRepository,
+            contextEstimator = contextEstimator,
+            availability = announcementAvailability,
+            scope = appScope,
+            context = context.applicationContext
+        )
     }
 }

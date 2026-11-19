@@ -233,7 +233,7 @@ class AssistanceRepository(
         if (trip == null || trip.id != incoming.id) current else current.copy(trip = mergeTrip(trip, incoming))
     }
 
-    /** The only way the snapshot changes, so every new decision is seen and announced once. */
+    /** The only way the snapshot changes, so every new decision is detected and submitted to the announcement coordinator once per process.*/
     private fun change(transform: (Snapshot) -> Snapshot) {
         val decisions = synchronized(lock) {
             val before = _snapshot.value
@@ -295,9 +295,3 @@ class AssistanceRepository(
     }
 }
 
-class MemoryAnnouncedDecisions : AnnouncedDecisions {
-    private val keys = mutableSetOf<String>()
-
-    @Synchronized
-    override fun add(key: String) = keys.add(key)
-}
