@@ -20,7 +20,7 @@ receipts.recorded event_id=b5e08bb9-52f1-49aa-be11-7e34291e9922 terminal=hmi-dem
 
 ## 2. Tracking screen — orientation change
 
-The **Tracking** screen was opened and the device was rotated between portrait and landscape. The user reported that the screen remained visually unchanged.
+The **Tracking** screen was opened and the device was rotated between portrait and landscape several times. The screen kept the same request and the same steps (`seguimiento-rotacion.mp4`).
 
 ```text
 POST /requests HTTP/1.1" 201 Created
@@ -45,7 +45,7 @@ outbox.publish.started ... topic=vehicles/BUS-DEMO-01/events
 outbox.publish.confirmed ...
 ```
 
-**Observation:** the acceptance request returned successfully (`200 OK`), and the corresponding events were published. No second `accept` request appears in the reviewed excerpt.
+**Observation** (`hmi-rotacion.mp4`): the acceptance request returned successfully (`200 OK`), and the corresponding events were published. No second `accept` request appears in the reviewed excerpt.
 
 ## 4. Automated API and idempotency tests
 
@@ -92,18 +92,19 @@ w: .../TrackingFactsTest.kt:77:67 Unnecessary non-null assertion (!!) on a non-n
 
 **Interpretation:** the module's unit tests completed successfully. The warnings listed above did not prevent execution.
 
-## 6. Additional historical logs
-
-Earlier in the conversation, additional accumulated logs were shared, including `POST /requests`, `cancel`, `accept`, `complete` and `advance` operations, MQTT event publications, and `receipts.duplicate` entries.
-
-The complete raw text of that historical log block is not available in the current record, so individual lines or counts are not reproduced here. In particular, `receipts.duplicate` indicates receipt deduplication; by itself, it does **not** prove that duplicate commands were absent during device rotation.
-
-## 7. Conclusion
+## 6. Conclusion
 
 - The `:app:testDebugUnitTest` suite completed with **BUILD SUCCESSFUL**.
 - The reviewed tests cover the idempotency header, key persistence and reuse, and retry behavior.
 - The available backend excerpts show one request creation, a successful synchronization, and a successful HMI acceptance. No second corresponding request is visible in those excerpts.
-- Rotation was tested manually on the Confirm and Tracking screens; the Tracking screen remained visually unchanged.
+- Rotation was tested manually on the Confirm, Tracking and HMI screens; each kept its state.
 - The available logs support the observed behavior, but do not constitute exhaustive proof that duplicates cannot occur in every rotation scenario.
 
-**Additional evidence to attach:** the four orientation screenshots and, if available, the video showing rotation during request submission.
+## Files
+
+| File | What it shows |
+|---|---|
+| `confirm_vertical.png`, `confirm_horizontal.png` | Confirm in portrait and landscape at 1.0 scale, system bars visible, no clipping or scrolling |
+| `hmi-vertical.png`, `hmi-horizontal.png` | HMI in portrait and landscape |
+| `hmi-rotacion.mp4` | HMI: Accept on stop 459, then rotation; the request stays in progress once, with no second accept |
+| `seguimiento-rotacion.mp4` | Stop detail, Confirm and Tracking, rotated several times; one request, same state |
