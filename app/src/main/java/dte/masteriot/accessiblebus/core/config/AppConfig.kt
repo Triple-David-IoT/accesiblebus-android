@@ -1,5 +1,7 @@
 package dte.masteriot.accessiblebus.core.config
 
+import dte.masteriot.accessiblebus.BuildConfig
+
 enum class ConnectionProfile {
     LABORATORY,
     COURSE
@@ -22,14 +24,16 @@ data class AppConfig (
     val highContrastEnabled: Boolean = false
 )
 
-//TODO: Add Real Connection data
+/** Laboratory: the build defaults (the laptop hotspot); Course: empty until someone fills it in. */
 object AppConfigDefaults {
+
+    private val broker = BuildConfig.MQTT_BROKER.substringAfter("://")
 
     val laboratory = AppConfig(
         profile = ConnectionProfile.LABORATORY,
-        apiUrl = "",
-        mqttHost = "",
-        mqttPort = 1883,
+        apiUrl = BuildConfig.API_BASE_URL,
+        mqttHost = broker.substringBefore(":"),
+        mqttPort = broker.substringAfter(":", "1883").toIntOrNull() ?: 1883,
         token = "",
     )
 

@@ -311,15 +311,20 @@ For the Android emulator, the host computer can normally be reached using:
 10.0.2.2:1883
 ```
 
-For a physical Android device, use the host computer's LAN IP address, for example:
+### Android app
 
-```text
-192.168.1.50:1883
-```
+By default the app talks to the laptop that runs Docker Compose and shares a **Windows mobile hotspot**: Windows always gives that laptop `192.168.137.1`, so the API is `http://192.168.137.1:8000/` and the broker `192.168.137.1:1883`. Set the hotspot to the **2.4 GHz** band (the ESP32 ramp node has no 5 GHz radio), join the phones and the ESP32 to it, and allow ports 8000 and 1883 in the Windows firewall.
 
-The example address must be replaced with the actual IP address of the computer running Docker.
+Any other address goes in **Preferences → Conexión** (API URL, broker host and port), and applies the next time the app starts:
 
-The Android device and the host computer must be connected to a network that allows communication between them. The host firewall must permit the required connections.
+| Where the laboratory runs | API URL | Broker host |
+| --- | --- | --- |
+| Laptop hotspot (default) | `http://192.168.137.1:8000/` | `192.168.137.1` |
+| Phone on USB, with `adb reverse tcp:8000 tcp:8000` and `adb reverse tcp:1883 tcp:1883` | `http://127.0.0.1:8000/` | `127.0.0.1` |
+| Android emulator on the same computer | `http://10.0.2.2:8000/` | `10.0.2.2` |
+| Another computer on a network that lets devices reach each other | `http://<its IP>:8000/` | `<its IP>` |
+
+The broker field also accepts `host:port`. A build can change the defaults with `-PapiBaseUrl=... -PmqttBroker=tcp://host:port`, and `-PuseSampleApi=true` runs the app on `assets/samples` without a laboratory.
 
 Inside the Docker Compose network, services communicate using their service names:
 

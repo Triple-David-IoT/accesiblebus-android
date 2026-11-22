@@ -1,10 +1,7 @@
 package dte.masteriot.accessiblebus
 
 import android.content.Context
-import android.util.Log
 import dte.masteriot.accessiblebus.core.data.AnnouncementCoordinator
-import dte.masteriot.accessiblebus.core.data.DecisionAnnouncer
-import dte.masteriot.accessiblebus.core.data.MemoryAnnouncedDecisions
 import dte.masteriot.accessiblebus.core.data.MqttEventFeed
 import dte.masteriot.accessiblebus.core.data.PreferencesAnnouncedDecisions
 import dte.masteriot.accessiblebus.core.data.StopsManifest
@@ -35,6 +32,9 @@ import dte.masteriot.accessiblebus.sensors.SensorDataSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 /**
  * Container for Dependency Injection holding app-wide data sources and repositories.
@@ -58,6 +58,9 @@ interface AppContainer {
 
 
     fun setAnnouncementAvailability(isAvailable: Boolean)
+
+    /** The app is visible again: /sync the repositories in use, since events may have been missed. */
+    fun refreshOnReturn()
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -81,11 +84,27 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         AppConfigRepository(context)
     }
 
+    // The laboratory saved in Preferences, read once: a change there applies when the app restarts.
+    // An empty field falls back to the build default (the laptop hotspot, 192.168.137.1).
+    private val connection by lazy {
+        runBlocking { appConfigRepository.getConfig(appConfigRepository.activeProfile().first()) }
+    }
+    private val apiUrl by lazy { connection.apiUrl.trim().ifBlank { BuildConfig.API_BASE_URL } }
+    // The broker field takes "host" or "host:port", with or without "tcp://".
+    private val mqttBroker by lazy {
+        val host = connection.mqttHost.trim().substringAfter("://")
+        when {
+            host.isBlank() -> BuildConfig.MQTT_BROKER
+            ':' in host -> "tcp://$host"
+            else -> "tcp://$host:${connection.mqttPort}"
+        }
+    }
+
     override val apiSource: ApiSource by lazy {
         if (BuildConfig.USE_SAMPLE_API) {
             SampleApi { name -> context.assets.open("samples/$name").bufferedReader().use { it.readText() } }
         } else {
-            ApiClient(BuildConfig.API_BASE_URL) { BuildConfig.API_TOKEN }
+            ApiClient(apiUrl) { BuildConfig.API_TOKEN }
         }
     }
 
@@ -105,29 +124,29 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     // Lives as long as the app: events and the /sync after a reconnection run here.
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // Passenger identity (K7) until the profile (C07) says whether this phone is a passenger or a bus.
-    override val assistanceRepository: AssistanceRepository by lazy {
+    // The demo identities are fixed (K7): passenger-1 here, driver-1 and hmi-demo-01 for the bus.
+    private val passenger = lazy {
         val live = !BuildConfig.USE_SAMPLE_API
         AssistanceRepository(
             api = apiSource,
             keys = PreferencesCommandKeys(context),
-            events = if (live) MqttEventFeed(BusMqttClient(BuildConfig.MQTT_BROKER, "app-passenger-1", appScope), appScope) else null,
+            events = if (live) MqttEventFeed(BusMqttClient(mqttBroker, "app-passenger-1", appScope), appScope) else null,
             eventsTopic = "users/passenger-1/events",
-            // Until the AnnouncementCoordinator (C) exists, decisions only go to the log.
             announcer = announcementCoordinator,
             announced = PreferencesAnnouncedDecisions(context),
             scope = appScope,
         )
     }
+    override val assistanceRepository: AssistanceRepository by passenger
 
-    override val hmiLink by lazy { HmiLink(BuildConfig.MQTT_BROKER, "hmi-demo-01", "BUS-DEMO-01", appScope) }
+    override val hmiLink by lazy { HmiLink(mqttBroker, "hmi-demo-01", "BUS-DEMO-01", appScope) }
 
-    // Driver token (K7) until the profile (C07) provides it. Sample mode shares the passenger's SampleApi.
+    // Sample mode shares the passenger's SampleApi.
     private val driverApi: ApiSource by lazy {
-        if (BuildConfig.USE_SAMPLE_API) apiSource else ApiClient(BuildConfig.API_BASE_URL) { "demo-conductor-1" }
+        if (BuildConfig.USE_SAMPLE_API) apiSource else ApiClient(apiUrl) { "demo-conductor-1" }
     }
 
-    override val driverRepository: AssistanceRepository by lazy {
+    private val driver = lazy {
         AssistanceRepository(
             api = driverApi,
             keys = PreferencesCommandKeys(context, name = "driver_command_keys"),
@@ -143,6 +162,7 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
             }
         }
     }
+    override val driverRepository: AssistanceRepository by driver
 
     override val receiptSender: ReceiptSender by lazy {
         ReceiptSender(driverRepository.snapshot, hmiLink, appScope, enabled = !BuildConfig.USE_SAMPLE_API)
@@ -155,6 +175,17 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override fun setAnnouncementAvailability(isAvailable: Boolean) {
         _announcementAvailability.value = isAvailable
+    }
+
+    // Only the repositories this phone already uses: touching the driver's would connect it as the HMI.
+    override fun refreshOnReturn() {
+        appScope.launch {
+            if (passenger.isInitialized()) passenger.value.refresh()
+            if (driver.isInitialized()) {
+                driver.value.refresh()
+                receiptSender.check(forgetSent = true)
+            }
+        }
     }
 
     override val sensorDataSource by lazy {
