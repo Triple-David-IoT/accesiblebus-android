@@ -47,7 +47,7 @@ object CommandIds {
 }
 
 /**
- * Requests and trip state for the screens (K5). Three inputs change [snapshot], always with the
+ * Requests and trip state for the screens. Three inputs change [snapshot], always with the
  * same rules: command answers, GET /sync and the MQTT events of [eventsTopic]. The higher
  * version of a request wins, received stays true, and a trip only moves forward.
  *
@@ -115,7 +115,7 @@ class AssistanceRepository(
         }
     }
 
-    /** Applies one K2 event. Unknown, repeated or malformed messages are ignored. */
+    /** Applies one MQTT event. Unknown, repeated or malformed messages are ignored. */
     fun onEvent(text: String) {
         val event = runCatching { ApiJson.decodeFromString(Event.serializer(), text) }.getOrNull() ?: return
         synchronized(lock) {

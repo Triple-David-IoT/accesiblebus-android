@@ -15,10 +15,10 @@ import java.util.TimeZone
 data class Fact(val title: String, val text: String, val done: Boolean)
 
 /**
- * The four separate facts of the proposal (p. 2 and 5): the request was registered, the bus
+ * Four separate facts: the request was registered, the bus
  * terminal received it, the driver decided, and the request was closed. Receipt never means
- * that a person read it; a decision is never inferred from the receipt. Texts follow
- * "Messages that do not mislead" (p. 17).
+ * that a person read it; a decision is never inferred from the receipt, and no text promises more
+ * than the system knows.
  */
 fun trackingFacts(request: AssistanceRequest): List<Fact> {
     val state = request.state

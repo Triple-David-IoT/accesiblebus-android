@@ -43,11 +43,11 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 # Shown in /docs and exported to contracts/openapi.yaml (api/tests/export_openapi.sh).
 CLIENT_RULES = """\
-REST contract K1, generated from this API. Real example responses are in `contracts/samples`.
+REST contract, generated from this API. Real example responses are in `contracts/samples`.
 
 Rules for every client:
 
-- Send `Authorization: Bearer <token>` with one of the fixed K7 demo tokens.
+- Send `Authorization: Bearer <token>` with one of the fixed demo tokens.
 - Send `Idempotency-Key` on every POST. Reuse the key when retrying the same command,
   including after a timeout, and use a new key for each new intention.
 - A repeated command returns the stored response with status 200.

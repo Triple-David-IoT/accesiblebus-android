@@ -11,7 +11,7 @@ import kotlinx.coroutines.sync.withLock
 /**
  * Offline ApiSource that starts from assets/samples/sync.json and keeps the changes in memory,
  * with the same rules as the API for versions, transitions and idempotency keys. It lets the
- * screens be built and shown without the server. To be removed in I1.
+ * app run without a laboratory (-PuseSampleApi=true).
  *
  * [read] returns the text of a file in assets/samples, for example "sync.json".
  */

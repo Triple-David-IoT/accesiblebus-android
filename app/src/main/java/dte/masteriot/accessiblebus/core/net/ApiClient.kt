@@ -19,7 +19,7 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-/** Retrofit routes of K1. Bodies are read by ApiClient so that error bodies can be read too. */
+/** Retrofit routes of the REST contract. Bodies are read by ApiClient so that error bodies can be read too. */
 private interface ApiService {
     @GET("sync")
     suspend fun sync(@Query("scope") scope: String, @Query("vehicleId") vehicleId: String?): Response<ResponseBody>

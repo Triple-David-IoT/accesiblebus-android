@@ -13,7 +13,7 @@ import org.junit.runner.RunWith
 class SensorConsensusTest {
 
     companion object {
-        private const val TAG = "C08_TEST"
+        private const val TAG = "SensorsTest"
     }
 
     @Test
@@ -22,7 +22,7 @@ class SensorConsensusTest {
             .getInstrumentation()
             .targetContext
 
-        Log.i(TAG, "========== START TEST C08 ==========")
+        Log.i(TAG, "========== START sensor test ==========")
 
         val sensorDataSource = SensorDataSource(context)
         val estimator = ContextEstimator(sensorDataSource)
@@ -53,6 +53,6 @@ class SensorConsensusTest {
             activeListeners
         )
 
-        Log.i(TAG, "========== END TEST C08 ==========")
+        Log.i(TAG, "========== END sensor test ==========")
     }
 }

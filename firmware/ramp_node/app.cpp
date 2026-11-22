@@ -1,5 +1,5 @@
-// Physical ramp node: one ESP32 and one ramp. It publishes the same K2 telemetry as the
-// Node-RED simulator and takes the maneuver commands of the HMI or the lab dashboard.
+// Physical ramp node: one ESP32 and one ramp. It publishes the same ramp telemetry as the
+// Node-RED simulator and takes the maneuver commands of the HMI or the laboratory panel.
 //   telemetry/vehicles/{vehicle}/ramp  QoS 0, every 5 s and on every switch change
 //   commands/vehicles/{vehicle}/ramp   QoS 1  {"schemaVersion":3,"commandId":"…","action":"DEPLOY"|"STOW"|"STOP"}
 //   devices/{device}/status            retained "online"; retained Will "offline"; with the boot sessionId

@@ -60,7 +60,7 @@ class HmiViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * B13: is the projection of the ramp still flowing? UNKNOWN on every connection, on a new
+     * Is the projection of the ramp still flowing? UNKNOWN on every connection, on a new
      * projectionRunId and after 10 s without a newer projection (see RampFlow.kt).
      */
     val rampFlow: StateFlow<RampFlowView> =
@@ -87,7 +87,7 @@ class HmiViewModel(application: Application) : AndroidViewModel(application) {
             while (!link.startProjection()) delay(5_000)
         }
         viewModelScope.launch {
-            // TODO(I1): remove with SampleApi.
+            // Sample mode has no laboratory: start with some requests.
             if (BuildConfig.USE_SAMPLE_API) seedDemo()
             refresh()
         }

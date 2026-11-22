@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# API smoke test (A08): health, reset, create, repeat, conflict, accept, complete,
+# API smoke test: health, reset, create, repeat, conflict, accept, complete,
 # and /sync with the three demo tokens.
 #
 # Needs curl and Python 3 (set PYTHON if the command is not python3).

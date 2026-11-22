@@ -66,7 +66,7 @@ class HmiLink(
         """{"schemaVersion":3,"eventId":"${request.createdEventId}","requestId":"${request.id}","terminalId":"$terminalId"}""",
     )
 
-    // ---- Physical ramp node (K2 proposal, see PhysicalRamp.kt) ----
+    // ---- Physical ramp node (see PhysicalRamp.kt) ----
 
     private val rampTelemetryTopic = "telemetry/vehicles/$vehicleId/ramp"
     private val rampActuatorTopic = "devices/$RAMP_DEVICE_ID/ramps/$RAMP_NODE_ID"
@@ -94,7 +94,7 @@ class HmiLink(
     suspend fun sendRampCommand(action: RampAction): Boolean =
         client.publish(rampCommandTopic, PhysicalRamp.commandPayload(action, UUID.randomUUID().toString()))
 
-    // ---- Ramp projection (B13): vehicles/{id}/ramp/state, written by the Node-RED ingestion ----
+    // ---- Ramp projection: vehicles/{id}/ramp/state, written by the Node-RED ingestion ----
 
     private val projectionTopic = "vehicles/$vehicleId/ramp/state"
     private val _projections = MutableSharedFlow<RampStamp>(extraBufferCapacity = 16)

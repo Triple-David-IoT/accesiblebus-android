@@ -1,4 +1,4 @@
-"""Receipts subscriber thread: records HMI receipts and tells the passenger and the HMI (B06, K2)."""
+"""Receipts subscriber thread: records HMI receipts and tells the passenger and the HMI."""
 
 import json
 import logging
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 _TOPIC_FILTER = "terminals/+/receipts"
 _SCHEMA_VERSION = 3
 
-# K7: the schema does not link terminals to vehicles, so use the demo identities.
+# The schema does not link terminals to vehicles, so use the demo identities.
 _TERMINAL_VEHICLE = {
     actor.terminal_id: actor.vehicle_id
     for actor in TOKENS.values()
@@ -131,7 +131,7 @@ class ReceiptsSubscriber:
         try:
             record_receipt(msg.topic, msg.payload)
         except Exception:
-            # The HMI sends the receipt again on its next /sync (B11), so a lost one is recoverable.
+            # The HMI sends the receipt again on its next /sync, so a lost one is recoverable.
             logger.exception("receipts.processing_failed topic=%s", msg.topic)
 
 

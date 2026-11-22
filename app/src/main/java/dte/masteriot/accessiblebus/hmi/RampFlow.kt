@@ -9,12 +9,12 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 
 /*
- * B13: does the projection of the ramp (vehicles/{id}/ramp/state, written by the Node-RED
+ * Does the projection of the ramp (vehicles/{id}/ramp/state, written by the Node-RED
  * ingestion) still flow? Node-RED decides the quality of the sample; the HMI only checks that
  * new projections keep arriving. A retained projection alone never makes the ramp VALID.
  */
 
-/** One projection of K2. */
+/** One projection message. */
 data class RampProjection(val runId: String, val sequence: Long, val position: String, val quality: String)
 
 /** A projection and the monotonic clock reading (elapsedRealtime) when it arrived. */

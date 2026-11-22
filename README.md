@@ -1,319 +1,115 @@
-# AccessBus — Docker Infrastructure (C01)
+# AccessBus
 
-## 1. Overview
+AccessBus lets a passenger who needs the ramp ask for it at a bus stop before the bus arrives, and lets the driver answer from a terminal in the cab. It is a laboratory prototype for the Master in Internet of Things (Universidad Politécnica de Madrid):
 
-This file describes the Docker Compose infrastructure for the AccessBus project.
+- the four stops are real open data from the Madrid transport consortium (CRTM);
+- the bus, the trip and the ramps are simulated;
+- an optional ESP32 drives a model ramp.
 
-The environment provides the services required for local development and integration:
+The system has five parts:
 
-- **Mosquitto:** MQTT message broker.
-- **Node-RED:** flow-based integration and dashboard.
-- **FastAPI:** backend API.
-- **PostgreSQL:** relational database.
+- **Android app** (Kotlin, Jetpack Compose): one APK with two profiles. The passenger picks a stop, asks for assistance and follows the request. The driver's HMI accepts or rejects requests, marks stops as passed and shows the ramp.
+- **API** (FastAPI, PostgreSQL): commands with idempotency keys, versioned requests, `GET /sync`, and an outbox that publishes every change to MQTT with QoS 1.
+- **Mosquitto**: the MQTT broker for events, HMI receipts, presence with Last Will, and ramp telemetry.
+- **Node-RED**: the ramp simulators, the ingestion that projects the ramp state, the operation dashboard and a laboratory panel for the physical ramp.
+- **Physical ramp node** (ESP32, optional): a model ramp with two limit switches.
 
-The infrastructure is designed to provide a reproducible development environment for the project team.
-
-## 2. Requirements
-
-The following software is required:
-
-- Docker Desktop with Docker Compose support.
-- Git.
-- A terminal (PowerShell, Bash, or equivalent).
-- An MQTT client such as `mosquitto_pub` and `mosquitto_sub` for testing.
-
-Docker Desktop must be running before starting the services.
-
-## 3. Project Structure
+## Repository layout
 
 ```text
-AccessBus/
-├── app/                         # Android application
+.
+├── app/                 Android app
 ├── api/
-│   ├── Dockerfile
-│   ├── app/                     # API code; see api/app/README.md
-│   ├── requirements.txt
-│   └── tests/
-│       ├── export_openapi.sh
-│       └── smoke.sh
-├── firmware/                    # Physical ramp node (ESP32); see firmware/README.md
-├── mosquitto/
-│   └── mosquitto.conf
-├── nodered/
-│   ├── Dockerfile
-│   └── package.json
-├── scripts/
-│   └── up.sh
+│   ├── app/             API code (see api/app/README.md)
+│   └── tests/           smoke test and OpenAPI export
+├── contracts/           REST (openapi.yaml) and MQTT (mqtt.md) contracts, stop manifest, sample messages
+├── docs/                stop data selection and the Node-RED flows (PDF)
+├── firmware/            physical ramp node (see firmware/README.md)
+├── mosquitto/           broker configuration
+├── nodered/             Node-RED image and flows
+├── scripts/up.sh        starts the laboratory
 ├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── README.md
+└── .env.example
 ```
 
-## 4. Docker Images and Versions
+## Laboratory
 
-The Compose configuration uses the following image families:
+### Requirements
 
-| Service | Image | Version |
-|---|---|---|
-| Mosquitto | `eclipse-mosquitto` | 2.1.2-alpine |
-| Node-RED | `nodered/node-red` | 4.1.3 |
-| API | `python` | 3.12-slim |
-| PostgreSQL | `postgres` | 16.x |
+Docker with Docker Compose, Git, and optionally `mosquitto_pub` and `mosquitto_sub` for manual tests.
 
-The exact image tags are defined in `docker-compose.yml`.
-
-Node-RED Dashboard 2.0 is declared in `nodered/package.json` and installed by `nodered/Dockerfile`.
-
-The flows are `nodered/flows.json`, built into the image: `docker compose up -d --build` loads them, with no copy into the container. A deploy from the editor lasts until the container is recreated, so export it to `nodered/flows.json`. `docs/nodered-flows.pdf` shows the three flows and what each one does.
-
-## 5. Environment Configuration
-
-The project uses environment variables to configure PostgreSQL and the API.
-
-Create a local `.env` file from the example:
-
-### Linux / macOS
+### Start
 
 ```bash
-cp .env.example .env
-```
-
-### Windows PowerShell
-
-```powershell
-Copy-Item .env.example .env
-```
-
-The example configuration contains:
-
-```dotenv
-POSTGRES_DB=accessiblebus
-POSTGRES_USER=accessiblebus
-POSTGRES_PASSWORD=accessiblebus_dev_password
-```
-
-The `.env` file is local configuration and must not be committed to Git.
-
-The `.env.example` file is committed so that other team members can reproduce the environment.
-
-## 6. Starting the Environment
-
-From the repository root, validate the Compose configuration:
-
-```bash
-docker compose config
-```
-
-Start and build the services:
-
-```bash
-docker compose up -d --build
-```
-
-Alternatively, use the provided script:
-
-```bash
-bash scripts/up.sh
-```
-
-On Windows, the Compose command can be executed directly from PowerShell:
-
-```powershell
-docker compose up -d --build
-```
-
-Check the status of the services:
-
-```bash
+cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
+docker compose up -d --build  # or: bash scripts/up.sh
 docker compose ps
 ```
 
 All four services should be running. PostgreSQL must pass its health check before the API starts.
 
-## 7. Service Endpoints
+| Service | Image | Endpoint |
+| --- | --- | --- |
+| Mosquitto | `eclipse-mosquitto:2.1.2-alpine` | `localhost:1883` |
+| Node-RED | `nodered/node-red` 4.1.3 with Dashboard 2.0 | editor `http://localhost:1880`, dashboard `http://localhost:1880/dashboard` |
+| API | Python 3.12, FastAPI | `http://localhost:8000`, Swagger UI at `/docs` |
+| PostgreSQL | `postgres:16.10` | `127.0.0.1:5432` (local only) |
 
-| Service | Endpoint | Description |
-|---|---|---|
-| Mosquitto | `localhost:1883` | MQTT broker |
-| Node-RED | `http://localhost:1880` | Node-RED editor |
-| FastAPI | `http://localhost:8000` | Backend API |
-| FastAPI Swagger UI | `http://localhost:8000/docs` | API documentation |
-| PostgreSQL | `localhost:5432` | Database connection |
+`.env` holds the PostgreSQL credentials and must not be committed. Inside the Compose network the services reach each other by name: `mosquitto:1883`, `postgres:5432`, `nodered:1880`, `api:8000`.
 
-The API and PostgreSQL ports are bound to the local host in the Compose configuration.
+### Demo identities
 
-## 8. MQTT Configuration
+The API uses fixed bearer tokens. This is laboratory access, not real security.
 
-Mosquitto is configured through `mosquitto/mosquitto.conf`.
+| Token | Role | Identity |
+| --- | --- | --- |
+| `demo-pasajero-1` | Passenger | `passenger-1` |
+| `demo-conductor-1` | Driver | `driver-1`, vehicle `BUS-DEMO-01`, terminal `hmi-demo-01` |
+| `demo-operador-1` | Operator | `operator-1` (demo reset, and `/sync` of any vehicle) |
 
-The development configuration includes:
+The app uses the passenger and driver tokens. Node-RED uses the operator token. The **Reset demo** button of the dashboard starts a new demo trip.
 
-```properties
-listener 1883
-allow_anonymous true
+### Node-RED
 
-persistence true
-persistence_location /mosquitto/data/
+The flows are in `nodered/flows.json` and are built into the image, so `docker compose up -d --build` loads them. A deploy from the editor lasts until the container is recreated, so export it to `nodered/flows.json`. `docs/nodered-flows.pdf` shows the three flows and what each one does.
 
-log_dest file /mosquitto/log/mosquitto.log
-```
+### MQTT
 
-This configuration enables MQTT connections on port 1883 and persistence.
-
-Anonymous access is enabled for the development environment. This configuration must not be used for a publicly exposed production broker.
-
-### MQTT test
-
-Subscribe to a test topic:
+`mosquitto/mosquitto.conf` enables port 1883, persistence and anonymous access. Anonymous access is for the laboratory only. The topics, QoS, retained messages and Last Will are defined in `contracts/mqtt.md`.
 
 ```bash
-mosquitto_sub -h localhost -p 1883 -t "accessiblebus/test" -v
+mosquitto_sub -h localhost -t "vehicles/BUS-DEMO-01/#" -v
 ```
 
-Publish a message from another terminal:
+### API
 
 ```bash
-mosquitto_pub -h localhost -p 1883 -t "accessiblebus/test" -m "Hello AccessBus"
+curl http://localhost:8000/health     # {"status":"ok","schemaVersion":1}
+bash api/tests/smoke.sh               # API_URL=http://<host>:8000 for another machine
 ```
 
-The subscriber should receive:
+The smoke test checks health, demo reset, request creation, a repeated and a conflicting idempotency key, accept, complete and `/sync` with the three tokens. It needs `curl` and Python 3, and it resets the demo trip, so do not run it during a demo.
 
-```text
-accessiblebus/test Hello AccessBus
-```
+`contracts/openapi.yaml` is exported from the running API with `bash api/tests/export_openapi.sh` (needs Python 3 with PyYAML); do not edit it by hand. Real example responses are in `contracts/samples`.
 
-## 9. API Health Check
+### Data, logs and stop
 
-The initial API implementation provides a health endpoint:
-
-```http
-GET /health
-```
-
-Expected response:
-
-```json
-{
-  "status": "ok",
-  "schemaVersion": 1
-}
-```
-
-Test it with:
+The volumes `postgres_data`, `nodered_data`, `mosquitto_data` and `mosquitto_log` survive `docker compose down`. **`docker compose down -v` deletes them.**
 
 ```bash
-curl http://localhost:8000/health
-```
-
-The API container runs Uvicorn with one worker:
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
-```
-
-### Smoke test
-
-With the stack running, `api/tests/smoke.sh` checks the main flow end to end:
-health, demo reset, request creation, a repeated and a conflicting idempotency key,
-accept, complete and `/sync` with the three demo tokens. It needs `curl` and Python 3.
-
-```bash
-bash api/tests/smoke.sh
-API_URL=http://192.168.1.50:8000 bash api/tests/smoke.sh
-```
-
-It prints one `OK` line per step and `Smoke test passed`, or stops at the first
-`FAIL` with exit code 1. It resets the demo trip, so do not run it during a demo.
-
-### REST contract
-
-`contracts/openapi.yaml` is exported from the running API, so it always matches the code.
-After changing a route or a model, start the stack and run:
-
-```bash
-bash api/tests/export_openapi.sh
-API_URL=http://192.168.1.50:8000 bash api/tests/export_openapi.sh
-```
-
-It needs `curl` and Python 3 with PyYAML. Do not edit the file by hand. Real example
-responses for each resource are in `contracts/samples`. The interactive version is at
-`http://localhost:8000/docs`.
-
-## 10. Data Persistence
-
-Docker volumes are used to preserve service data.
-
-| Volume | Purpose |
-|---|---|
-| `postgres_data` | PostgreSQL database files |
-| `nodered_data` | Node-RED settings and context (the flows come from the image) |
-| `mosquitto_data` | Mosquitto persistent data |
-| `mosquitto_log` | Mosquitto logs |
-
-Stopping or recreating the containers does not remove these volumes.
-
-To stop the services while preserving data:
-
-```bash
+docker compose logs -f api            # or mosquitto, nodered, postgres
 docker compose down
 ```
 
-**Warning:** the following command removes the Compose volumes and deletes the persisted data:
+## Android app
 
-```bash
-docker compose down -v
-```
+Open the project in Android Studio and run the `app` configuration, or build it with `./gradlew assembleDebug`.
 
-Use it only when a complete reset is intended.
+By default the app talks to the laptop that runs Docker Compose and shares a **Windows mobile hotspot**. Windows always gives that laptop `192.168.137.1`, so the API is `http://192.168.137.1:8000/` and the broker `192.168.137.1:1883`. To use this setup:
 
-## 11. Logs and Troubleshooting
-
-Display logs for all services:
-
-```bash
-docker compose logs -f
-```
-
-Display logs for a specific service:
-
-```bash
-docker compose logs -f api
-```
-
-```bash
-docker compose logs -f mosquitto
-```
-
-```bash
-docker compose logs -f postgres
-```
-
-Check the status of the containers:
-
-```bash
-docker compose ps
-```
-
-If a service fails to start, inspect its logs and verify the `.env` configuration.
-
-## 12. Local Network Configuration
-
-For applications running on the same computer, the MQTT broker is available at:
-
-```text
-localhost:1883
-```
-
-For the Android emulator, the host computer can normally be reached using:
-
-```text
-10.0.2.2:1883
-```
-
-### Android app
-
-By default the app talks to the laptop that runs Docker Compose and shares a **Windows mobile hotspot**: Windows always gives that laptop `192.168.137.1`, so the API is `http://192.168.137.1:8000/` and the broker `192.168.137.1:1883`. Set the hotspot to the **2.4 GHz** band (the ESP32 ramp node has no 5 GHz radio), join the phones and the ESP32 to it, and allow ports 8000 and 1883 in the Windows firewall.
+- Set the hotspot to the **2.4 GHz** band, because the ESP32 has no 5 GHz radio.
+- Join the phones and the ESP32 to it.
+- Allow ports 8000 and 1883 in the Windows firewall.
 
 Any other address goes in **Preferences → Connection** (API URL, broker host and port), and applies the next time the app starts:
 
@@ -326,54 +122,15 @@ Any other address goes in **Preferences → Connection** (API URL, broker host a
 
 The broker field also accepts `host:port`. A build can change the defaults with `-PapiBaseUrl=... -PmqttBroker=tcp://host:port`, and `-PuseSampleApi=true` runs the app on `assets/samples` without a laboratory.
 
-Inside the Docker Compose network, services communicate using their service names:
+Unit tests: `./gradlew testDebugUnitTest`.
 
-- MQTT broker: `mosquitto:1883`
-- PostgreSQL: `postgres:5432`
-- Node-RED: `nodered:1880`
-- API: `api:8000`
+## Physical ramp node
 
-## 13. Evidence and Verification
+Optional. Wiring, configuration and flashing are in `firmware/README.md`. The node publishes the same telemetry as the simulator. The driver's HMI, or the laboratory panel in Node-RED, can deploy and stow it.
 
-The C01 infrastructure should be verified by checking:
+## Limitations
 
-1. The four Compose services are running.
-2. PostgreSQL passes its health check.
-3. The API health endpoint responds successfully.
-4. The Node-RED editor is accessible.
-5. MQTT messages can be published and received.
-6. Persistent data is retained after restarting the containers.
-
-Evidence should be stored under:
-
-```text
-docs/
-└── evidence/
-    └── C01/
-        ├── 01-compose-ps.png
-        ├── 02-api-health.png
-        ├── 03-nodered.png
-        ├── 04-mqtt-pc.png
-        ├── 05-mqtt-device.png
-        └── 06-persistence.png
-```
-
-These screenshots should be captured from the actual running environment.
-
-## 14. Limitations
-
-- The API currently provides a minimal health endpoint.
-- MQTT anonymous access is enabled for development.
-- The environment is intended for local development and integration.
-- Production deployment requires appropriate authentication, access control, and network security.
-- Node-RED flows and the complete backend functionality will be integrated as the project progresses.
-
-## 15. Stopping the Environment
-
-Stop the services:
-
-```bash
-docker compose down
-```
-
-The named volumes remain available for the next execution.
+- The bus, the trip and the simulated ramps are laboratory data. There is no connection to real EMT vehicles.
+- Fixed demo tokens and an anonymous MQTT broker: not suitable for a public network.
+- One demo vehicle (`BUS-DEMO-01`) and one passenger.
+- The passenger is told of decisions while the app is visible; announcements with the screen off would need a foreground service and push notifications.

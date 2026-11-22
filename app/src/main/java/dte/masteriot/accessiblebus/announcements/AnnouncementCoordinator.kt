@@ -139,7 +139,7 @@ class AnnouncementCoordinator(
 
         val mode = preferences.voiceMode
         val covered = mode == VoiceMode.AUTO &&
-            contextEstimator.estimate().also { Log.d("C09", "AUTO context estimated: $it") } == PhoneContext.COVERED
+            contextEstimator.estimate().also { Log.d("Announcements", "AUTO context estimated: $it") } == PhoneContext.COVERED
         // With TalkBack on, the message goes on screen for TalkBack to read, instead of speaking over it.
         val voice = (mode == VoiceMode.ALWAYS || covered) && !accessibility.isTouchExplorationEnabled
 
@@ -151,7 +151,7 @@ class AnnouncementCoordinator(
 
         if (mode != VoiceMode.ALWAYS) feedback.vibrate(preferences.vibrationEnabled)
         if (voice) {
-            if (!speech.speak(message)) Log.w("C09", "Voice announcement could not be completed")
+            if (!speech.speak(message)) Log.w("Announcements", "Voice announcement could not be completed")
         } else {
             uiEventsChannel.trySend(AnnouncementUiEvent(message))
         }

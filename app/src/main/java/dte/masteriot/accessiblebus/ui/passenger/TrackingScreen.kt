@@ -39,7 +39,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dte.masteriot.accessiblebus.core.data.CommandIds
 
 /**
- * Tracking screen (A15).
+ * Tracking screen.
  *
  * Displays the four request facts as separate blocks, provides
  * cancellation with confirmation, an update action, and a notice

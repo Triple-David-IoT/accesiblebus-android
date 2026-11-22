@@ -40,8 +40,7 @@ class TrackingFactsTest {
     }
 
     @Test
-    fun proposalMessages() {
-        // Proposal p. 17, "Messages that do not mislead".
+    fun decisionMessages() {
         assertEquals("The driver has confirmed your request.", texts(pending.to(RequestState.ACCEPTED, 2))[2])
         assertEquals("Your request could not be fulfilled.", texts(pending.to(RequestState.REJECTED, 2, "UNSAFE_STOP"))[2])
         assertEquals(

@@ -103,7 +103,7 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     // Lives as long as the app: events and the /sync after a reconnection run here.
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // The demo identities are fixed (K7): passenger-1 here, driver-1 and hmi-demo-01 for the bus.
+    // The demo identities are fixed: passenger-1 here, driver-1 and hmi-demo-01 for the bus.
     private val passenger = lazy {
         val live = !BuildConfig.USE_SAMPLE_API
         AssistanceRepository(

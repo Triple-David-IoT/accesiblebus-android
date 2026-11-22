@@ -1,7 +1,7 @@
-# MQTT contract (K2)
+# MQTT contract
 
-Broker: Mosquitto on the local lab network. Protocol: MQTT 3.1.1, clean session. After a reconnect, clients subscribe again and recover business state with `GET /sync` (K1).
-Fixed client IDs (K7): `api-outbox`, `api-receipts`, `app-passenger-1`, `hmi-demo-01`, `nodered`, `ramp-esp32-01` (physical ramp node).
+Broker: Mosquitto on the local lab network. Protocol: MQTT 3.1.1, clean session. After a reconnect, clients subscribe again and recover business state with `GET /sync` (`contracts/openapi.yaml`).
+Fixed client IDs: `api-outbox`, `api-receipts`, `app-passenger-1`, `hmi-demo-01`, `nodered`, `ramp-esp32-01` (physical ramp node).
 Demo identities: subject `passenger-1`, vehicle `BUS-DEMO-01`, terminal `hmi-demo-01`.
 Every message carries `"schemaVersion": 3`. Dates are ISO 8601 UTC. One example per message is in `contracts/samples/`.
 
@@ -25,25 +25,25 @@ Every message carries `"schemaVersion": 3`. Dates are ISO 8601 UTC. One example 
 - A retained message is the last known reference, never proof that the data is current.
 - A receipt means "received by the terminal". It does not mean read or accepted.
 - Topics are a convention, not isolation (local network, fictitious data).
-- With MQTT 3.1.1 the Will payload must be bytes, not a String (see `docs/mqttastic.md`).
+- With MQTT 3.1.1 the Will payload must be bytes: with a String, MQTTastic sets the MQTT 5 payload format indicator.
 - After every reconnect the HMI publishes its retained `online` presence again, because the broker publishes the Will `offline` when the old connection drops.
 
 ## Outbox events (`users/...` and `vehicles/...`)
 
-The whole message is what `outbox_event.payload` stores (K3), and the publisher sends it unchanged. `eventId` equals the column `event_id` (UUID).
+The whole message is what `outbox_event.payload` stores, and the publisher sends it unchanged. `eventId` equals the column `event_id` (UUID).
 Envelope: `schemaVersion`, `eventId`, `eventType`, `tripId`, `payload`. `requestId` and `version` appear only in `request.*` events, as in the SQL schema.
 
 | `eventType` | `payload` |
 | --- | --- |
-| `request.created`, `request.accepted`, `request.rejected`, `request.cancelled`, `request.completed`, `request.expired` | `AssistanceRequest` from K1 after the change. `request.expired` carries `closeReason` `STOP_PASSED` or `TRIP_ENDED` |
+| `request.created`, `request.accepted`, `request.rejected`, `request.cancelled`, `request.completed`, `request.expired` | `AssistanceRequest` of the REST contract after the change. `request.expired` carries `closeReason` `STOP_PASSED` or `TRIP_ENDED` |
 | `request.receipt_recorded` | `{"received": true}`. Owner and vehicle topics, so the HMI also learns that its receipt was recorded. `version` is the current one, not incremented |
-| `trip.progressed`, `trip.ended` | `Trip` from K1 |
+| `trip.progressed`, `trip.ended` | `Trip` of the REST contract |
 
 Samples: `event_request_created.json`, `event_request_accepted.json`, `event_receipt_recorded.json`, `event_trip_progressed.json`, `event_trip_ended.json`.
 
 ## HMI receipt (`terminals/{terminalId}/receipts`)
 
-`eventId` is the `createdEventId` of the `request.created` event being acknowledged. The API checks that `requestId` belongs to that event (enforced by the composite foreign key in `terminal_receipt`, K3) and that the terminal is the one assigned to the vehicle (K7), and ignores anything else.
+`eventId` is the `createdEventId` of the `request.created` event being acknowledged. The API checks that `requestId` belongs to that event (enforced by the composite foreign key in `terminal_receipt`) and that the terminal is the one assigned to the vehicle, and ignores anything else.
 Sample: `receipt.json`.
 
 ## Ramp telemetry (`telemetry/vehicles/{vehicleId}/ramp`)
@@ -54,7 +54,7 @@ Sample: `telemetry.json`.
 
 ## Physical ramp node
 
-An extension outside the agreed scope (the proposal leaves mechanical control out). It does not change any request.
+An extension of the laboratory: the ramp model is not part of the assistance flow and does not change any request.
 
 An ESP32 drives a rack-and-pinion actuator (continuous-rotation servo) and reads the `stowed` and `deployed` limit switches. One device can host several nodes, one per vehicle. The switches, not the servo, decide where a maneuver stops; the node cuts the servo and reports `FAULT` if a maneuver lasts longer than its timeout or both switches close at once. Nothing moves at boot.
 
@@ -79,7 +79,7 @@ Sample: `ramp_actuator.json`.
 
 ## Ramp projection (`vehicles/{vehicleId}/ramp/state`)
 
-Published by the Node-RED ingest (B03) for the simulated nodes. Telemetry with `sourceMode` `PHYSICAL` from another node of the same vehicle is ignored, so the physical node never changes the projection; it is shown from its own topics.
+Published by the Node-RED ingest for the simulated nodes. Telemetry with `sourceMode` `PHYSICAL` from another node of the same vehicle is ignored, so the physical node never changes the projection; it is shown from its own topics.
 Adds `projectionRunId`, `projectionSequence`, `sourceSequence`, `position` and `quality`.
 `position`: `STOWED`, `DEPLOYED`, `INTERMEDIATE` or `UNKNOWN`. `quality`: `VALID`, `INVALID` or `STALE`.
 Sample: `projection.json`.

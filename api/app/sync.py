@@ -1,7 +1,7 @@
-"""GET /sync: one consistent snapshot of a trip and its requests (A06).
+"""GET /sync: one consistent snapshot of a trip and its requests.
 
 Clients call it on start, after reconnecting and when the user presses Refresh, and then
-merge it with the MQTT events they received meanwhile (K2).
+merge it with the MQTT events they received meanwhile.
 """
 
 from typing import Annotated, Literal
@@ -88,7 +88,7 @@ def sync(
         return read_snapshot(VEHICLE_ID, actor.subject)
 
     if not vehicle_id:
-        # Same 422 format as FastAPI's own validation errors, as K1 defines.
+        # Same 422 format as FastAPI's own validation errors, as the REST contract defines.
         raise RequestValidationError(
             [{"loc": ("query", "vehicleId"), "msg": "Field required when scope is vehicle", "type": "missing"}]
         )

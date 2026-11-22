@@ -1,18 +1,24 @@
-# API startup contract (K4)
+# API: startup and background threads
 
-The API runs as one Uvicorn process with `--workers 1`. That process also runs two background threads: the outbox publisher and the receipts subscriber. This document defines how they start and stop, so each one can be built separately.
+The API runs as one Uvicorn process with `--workers 1`. That process also runs two background threads: the outbox publisher and the receipts subscriber. This document describes how they start and stop.
 
 ## Files
 
-| File | Owner | Task | Purpose |
-| --- | --- | --- | --- |
-| `settings.py` | A | K4 | Configuration from environment variables |
-| `main.py` | A | A03 | Startup, shutdown and routes |
-| `db.py` | A | A03 | Connection pool and shared database helpers |
-| `outbox.py` | C | C03 | Publishes pending outbox rows to MQTT |
-| `receipts.py` | B | B06 | Records HMI receipts from MQTT |
-
-`outbox.py` and `receipts.py` start as placeholders that only write to the log, so the API can boot before C03 and B06 exist. C03 and B06 replace their bodies and keep the signatures.
+| File | Purpose |
+| --- | --- |
+| `settings.py` | Configuration from environment variables |
+| `main.py` | Startup, shutdown and routes |
+| `db.py` | Connection pool and shared database helpers |
+| `schema.sql` | Tables, constraints and the outbox |
+| `models.py` | Request and response bodies |
+| `errors.py` | One error format for every route |
+| `auth.py` | Fixed demo tokens and the identity behind each one |
+| `commands.py` | Assistance request commands and reads |
+| `sync.py` | `GET /sync`, one consistent snapshot of a trip and its requests |
+| `trips.py` | Trip progress: pass a stop and end the trip |
+| `demo.py` | Demo scenario and reset |
+| `outbox.py` | Publishes pending outbox rows to MQTT |
+| `receipts.py` | Records HMI receipts from MQTT |
 
 ## Thread interface
 
@@ -25,8 +31,8 @@ def start_receipts(settings: Settings) -> Stoppable: ...
 
 ### Rules
 
-- **Return quickly.** `start_*` starts the thread and returns. It must not wait for the broker or raise if the broker is down, because the REST API has to keep responding (TD05). The thread retries on its own.
-- **Use your own resources.** Each thread has its own MQTT client, with the K7 client IDs `api-outbox` and `api-receipts`. The outbox publisher opens its own database connection, because it keeps a transaction open while it waits for each `PUBACK`. The receipts subscriber may use the shared pool (`db.transaction()`), because each receipt is one short transaction. If the pool stays busy past its timeout, the receipt is logged and dropped, and the HMI sends it again after its next `/sync`.
+- **Return quickly.** `start_*` starts the thread and returns. It must not wait for the broker or raise if the broker is down, because the REST API has to keep responding. The thread retries on its own.
+- **Use your own resources.** Each thread has its own MQTT client, with the fixed client IDs `api-outbox` and `api-receipts`. The outbox publisher opens its own database connection, because it keeps a transaction open while it waits for each `PUBACK`. The receipts subscriber may use the shared pool (`db.transaction()`), because each receipt is one short transaction. If the pool stays busy past its timeout, the receipt is logged and dropped, and the HMI sends it again after its next `/sync`.
 - **Never touch the event loop.** Use a normal `threading.Thread(daemon=True)`. Waiting for a `PUBACK` must not block REST requests.
 - **Survive errors.** Log the error, roll back and try again. An exception must not end the thread.
 - **Stop within a few seconds.** `stop()` asks the thread to end and waits for it with a timeout, so shutdown never hangs.
@@ -58,12 +64,13 @@ Outbox rows that are still pending stay in the database, and the publisher resum
 | `MQTT_HOST` | Yes | | Broker host |
 | `MQTT_PORT` | No | `1883` | Broker port |
 | `MANIFEST_PATH` | No | `/app/contracts/manifest.json` | Stop manifest, mounted from `contracts/` |
+| `OUTBOX_PUBLISH_DELAY_MS` | No | `0` | Delay between the `PUBACK` and the mark, for failure tests only |
 
-To add a variable, add it to `settings.py` and `docker-compose.yml` in the same pull request.
+A new variable goes in `docker-compose.yml` and is read in `settings.py`.
 
 ## Writing outbox events
 
-Commands (A05, A07, B05) and the receipts subscriber (B06) all write outbox rows. They must use one shared helper from `db.py`, inside the transaction that changes the data:
+The commands and the receipts subscriber all write outbox rows. They use one shared helper from `db.py`, inside the transaction that changes the data:
 
 ```python
 def enqueue_event(
@@ -81,14 +88,10 @@ def enqueue_event(
 - `payload` is the full MQTT message, which the publisher sends unchanged.
 - `request_id` is required for `request.*` events and must be `None` for `trip.*` events.
 
-The helper is added in A03. Message formats belong to the MQTT contract (K2).
+Message formats are defined in the MQTT contract, `contracts/mqtt.md`.
 
 ### Outbox publisher
 
-Each event is published with QoS 1, and once the broker confirms it (PUBACK) the row is marked
-`published_at` and committed on its own.
+Each event is published with QoS 1. Once the broker confirms it (`PUBACK`), the row is marked `published_at` and committed on its own.
 
-`OUTBOX_PUBLISH_DELAY_MS` is an optional delay, in milliseconds, between the PUBACK and that mark.
-It defaults to `0` and exists for the failure scenarios (TD05): stopping the API inside the window
-leaves a published event unmarked, so it is published again after the restart, and consumers drop
-the duplicate by `eventId`.
+`OUTBOX_PUBLISH_DELAY_MS` is an optional delay, in milliseconds, between the `PUBACK` and that mark. It defaults to `0` and exists for failure tests. If the API stops inside that window, a published event stays unmarked, so it is published again after the restart, and consumers drop the duplicate by `eventId`.

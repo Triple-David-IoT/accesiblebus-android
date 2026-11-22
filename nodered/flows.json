@@ -9,7 +9,7 @@
     {
         "id": "f091a826ae3d1ecb",
         "type": "tab",
-        "label": "B04 operation dashboard",
+        "label": "Operation dashboard",
         "disabled": false,
         "info": "",
         "env": []
@@ -135,7 +135,7 @@
     {
         "id": "5f2baae0b10e6362",
         "type": "ui-group",
-        "name": "B04 Ramps",
+        "name": "Ramps",
         "page": "f07cf00afdce6610",
         "width": 6,
         "height": 1,
@@ -149,7 +149,7 @@
     {
         "id": "a16095d2a10f8a91",
         "type": "ui-group",
-        "name": "B04 HMI presence",
+        "name": "HMI presence",
         "page": "f07cf00afdce6610",
         "width": 6,
         "height": 1,
@@ -163,7 +163,7 @@
     {
         "id": "d0db52af74b7fee3",
         "type": "ui-group",
-        "name": "B04 Requests",
+        "name": "Requests",
         "page": "f07cf00afdce6610",
         "width": 6,
         "height": 1,
@@ -177,7 +177,7 @@
     {
         "id": "b5814d66f34d7fe2",
         "type": "ui-group",
-        "name": "B04 Demo",
+        "name": "Demo",
         "page": "f07cf00afdce6610",
         "width": 6,
         "height": 1,
@@ -375,7 +375,7 @@
         "id": "sim_dbg_restart",
         "type": "debug",
         "z": "sim_tab",
-        "name": "restart (for B03)",
+        "name": "restart (for the ingest)",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -1566,7 +1566,7 @@
         "type": "tab",
         "label": "Lab ramp test",
         "disabled": false,
-        "info": "Physical ramp node (ESP32) in the B04 Ramps group: its state, and a lab test mode that sends commands only while the driver's HMI is offline."
+        "info": "Physical ramp node (ESP32) in the Ramps group of the dashboard: its state, and a lab test mode that sends commands only while the driver's HMI is offline."
     },
     {
         "id": "lab_ramp_in_status",
