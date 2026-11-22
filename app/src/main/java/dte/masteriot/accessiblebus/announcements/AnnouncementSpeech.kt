@@ -1,5 +1,5 @@
 
-package dte.masteriot.accessiblebus.core.data
+package dte.masteriot.accessiblebus.announcements
 
 import android.content.Context
 import android.media.AudioAttributes

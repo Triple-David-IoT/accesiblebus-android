@@ -1,5 +1,5 @@
 
-package dte.masteriot.accessiblebus.ui.screens.hmi
+package dte.masteriot.accessiblebus.ui.hmi
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

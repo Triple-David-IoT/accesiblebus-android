@@ -132,7 +132,7 @@ class HmiLink(
         else """{"schemaVersion":3,"status":"$status","terminalId":"$terminalId"}"""
 
     private companion object {
-        // Identity of the physical node in Rampa_Fisica/firmware (config.h).
+        // Identity of the physical node in firmware/ramp_node/config.h.
         const val RAMP_DEVICE_ID = "ramp-esp32-01"
         const val RAMP_NODE_ID = "ramp-phys-01"
     }

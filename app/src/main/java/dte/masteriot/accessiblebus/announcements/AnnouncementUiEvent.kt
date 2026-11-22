@@ -1,4 +1,4 @@
-package dte.masteriot.accessiblebus.core.data
+package dte.masteriot.accessiblebus.announcements
 
 data class AnnouncementUiEvent(
     val message: String

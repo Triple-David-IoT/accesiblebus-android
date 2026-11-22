@@ -52,8 +52,9 @@ object CommandIds {
  * version of a request wins, received stays true, and a trip only moves forward.
  *
  * Commands go through [ApiSource] with a key saved in [keys] before sending. Every decision on
- * a request (accepted, rejected, completed, expired) reaches [announcer] once, whichever input
- * brought it, because [announced] remembers "requestId:version" on disk.
+ * a request (accepted, rejected, completed, expired) reaches [announcer] once per process, whichever
+ * input brought it, because [announced] remembers "requestId:version". The announcer keeps on disk
+ * what it actually announced, so a decision held when the process dies comes back with /sync.
  *
  * [syncScope] and [vehicleId] are those of GET /sync: "mine" for the passenger, "vehicle" with
  * the bus for the driver. [scope] runs the /sync that follows a reconnection or a new trip.

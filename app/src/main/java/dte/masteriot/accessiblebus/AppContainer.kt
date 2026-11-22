@@ -1,7 +1,7 @@
 package dte.masteriot.accessiblebus
 
 import android.content.Context
-import dte.masteriot.accessiblebus.core.data.AnnouncementCoordinator
+import dte.masteriot.accessiblebus.announcements.AnnouncementCoordinator
 import dte.masteriot.accessiblebus.core.data.MqttEventFeed
 import dte.masteriot.accessiblebus.core.data.PreferencesAnnouncedDecisions
 import dte.masteriot.accessiblebus.core.data.StopsManifest
@@ -21,10 +21,7 @@ import dte.masteriot.accessiblebus.core.data.PreferencesCommandKeys
 import dte.masteriot.accessiblebus.core.net.ApiClient
 import dte.masteriot.accessiblebus.core.net.ApiSource
 import dte.masteriot.accessiblebus.core.net.SampleApi
-import dte.masteriot.accessiblebus.data.AppConfigRepository
-import dte.masteriot.accessiblebus.data.FileDataSource
-import dte.masteriot.accessiblebus.data.NetworkDataSource
-import dte.masteriot.accessiblebus.data.Repository
+import dte.masteriot.accessiblebus.core.config.AppConfigRepository
 import dte.masteriot.accessiblebus.hmi.HmiLink
 import dte.masteriot.accessiblebus.hmi.ReceiptSender
 import dte.masteriot.accessiblebus.sensors.ContextEstimator
@@ -40,9 +37,6 @@ import kotlinx.coroutines.runBlocking
  * Container for Dependency Injection holding app-wide data sources and repositories.
  */
 interface AppContainer {
-    val repository: Repository
-    val networkDataSource: NetworkDataSource
-    val fileDataSource: FileDataSource
     val sensorDataSource: SensorDataSource
     val contextEstimator: ContextEstimator
     val appConfigRepository: AppConfigRepository
@@ -64,21 +58,6 @@ interface AppContainer {
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
-
-    override val repository: Repository by lazy {
-        Repository(
-            context = context,
-            appConfigRepository = appConfigRepository
-        )
-    }
-
-    override val networkDataSource: NetworkDataSource by lazy {
-        NetworkDataSource
-    }
-
-    override val fileDataSource: FileDataSource by lazy {
-        FileDataSource(context)
-    }
 
     override val appConfigRepository: AppConfigRepository by lazy {
         AppConfigRepository(context)
@@ -133,7 +112,6 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
             events = if (live) MqttEventFeed(BusMqttClient(mqttBroker, "app-passenger-1", appScope), appScope) else null,
             eventsTopic = "users/passenger-1/events",
             announcer = announcementCoordinator,
-            announced = PreferencesAnnouncedDecisions(context),
             scope = appScope,
         )
     }
@@ -202,7 +180,8 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
             contextEstimator = contextEstimator,
             availability = announcementAvailability,
             scope = appScope,
-            context = context.applicationContext
+            context = context.applicationContext,
+            announced = PreferencesAnnouncedDecisions(context),
         )
     }
 }

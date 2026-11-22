@@ -1,8 +1,8 @@
-# AccessibleBus — Docker Infrastructure (C01)
+# AccessBus — Docker Infrastructure (C01)
 
 ## 1. Overview
 
-This file describes the Docker Compose infrastructure for the AccessibleBus project.
+This file describes the Docker Compose infrastructure for the AccessBus project.
 
 The environment provides the services required for local development and integration:
 
@@ -27,7 +27,7 @@ Docker Desktop must be running before starting the services.
 ## 3. Project Structure
 
 ```text
-AccessibleBus/
+AccessBus/
 ├── app/                         # Android application
 ├── api/
 │   ├── Dockerfile
@@ -174,13 +174,13 @@ mosquitto_sub -h localhost -p 1883 -t "accessiblebus/test" -v
 Publish a message from another terminal:
 
 ```bash
-mosquitto_pub -h localhost -p 1883 -t "accessiblebus/test" -m "Hello AccessibleBus"
+mosquitto_pub -h localhost -p 1883 -t "accessiblebus/test" -m "Hello AccessBus"
 ```
 
 The subscriber should receive:
 
 ```text
-accessiblebus/test Hello AccessibleBus
+accessiblebus/test Hello AccessBus
 ```
 
 ## 9. API Health Check
