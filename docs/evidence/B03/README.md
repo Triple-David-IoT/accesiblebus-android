@@ -30,7 +30,7 @@ Node-RED 4.1.3, same tab as the B02 simulators. Broker `mosquitto:1883`, client 
 
 ## How to run it
 
-1. `docker compose up -d`, load the flow: `docker cp nodered/flows.json nodered_service:/data/flows.json && docker restart nodered_service`.
+1. `docker compose up -d --build`; the Node-RED image carries `nodered/flows.json`.
 2. `mosquitto_sub -h localhost -t 'vehicles/+/ramp/state' -F '%I %p'` and `mosquitto_sub -h localhost -t 'telemetry/#' -F '%I %p'`.
 3. Use the buttons of `http://localhost:1880/dashboard`, and the "discarded" debug node of the editor.
 

@@ -43,7 +43,7 @@ The four limit combinations (`(true,false)`, `(false,false)`, `(false,true)`, `(
 ## How to run it
 
 1. `docker compose up -d`.
-2. Load the flow: `docker cp nodered/flows.json nodered_service:/data/flows.json` and `docker restart nodered_service`.
+2. Load the flow: `docker compose up -d --build nodered` (the image carries `nodered/flows.json`).
 3. Watch the traffic: `mosquitto_sub -h localhost -t 'telemetry/#' -t 'vehicles/+/ramp/state' -F '%I %t %p'`.
 4. Open `http://localhost:1880/dashboard` and use the buttons.
 
