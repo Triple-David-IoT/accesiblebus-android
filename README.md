@@ -64,6 +64,8 @@ The exact image tags are defined in `docker-compose.yml`.
 
 Node-RED Dashboard 2.0 is declared in `nodered/package.json` and installed by `nodered/Dockerfile`.
 
+The flows are `nodered/flows.json`, built into the image: `docker compose up -d --build` loads them, with no copy into the container. A deploy from the editor lasts until the container is recreated, so export it to `nodered/flows.json`.
+
 ## 5. Environment Configuration
 
 The project uses environment variables to configure PostgreSQL and the API.
@@ -244,7 +246,7 @@ Docker volumes are used to preserve service data.
 | Volume | Purpose |
 |---|---|
 | `postgres_data` | PostgreSQL database files |
-| `nodered_data` | Node-RED flows and configuration |
+| `nodered_data` | Node-RED settings and context (the flows come from the image) |
 | `mosquitto_data` | Mosquitto persistent data |
 | `mosquitto_log` | Mosquitto logs |
 
