@@ -1,4 +1,3 @@
-
 package dte.masteriot.accessiblebus.ui.passenger
 
 import androidx.compose.foundation.layout.Arrangement
@@ -8,10 +7,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
@@ -23,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
@@ -71,13 +77,36 @@ fun TrackingScreen(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
-            "Tracking",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.semantics {
-                heading()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                "Tracking",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics {
+                        heading()
+                    }
+            )
+
+            IconButton(
+                onClick = onPreferences,
+                modifier = Modifier.sizeIn(
+                    minWidth = 64.dp,
+                    minHeight = 64.dp
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Open preferences",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(32.dp)
+                )
             }
-        )
+        }
 
         Text(
             if (live) {
@@ -205,13 +234,8 @@ fun TrackingScreen(
         }
 
         OutlinedButton(
-            onClick = onPreferences
-        ) {
-            Text("Preferences")
-        }
-
-        OutlinedButton(
-            onClick = onBack
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Back")
         }

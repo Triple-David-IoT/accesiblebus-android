@@ -74,12 +74,12 @@ fun PreferencesScreen(
     val vibrationEnabled = accessibilityPreferences.vibrationEnabled
     val highContrastEnabled = accessibilityPreferences.highContrastEnabled
 
-    // Entorno que se está editando.
+    // Environment being edited.
     var selectedProfile by remember(profile) {
         mutableStateOf(profile)
     }
 
-    // Entorno que estaba activo al entrar en Preferences.
+    // Environment that was active when Preferences was opened.
     val initialProfile = remember(profile) {
         profile
     }
@@ -98,7 +98,7 @@ fun PreferencesScreen(
         }
     )
 
-    // Campos de conexión.
+    // Connection fields.
     var apiUrl by remember {
         mutableStateOf("")
     }
@@ -154,7 +154,7 @@ fun PreferencesScreen(
         }
     }
 
-    // Actualizar los campos de conexión al cambiar de entorno.
+    // Update connection fields when the environment changes.
     LaunchedEffect(config) {
         apiUrl = config.apiUrl
         mqttHost = config.mqttHost
@@ -209,21 +209,21 @@ fun PreferencesScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Preferencias",
+                text = "Preferences",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Normal
             )
 
             // ---------------------------------------------------------
-            // AVISOS
+            // NOTIFICATIONS
             // ---------------------------------------------------------
 
             PreferencesSectionTitle(
-                title = "Avisos"
+                title = "Notifications"
             )
 
             Text(
-                text = "Voz",
+                text = "Voice",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -239,34 +239,34 @@ fun PreferencesScreen(
                 mode = voiceMode
             )
 
-            // Vibración.
+            // Vibration.
             PreferenceSwitchRow(
-                title = "Vibración",
-                description = "Vibra cuando llega una decisión del conductor.",
+                title = "Vibration",
+                description = "Vibrates when a decision from the driver is received.",
                 checked = vibrationEnabled,
                 onCheckedChange = { enabled ->
                     preferencesViewModel.updateVibration(enabled)
                 }
             )
 
-            // Alto contraste.
+            // High contrast.
             PreferenceSwitchRow(
-                title = "Alto contraste",
-                description = "Fondo negro, texto blanco y acciones en amarillo.",
+                title = "High contrast",
+                description = "Black background, white text and yellow actions.",
                 checked = highContrastEnabled,
                 onCheckedChange = { enabled ->
                     preferencesViewModel.updateHighContrast(enabled)
                 }
             )
 
-            // Probar voz.
+            // Test voice.
             TestVoiceButton(
                 onClick = onTestVoice,
                 modifier = Modifier.fillMaxWidth()
             )
 
             // ---------------------------------------------------------
-            // CONEXIÓN
+            // CONNECTION
             // ---------------------------------------------------------
 
             Spacer(
@@ -274,9 +274,10 @@ fun PreferencesScreen(
             )
 
             PreferencesSectionTitle(
-                title = "Conexión"
+                title = "Connection"
             )
-            // Selector Laboratory / Course.
+
+            // Laboratory / Course selector.
             ConnectionProfileSelector(
                 selectedProfile = selectedProfile,
                 onProfileSelected = { newProfile ->
@@ -284,15 +285,15 @@ fun PreferencesScreen(
                 }
             )
 
-            // URL API.
+            // API URL.
             ConnectionTextField(
                 value = apiUrl,
                 onValueChange = { apiUrl = it },
-                label = "URL de la API",
+                label = "API URL",
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Host y puerto.
+            // Host and port.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -300,7 +301,7 @@ fun PreferencesScreen(
                 ConnectionTextField(
                     value = mqttHost,
                     onValueChange = { mqttHost = it },
-                    label = "Host del broker",
+                    label = "Broker host",
                     modifier = Modifier.weight(1.5f)
                 )
 
@@ -314,17 +315,17 @@ fun PreferencesScreen(
                         portError = it.isNotBlank() &&
                                 (port == null || port !in 1..65535)
                     },
-                    label = "Puerto",
+                    label = "Port",
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
                     ),
                     isError = portError,
-                    supportingText = if (portError) "Puerto inválido" else null
+                    supportingText = if (portError) "Invalid port" else null
                 )
             }
 
-            // Token oculto.
+            // Hidden token.
             TokenTextField(
                 value = token,
                 onValueChange = { token = it },
@@ -332,12 +333,12 @@ fun PreferencesScreen(
                 onVisibilityChange = { tokenVisible = it }
             )
 
-            // Aviso de reinicio.
+            // Restart notice.
             if (connectionChanged) {
                 ConnectionRestartNotice()
             }
 
-            // Acciones.
+            // Actions.
             PreferencesActionButtons(
                 onSave = savePreferences,
                 onBack = onBack,

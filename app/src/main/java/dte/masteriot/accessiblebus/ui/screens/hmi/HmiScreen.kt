@@ -1,45 +1,49 @@
+
 package dte.masteriot.accessiblebus.ui.screens.hmi
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.foundation.layout.Row
-import androidx.compose.ui.Alignment
-import androidx.compose.material3.IconButton
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import dte.masteriot.accessiblebus.hmi.HmiViewModel
-import dte.masteriot.accessiblebus.core.net.AssistanceRequest
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dte.masteriot.accessiblebus.core.net.AssistanceRequest
 import dte.masteriot.accessiblebus.core.net.RejectReason
+import dte.masteriot.accessiblebus.hmi.HmiViewModel
 
 @Composable
 fun HmiScreen(
@@ -51,48 +55,90 @@ fun HmiScreen(
     val rampFlow by viewModel.rampFlow.collectAsState()
 
     var rejectingId by remember { mutableStateOf<String?>(null) }
+
     rejectingId?.let { id ->
         AlertDialog(
             onDismissRequest = { rejectingId = null },
             title = { Text("Reject request") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     RejectReason.entries.forEach { reason ->
                         OutlinedButton(
-                            onClick = { viewModel.reject(id, reason); rejectingId = null },
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
-                        ) { Text(reasonLabel(reason)) }
+                            onClick = {
+                                viewModel.reject(id, reason)
+                                rejectingId = null
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 56.dp)
+                        ) {
+                            Text(reasonLabel(reason))
+                        }
                     }
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { rejectingId = null }) { Text("Cancel") } },
+            dismissButton = {
+                TextButton(onClick = { rejectingId = null }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 
     var confirmEnd by remember { mutableStateOf(false) }
+
     if (confirmEnd) {
         val open = ui.pending + ui.inProgress
+
         AlertDialog(
             onDismissRequest = { confirmEnd = false },
             title = { Text("End trip?") },
             text = {
                 Text(
-                    if (open.isEmpty()) "There are no open assistances."
-                    else "These assistances will be closed:\n" +
-                            open.joinToString("\n") { "Stop ${it.physicalStopCode} (${it.state})" }
+                    if (open.isEmpty()) {
+                        "There are no open assistances."
+                    } else {
+                        "These assistances will be closed:\n" +
+                                open.joinToString("\n") {
+                                    "Stop ${it.physicalStopCode} (${it.state})"
+                                }
+                    }
                 )
             },
             confirmButton = {
-                Button(onClick = { viewModel.endTrip(); confirmEnd = false }) { Text("End trip") }
+                Button(
+                    onClick = {
+                        viewModel.endTrip()
+                        confirmEnd = false
+                    },
+                    modifier = Modifier.heightIn(min = 56.dp)
+                ) {
+                    Text("End trip")
+                }
             },
-            dismissButton = { TextButton(onClick = { confirmEnd = false }) { Text("Cancel") } },
+            dismissButton = {
+                TextButton(
+                    onClick = { confirmEnd = false },
+                    modifier = Modifier.heightIn(min = 56.dp)
+                ) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(16.dp).statusBarsPadding(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .statusBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item {
@@ -101,12 +147,10 @@ fun HmiScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-
                         Text(
                             "LAB",
                             style = MaterialTheme.typography.labelLarge,
@@ -116,7 +160,8 @@ fun HmiScreen(
                         Text(
                             "Vehicle ${ui.vehicleId}",
                             style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.semantics { heading() }
                         )
 
                         Text(
@@ -127,65 +172,138 @@ fun HmiScreen(
 
                     IconButton(
                         onClick = onPreferences,
+                        modifier = Modifier.sizeIn(
+                            minWidth = 64.dp,
+                            minHeight = 64.dp
+                        )
                     ) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Abrir preferencias",
-                            tint = MaterialTheme.colorScheme.onSurface
+                            contentDescription = "Open preferences",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(32.dp)
                         )
                     }
                 }
             }
-            item { StatusStrip(rampFlow.text) }
-            item { RampCard(ramp, onAction = viewModel::ramp) }
-            item { StatusStrip(ui.connectionText) }
+
+            item {
+                StatusStrip(rampFlow.text)
+            }
+
+            item {
+                RampCard(ramp, onAction = viewModel::ramp)
+            }
+
+            item {
+                StatusStrip(ui.connectionText)
+            }
+
             item {
                 Button(
                     onClick = viewModel::refresh,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
-                ) { Text("Refresh") }
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                ) {
+                    Text("Refresh")
+                }
             }
+
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     OutlinedButton(
                         onClick = viewModel::advance,
                         enabled = ui.canAdvance,
-                        modifier = Modifier.weight(1f).heightIn(min = 56.dp)
-                    ) { Text("Stop passed") }
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 56.dp)
+                    ) {
+                        Text("Stop passed")
+                    }
+
                     OutlinedButton(
                         onClick = { confirmEnd = true },
                         enabled = ui.tripActive,
-                        modifier = Modifier.weight(1f).heightIn(min = 56.dp)
-                    ) { Text("End trip") }
-                }
-            }
-            ui.error?.let { msg -> item { StatusStrip(msg) } }
-
-            item { SectionTitle("Pending (${ui.pending.size})") }
-            if (ui.pending.isEmpty()) item { Text("No pending requests", style = MaterialTheme.typography.bodyMedium) }
-            items(ui.pending, key = { it.id }) { request ->
-                RequestRow(request) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
-                            onClick = { viewModel.accept(request.id) },
-                            modifier = Modifier.weight(1f).heightIn(min = 56.dp)
-                        ) { Text("Accept") }
-                        OutlinedButton(
-                            onClick = { rejectingId = request.id },
-                            modifier = Modifier.weight(1f).heightIn(min = 56.dp)
-                        ) { Text("Reject") }
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 56.dp)
+                    ) {
+                        Text("End trip")
                     }
                 }
             }
 
-            item { SectionTitle("In Progress (${ui.inProgress.size})") }
-            if (ui.inProgress.isEmpty()) item { Text("No ongoing assistance", style = MaterialTheme.typography.bodyMedium) }
+            ui.error?.let { msg ->
+                item {
+                    StatusStrip(msg)
+                }
+            }
+
+            item {
+                SectionTitle("Pending (${ui.pending.size})")
+            }
+
+            if (ui.pending.isEmpty()) {
+                item {
+                    Text(
+                        "No pending requests",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            items(ui.pending, key = { it.id }) { request ->
+                RequestRow(request) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { viewModel.accept(request.id) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp)
+                        ) {
+                            Text("Accept")
+                        }
+
+                        OutlinedButton(
+                            onClick = { rejectingId = request.id },
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp)
+                        ) {
+                            Text("Reject")
+                        }
+                    }
+                }
+            }
+
+            item {
+                SectionTitle("In Progress (${ui.inProgress.size})")
+            }
+
+            if (ui.inProgress.isEmpty()) {
+                item {
+                    Text(
+                        "No ongoing assistance",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
             items(ui.inProgress, key = { it.id }) { request ->
                 RequestRow(request) {
                     Button(
                         onClick = { viewModel.complete(request.id) },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
-                    ) { Text("Complete") }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp)
+                    ) {
+                        Text("Complete")
+                    }
                 }
             }
         }
@@ -194,29 +312,68 @@ fun HmiScreen(
 
 @Composable
 private fun SectionTitle(text: String) =
-    Text(text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    Text(
+        text,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.semantics { heading() }
+    )
 
 @Composable
 private fun StatusStrip(text: String) =
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Text(text, modifier = Modifier.padding(12.dp), style = MaterialTheme.typography.bodyLarge)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                liveRegion = LiveRegionMode.Polite
+            }
+    ) {
+        Text(
+            text,
+            modifier = Modifier.padding(12.dp),
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 
 @Composable
-private fun RequestRow(r: AssistanceRequest, actions: @Composable () -> Unit = {}) =
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Stop ${r.physicalStopCode} · visit ${r.sequence}",
-                style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(if (r.received) "Received by terminal" else "Not yet confirmed by terminal",
-                style = MaterialTheme.typography.bodyMedium)
-            Text("Status: ${r.state}", style = MaterialTheme.typography.bodyMedium)
+private fun RequestRow(
+    r: AssistanceRequest,
+    actions: @Composable () -> Unit = {}
+) =
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                "Stop ${r.physicalStopCode} · visit ${r.sequence}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                if (r.received) {
+                    "Received by terminal"
+                } else {
+                    "Not yet confirmed by terminal"
+                },
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Text(
+                "Status: ${r.state}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
             actions()
         }
     }
 
-private fun reasonLabel(reason: RejectReason): String = when (reason) {
-    RejectReason.RAMP_UNAVAILABLE -> "Ramp unavailable"
-    RejectReason.UNSAFE_STOP -> "Unsafe stop"
-    RejectReason.OTHER -> "Other"
-}
+private fun reasonLabel(reason: RejectReason): String =
+    when (reason) {
+        RejectReason.RAMP_UNAVAILABLE -> "Ramp unavailable"
+        RejectReason.UNSAFE_STOP -> "Unsafe stop"
+        RejectReason.OTHER -> "Other"
+    }

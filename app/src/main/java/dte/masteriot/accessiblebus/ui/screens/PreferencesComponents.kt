@@ -36,7 +36,7 @@ import dte.masteriot.accessiblebus.core.config.ConnectionProfile
 import dte.masteriot.accessiblebus.core.config.VoiceMode
 
 /**
- * Título de una sección de Preferencias.
+ * Title of a Preferences section.
  */
 @Composable
 fun PreferencesSectionTitle(
@@ -53,10 +53,10 @@ fun PreferencesSectionTitle(
 }
 
 /**
- * Selector accesible de modos de voz.
+ * Accessible voice mode selector.
  *
- * Role.RadioButton permite que TalkBack identifique
- * cada opción y su estado seleccionado.
+ * Role.RadioButton allows TalkBack to identify
+ * each option and its selected state.
  */
 @Composable
 fun VoiceModeSelector(
@@ -148,7 +148,7 @@ fun VoiceModeSelector(
 }
 
 /**
- * Descripción del modo de voz seleccionado.
+ * Description of the selected voice mode.
  */
 @Composable
 fun VoiceModeDescription(
@@ -157,14 +157,14 @@ fun VoiceModeDescription(
 ) {
     val description = when (mode) {
         VoiceMode.AUTO ->
-            "AUTO: habla si el teléfono está tapado (bolsillo o bolso). " +
-                    "Si no, texto y vibración."
+            "AUTO: speaks when the phone is covered (pocket or bag). " +
+                    "Otherwise, notifications use text and vibration."
 
         VoiceMode.ALWAYS ->
-            "ALWAYS: los avisos se reproducen siempre por voz."
+            "ALWAYS: notifications are always spoken aloud."
 
         VoiceMode.OFF ->
-            "OFF: los avisos se muestran mediante texto y vibración."
+            "OFF: notifications are displayed using text and vibration."
     }
 
     Text(
@@ -176,7 +176,7 @@ fun VoiceModeDescription(
 }
 
 /**
- * Fila accesible para un ajuste de tipo interruptor.
+ * Accessible row for a switch setting.
  */
 @Composable
 fun PreferenceSwitchRow(
@@ -221,7 +221,7 @@ fun PreferenceSwitchRow(
 }
 
 /**
- * Selector accesible del perfil de conexión.
+ * Accessible connection profile selector.
  */
 @Composable
 fun ConnectionProfileSelector(
@@ -244,8 +244,8 @@ fun ConnectionProfileSelector(
             val selected = selectedProfile == profile
 
             val label = when (profile) {
-                ConnectionProfile.LABORATORY -> "Laboratorio"
-                ConnectionProfile.COURSE -> "Curso"
+                ConnectionProfile.LABORATORY -> "Laboratory"
+                ConnectionProfile.COURSE -> "Course"
             }
 
             val shape = when (index) {
@@ -305,7 +305,7 @@ fun ConnectionProfileSelector(
 }
 
 /**
- * Campo de texto reutilizable para la configuración.
+ * Reusable text field for configuration.
  */
 @Composable
 fun ConnectionTextField(
@@ -334,7 +334,7 @@ fun ConnectionTextField(
 }
 
 /**
- * Campo de token con opción de mostrar u ocultar su contenido.
+ * Token field with an option to show or hide its contents.
  */
 @Composable
 fun TokenTextField(
@@ -361,7 +361,7 @@ fun TokenTextField(
                 modifier = Modifier.heightIn(min = 56.dp)
             ) {
                 Text(
-                    text = if (visible) "Ocultar" else "Mostrar"
+                    text = if (visible) "Hide" else "Show"
                 )
             }
         }
@@ -369,7 +369,7 @@ fun TokenTextField(
 }
 
 /**
- * Botón de probar voz.
+ * Test voice button.
  */
 @Composable
 fun TestVoiceButton(
@@ -386,12 +386,12 @@ fun TestVoiceButton(
         ),
         shape = RoundedCornerShape(24.dp)
     ) {
-        Text("🔊  Probar voz")
+        Text("🔊  Test voice")
     }
 }
 
 /**
- * Botones de guardar y volver.
+ * Save and back buttons.
  */
 @Composable
 fun PreferencesActionButtons(
@@ -411,7 +411,7 @@ fun PreferencesActionButtons(
                 .heightIn(min = 56.dp),
             enabled = saveEnabled
         ) {
-            Text("Guardar preferencias")
+            Text("Save preferences")
         }
 
         Button(
@@ -426,7 +426,7 @@ fun PreferencesActionButtons(
             ),
             shape = RoundedCornerShape(24.dp)
         ) {
-            Text("Volver")
+            Text("Back")
         }
     }
 }
@@ -441,7 +441,7 @@ fun ConnectionRestartNotice(
         shape = RoundedCornerShape(12.dp)
     ) {
         Text(
-            text = "↻  Reinicia la app para aplicar la conexión",
+            text = "↻  Restart the app to apply the connection.",
             modifier = Modifier.padding(
                 horizontal = 16.dp,
                 vertical = 12.dp
@@ -452,4 +452,3 @@ fun ConnectionRestartNotice(
         )
     }
 }
-

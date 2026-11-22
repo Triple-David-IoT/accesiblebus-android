@@ -36,7 +36,14 @@ import java.util.Locale
 import java.util.TimeZone
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.contentDescription
 
 /**
  * Displays the four stops of the demo line, with their CRTM codes and names,
@@ -82,13 +89,35 @@ fun StopsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(
-            "Stops",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.semantics {
-                heading()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                "Stops",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics {
+                        heading()
+                    }
+            )
+
+            IconButton(
+                onClick = onPreferences,
+                modifier = Modifier.size(64.dp)
+                    .semantics {
+                        contentDescription = "Open preferences"
+                    }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                )
             }
-        )
+        }
 
         Text(
             "Line 27 · Plaza de Castilla → Glorieta de Embajadores",
@@ -123,15 +152,6 @@ fun StopsScreen(
                 ) {
                     Text(if (showMap) "View list" else "View map")
                 }
-
-                OutlinedButton(
-                    onClick = onPreferences,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 56.dp)
-                ) {
-                    Text("Preferences")
-                }
             }
         } else {
             // Vertical layout when the device is in portrait orientation.
@@ -160,15 +180,6 @@ fun StopsScreen(
                         .heightIn(min = 56.dp)
                 ) {
                     Text(if (showMap) "View list" else "View map")
-                }
-
-                OutlinedButton(
-                    onClick = onPreferences,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                ) {
-                    Text("Preferences")
                 }
             }
         }

@@ -1,3 +1,4 @@
+
 package dte.masteriot.accessiblebus.ui.passenger
 
 import android.content.res.Configuration
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Button
@@ -27,10 +29,11 @@ import dte.masteriot.accessiblebus.core.data.CommandIds
 import dte.masteriot.accessiblebus.core.data.CommandState
 
 /**
- * Confirm: the stop, the trip and "Solicitar asistencia". One column in portrait and two panels
- * in landscape, with the normal font size and no scroll. The command runs in the ViewModel and
- * its key is saved before sending, so turning the phone while it is on its way never sends it
- * twice; when the answer arrives, Tracking opens once.
+ * Confirm the stop, the trip and the assistance request.
+ * One column in portrait and two panels in landscape, with the normal font size and no scroll.
+ *
+ * The command runs in the ViewModel and its key is saved before sending, so turning the phone
+ * while it is on its way never sends it twice. When the answer arrives, Tracking opens once.
  */
 @Composable
 fun ConfirmScreen(
@@ -53,23 +56,43 @@ fun ConfirmScreen(
 
     val visit = snapshot.stopVisits.find { it.id == stopVisitId }
     val stop = visit?.let { findStop(stops, it.physicalStopCode) }
-    val status = visit?.let { visitStatus(snapshot, it.physicalStopCode) } ?: VisitStatus.NoVisit
+    val status = visit?.let {
+        visitStatus(snapshot, it.physicalStopCode)
+    } ?: VisitStatus.NoVisit
+
     val commandId = CommandIds.create(stopVisitId)
     val command = commands[commandId]
-    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val landscape =
+        LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     val details: @Composable ColumnScope.() -> Unit = {
-        Text("Confirmar asistencia", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
-        Text(stop?.name ?: "Parada ${visit?.physicalStopCode ?: "desconocida"}", style = MaterialTheme.typography.titleLarge)
         Text(
-            "Código CRTM ${visit?.physicalStopCode ?: "-"}" + (stop?.let { " · EMT ${it.emtStopCode}" } ?: ""),
-            style = MaterialTheme.typography.bodyLarge,
+            text = "Confirm assistance",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.semantics { heading() }
         )
+
         Text(
-            "Línea 27, viaje de laboratorio, parada ${visit?.sequence ?: "-"} de ${snapshot.stopVisits.size}",
-            style = MaterialTheme.typography.bodyLarge,
+            text = stop?.name ?: "Stop ${visit?.physicalStopCode ?: "unknown"}",
+            style = MaterialTheme.typography.titleLarge
         )
-        Text("Asistencia: rampa para subir al autobús", style = MaterialTheme.typography.bodyLarge)
+
+        Text(
+            text = "CRTM code ${visit?.physicalStopCode ?: "-"}" +
+                    (stop?.let { " · EMT ${it.emtStopCode}" } ?: ""),
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Text(
+            text = "Line 27, laboratory trip, stop ${visit?.sequence ?: "-"} " +
+                    "of ${snapshot.stopVisits.size}",
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Text(
+            text = "Assistance: boarding ramp",
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 
     val actions: @Composable ColumnScope.() -> Unit = {
@@ -77,26 +100,81 @@ fun ConfirmScreen(
             is VisitStatus.Available -> Button(
                 onClick = { viewModel.create(stopVisitId) },
                 enabled = command != CommandState.Sending,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Solicitar asistencia") }
-            is VisitStatus.Open -> {
-                Text(statusText(status), style = MaterialTheme.typography.bodyLarge)
-                Button(onClick = { onTracking(status.request.id) }, modifier = Modifier.fillMaxWidth()) { Text("Ver seguimiento") }
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp),
+            ) {
+                Text("Request assistance")
             }
-            else -> Text(statusText(status), style = MaterialTheme.typography.bodyLarge)
+
+            is VisitStatus.Open -> {
+                Text(
+                    statusText(status),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Button(
+                    onClick = { onTracking(status.request.id) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                ) {
+                    Text("View tracking")
+                }
+            }
+
+            else -> Text(
+                statusText(status),
+                style = MaterialTheme.typography.bodyLarge
+            )
         }
-        CommandStatus(command, onRetry = { viewModel.create(stopVisitId) }, onDismiss = { viewModel.dismiss(commandId) })
-        OutlinedButton(onClick = onBack) { Text("Volver") }
+
+        CommandStatus(
+            command,
+            onRetry = { viewModel.create(stopVisitId) },
+            onDismiss = { viewModel.dismiss(commandId) }
+        )
+
+        OutlinedButton(
+            onClick = onBack,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+        ) {
+            Text("Back")
+        }
     }
 
-    val screen = Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)
+    val screen = Modifier
+        .fillMaxSize()
+        .safeDrawingPadding()
+        .padding(16.dp)
+
     if (landscape) {
-        Row(screen, horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp), content = details)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp, androidx.compose.ui.Alignment.CenterVertically), content = actions)
+        Row(
+            screen,
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Column(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                content = details
+            )
+
+            Column(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(
+                    12.dp,
+                    androidx.compose.ui.Alignment.CenterVertically
+                ),
+                content = actions
+            )
         }
     } else {
-        Column(screen, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            screen,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             details()
             actions()
         }
