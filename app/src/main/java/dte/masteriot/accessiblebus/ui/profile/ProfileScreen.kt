@@ -1,5 +1,5 @@
 
-package dte.masteriot.accessiblebus.ui.screens
+package dte.masteriot.accessiblebus.ui.profile
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

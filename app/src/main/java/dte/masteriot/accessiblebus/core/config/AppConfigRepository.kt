@@ -1,5 +1,5 @@
 
-package dte.masteriot.accessiblebus.data
+package dte.masteriot.accessiblebus.core.config
 
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -7,11 +7,6 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import dte.masteriot.accessiblebus.core.config.AccessibilityPreferences
-import dte.masteriot.accessiblebus.core.config.AppConfig
-import dte.masteriot.accessiblebus.core.config.AppConfigDefaults
-import dte.masteriot.accessiblebus.core.config.ConnectionProfile
-import dte.masteriot.accessiblebus.core.config.VoiceMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -204,90 +199,6 @@ class AppConfigRepository(
                 preferences.highContrastEnabled
         }
     }
-
-    // -------------------------------------------------------------
-    // Change connection parameters
-    // -------------------------------------------------------------
-
-    suspend fun setApiUrl(
-        profile: ConnectionProfile,
-        apiUrl: String
-    ) {
-        context.appConfigDataStore.edit { preferences ->
-            preferences[apiUrlKey(profile)] = apiUrl
-        }
-    }
-
-
-    suspend fun setMqttHost(
-        profile: ConnectionProfile,
-        host: String
-    ) {
-        context.appConfigDataStore.edit { preferences ->
-            preferences[mqttHostKey(profile)] = host
-        }
-    }
-
-
-    suspend fun setMqttPort(
-        profile: ConnectionProfile,
-        port: Int
-    ) {
-        require(port in 1..65535) {
-            "MQTT port must be between 1 and 65535"
-        }
-
-        context.appConfigDataStore.edit { preferences ->
-            preferences[mqttPortKey(profile)] = port
-        }
-    }
-
-
-    suspend fun setToken(
-        profile: ConnectionProfile,
-        token: String
-    ) {
-        context.appConfigDataStore.edit { preferences ->
-            preferences[tokenKey(profile)] = token
-        }
-    }
-
-
-    // -------------------------------------------------------------
-    // Change accessibility preferences
-    // -------------------------------------------------------------
-
-    suspend fun setVoiceMode(
-        profile: ConnectionProfile,
-        mode: VoiceMode
-    ) {
-        // profile stays in the signature so existing calls
-        // do not break.
-        context.appConfigDataStore.edit { preferences ->
-            preferences[voiceModeKey] = mode.name
-        }
-    }
-
-
-    suspend fun setVibrationEnabled(
-        profile: ConnectionProfile,
-        enabled: Boolean
-    ) {
-        context.appConfigDataStore.edit { preferences ->
-            preferences[vibrationEnabledKey] = enabled
-        }
-    }
-
-
-    suspend fun setHighContrastEnabled(
-        profile: ConnectionProfile,
-        enabled: Boolean
-    ) {
-        context.appConfigDataStore.edit { preferences ->
-            preferences[highContrastEnabledKey] = enabled
-        }
-    }
-
 
     // -------------------------------------------------------------
     // Active environment

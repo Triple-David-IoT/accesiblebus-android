@@ -33,7 +33,7 @@ data class StopsManifest(
     val stops: List<ManifestStop>,
 )
 
-// ---- CRTM GeoJSON: only the fields the app uses (docs/datos.md)
+// ---- CRTM GeoJSON: only the fields the app uses (docs/stop-data.md)
 
 @Serializable
 private data class FeatureCollection(val features: List<Feature> = emptyList())

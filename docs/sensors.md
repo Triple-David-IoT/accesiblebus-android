@@ -1,4 +1,6 @@
-# AccessibleBusApp – Light and Proximity Sensors
+# AccessBus – Light and proximity sensors (C02)
+
+> The test activity used here (`SensorTestActivity`) was removed once C08 moved this logic into the app: `sensors/SensorDataSource.kt` and `sensors/ContextEstimator.kt`, checked by the instrumented test `sensors/SensorConsensusTest`. The measurements and thresholds below are still the ones the app uses.
 
 ## 1. Objective
 

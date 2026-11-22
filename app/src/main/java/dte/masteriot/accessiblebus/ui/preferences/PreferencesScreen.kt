@@ -1,7 +1,6 @@
 
-package dte.masteriot.accessiblebus.ui.screens
+package dte.masteriot.accessiblebus.ui.preferences
 
-import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +17,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -37,20 +34,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dte.masteriot.accessiblebus.core.config.AppConfig
 import dte.masteriot.accessiblebus.core.config.AppConfigDefaults
 import dte.masteriot.accessiblebus.core.config.ConnectionProfile
-import dte.masteriot.accessiblebus.data.AppConfigRepository
-import dte.masteriot.accessiblebus.data.Repository
+import dte.masteriot.accessiblebus.core.config.AppConfigRepository
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @Composable
 fun PreferencesScreen(
     profile: ConnectionProfile,
     repository: AppConfigRepository,
-    mqttRepository: Repository,
     onBack: () -> Unit,
     onTestVoice: () -> Unit
 ) {
-    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
     val preferencesViewModel: PreferencesViewModel = viewModel(
@@ -111,47 +104,8 @@ fun PreferencesScreen(
         mutableStateOf("1883")
     }
 
-    var token by remember {
-        mutableStateOf("")
-    }
-
-    var tokenVisible by remember {
-        mutableStateOf(false)
-    }
-
     var portError by remember {
         mutableStateOf(false)
-    }
-
-    // Text-to-Speech.
-    var ttsReady by remember {
-        mutableStateOf(false)
-    }
-
-    var textToSpeech by remember {
-        mutableStateOf<TextToSpeech?>(null)
-    }
-
-    DisposableEffect(context) {
-        val tts = TextToSpeech(context) { status ->
-            ttsReady = status == TextToSpeech.SUCCESS
-        }
-
-        textToSpeech = tts
-
-        onDispose {
-            tts.stop()
-            tts.shutdown()
-
-            textToSpeech = null
-            ttsReady = false
-        }
-    }
-
-    LaunchedEffect(ttsReady) {
-        if (ttsReady) {
-            textToSpeech?.language = Locale.ENGLISH
-        }
     }
 
     // Update connection fields when the environment changes.
@@ -159,13 +113,13 @@ fun PreferencesScreen(
         apiUrl = config.apiUrl
         mqttHost = config.mqttHost
         mqttPort = config.mqttPort.toString()
-        token = config.token
 
         portError = false
-        tokenVisible = false
     }
 
-    val connectionChanged = selectedProfile != initialProfile
+    // The connection is read when the app starts (AppContainer).
+    val connectionChanged = selectedProfile != initialProfile ||
+        apiUrl != config.apiUrl || mqttHost != config.mqttHost || mqttPort != config.mqttPort.toString()
 
     val savePreferences: () -> Unit = {
         val port = mqttPort.toIntOrNull()
@@ -176,7 +130,7 @@ fun PreferencesScreen(
                 apiUrl = apiUrl,
                 mqttHost = mqttHost,
                 mqttPort = port,
-                token = token,
+                token = config.token,
                 voiceMode = voiceMode,
                 vibrationEnabled = vibrationEnabled,
                 highContrastEnabled = highContrastEnabled
@@ -324,14 +278,6 @@ fun PreferencesScreen(
                     supportingText = if (portError) "Invalid port" else null
                 )
             }
-
-            // Hidden token.
-            TokenTextField(
-                value = token,
-                onValueChange = { token = it },
-                visible = tokenVisible,
-                onVisibilityChange = { tokenVisible = it }
-            )
 
             // Restart notice.
             if (connectionChanged) {

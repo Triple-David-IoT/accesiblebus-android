@@ -18,9 +18,9 @@ import dte.masteriot.accessiblebus.ui.passenger.ConfirmScreen
 import dte.masteriot.accessiblebus.ui.passenger.StopDetailScreen
 import dte.masteriot.accessiblebus.ui.passenger.StopsScreen
 import dte.masteriot.accessiblebus.ui.passenger.TrackingScreen
-import dte.masteriot.accessiblebus.ui.screens.PreferencesScreen
-import dte.masteriot.accessiblebus.ui.screens.ProfileScreen
-import dte.masteriot.accessiblebus.ui.screens.hmi.HmiScreen
+import dte.masteriot.accessiblebus.ui.preferences.PreferencesScreen
+import dte.masteriot.accessiblebus.ui.profile.ProfileScreen
+import dte.masteriot.accessiblebus.ui.hmi.HmiScreen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.material3.Scaffold
@@ -46,7 +46,6 @@ fun AppNav(
     }
 
     val configRepository = container.appConfigRepository
-    val mqttRepository = container.repository
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -139,7 +138,6 @@ fun AppNav(
                 PreferencesScreen(
                     profile = profile,
                     repository = configRepository,
-                    mqttRepository = mqttRepository,
                     onBack = {
                         navController.popBackStack()
                     },

@@ -1,11 +1,11 @@
 
-package dte.masteriot.accessiblebus.ui.screens
+package dte.masteriot.accessiblebus.ui.preferences
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dte.masteriot.accessiblebus.core.config.AccessibilityPreferences
 import dte.masteriot.accessiblebus.core.config.VoiceMode
-import dte.masteriot.accessiblebus.data.AppConfigRepository
+import dte.masteriot.accessiblebus.core.config.AppConfigRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

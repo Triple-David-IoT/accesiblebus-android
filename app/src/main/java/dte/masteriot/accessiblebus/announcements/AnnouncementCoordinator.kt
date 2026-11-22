@@ -1,10 +1,14 @@
-package dte.masteriot.accessiblebus.core.data
+package dte.masteriot.accessiblebus.announcements
 
 import android.content.Context
 import android.util.Log
+import android.view.accessibility.AccessibilityManager
 import dte.masteriot.accessiblebus.core.config.VoiceMode
+import dte.masteriot.accessiblebus.core.data.AnnouncedDecisions
+import dte.masteriot.accessiblebus.core.data.DecisionAnnouncer
+import dte.masteriot.accessiblebus.core.data.DecisionEvent
 import dte.masteriot.accessiblebus.core.net.RequestState
-import dte.masteriot.accessiblebus.data.AppConfigRepository
+import dte.masteriot.accessiblebus.core.config.AppConfigRepository
 import dte.masteriot.accessiblebus.sensors.ContextEstimator
 import dte.masteriot.accessiblebus.sensors.PhoneContext
 import kotlinx.coroutines.CoroutineScope
@@ -24,8 +28,12 @@ class AnnouncementCoordinator(
     private val contextEstimator: ContextEstimator,
     private val availability: kotlinx.coroutines.flow.StateFlow<Boolean>,
     private val scope: CoroutineScope,
-    context: Context
+    context: Context,
+    /** Decisions already announced, on disk. */
+    private val announced: AnnouncedDecisions,
 ) : DecisionAnnouncer {
+
+    private val accessibility = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
 
     private val speech = AnnouncementSpeech(context)
     private val incoming = Channel<DecisionEvent>(Channel.UNLIMITED)
@@ -46,6 +54,8 @@ class AnnouncementCoordinator(
         scope.launch {
             for (decision in incoming) {
                 pendingMutex.withLock {
+                    // Only the newest decision of a request is worth announcing when the app is back.
+                    pending.removeAll { it.requestId == decision.requestId && !it.isTest }
                     pending.addLast(decision)
                 }
 
@@ -127,60 +137,23 @@ class AnnouncementCoordinator(
             return true
         }
 
-        when (preferences.voiceMode) {
+        val mode = preferences.voiceMode
+        val covered = mode == VoiceMode.AUTO &&
+            contextEstimator.estimate().also { Log.d("C09", "AUTO context estimated: $it") } == PhoneContext.COVERED
+        // With TalkBack on, the message goes on screen for TalkBack to read, instead of speaking over it.
+        val voice = (mode == VoiceMode.ALWAYS || covered) && !accessibility.isTouchExplorationEnabled
 
-            VoiceMode.OFF -> {
-                feedback.vibrate(preferences.vibrationEnabled)
-                uiEventsChannel.trySend(
-                    AnnouncementUiEvent(message)
-                )
-            }
+        if (!availability.value) return false
 
-            VoiceMode.ALWAYS -> {
-                val spoken = speech.speak(message)
+        // Marked when delivered, not when detected: a decision held while the app was hidden
+        // survives the process being killed, and /sync brings it back.
+        if (!announced.add("${decision.requestId}:${decision.version}")) return true
 
-                if (!spoken) {
-                    Log.w(
-                        "C09",
-                        "Voice announcement could not be completed"
-                    )
-                }
-            }
-
-            VoiceMode.AUTO -> {
-                val contextEstimated = contextEstimator.estimate()
-
-                Log.d(
-                    "C09",
-                    "AUTO context estimated: $contextEstimated"
-                )
-
-                when (contextEstimated) {
-
-                    PhoneContext.COVERED -> {
-                        if (!availability.value) return false
-
-                        feedback.vibrate(preferences.vibrationEnabled)
-
-                        val spoken = speech.speak(message)
-
-                        if (!spoken) {
-                            Log.w(
-                                "C09",
-                                "Voice announcement could not be completed"
-                            )
-                        }
-                    }
-
-                    PhoneContext.UNCOVERED,
-                    PhoneContext.UNKNOWN -> {
-                        feedback.vibrate(preferences.vibrationEnabled)
-                        uiEventsChannel.trySend(
-                            AnnouncementUiEvent(message)
-                        )
-                    }
-                }
-            }
+        if (mode != VoiceMode.ALWAYS) feedback.vibrate(preferences.vibrationEnabled)
+        if (voice) {
+            if (!speech.speak(message)) Log.w("C09", "Voice announcement could not be completed")
+        } else {
+            uiEventsChannel.trySend(AnnouncementUiEvent(message))
         }
 
         return true

@@ -1,11 +1,8 @@
-package dte.masteriot.accessiblebus
+package dte.masteriot.accessiblebus.sensors
 
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import dte.masteriot.accessiblebus.sensors.SensorDataSource
-import dte.masteriot.accessiblebus.sensors.ContextEstimator
-import dte.masteriot.accessiblebus.sensors.PhoneContext
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertEquals

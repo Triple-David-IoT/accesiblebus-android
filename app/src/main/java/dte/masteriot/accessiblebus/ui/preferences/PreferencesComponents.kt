@@ -1,5 +1,5 @@
 
-package dte.masteriot.accessiblebus.ui.screens
+package dte.masteriot.accessiblebus.ui.preferences
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -29,8 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import dte.masteriot.accessiblebus.core.config.ConnectionProfile
 import dte.masteriot.accessiblebus.core.config.VoiceMode
@@ -329,41 +327,6 @@ fun ConnectionTextField(
             { Text(supportingText) }
         } else {
             null
-        }
-    )
-}
-
-/**
- * Token field with an option to show or hide its contents.
- */
-@Composable
-fun TokenTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    visible: Boolean,
-    onVisibilityChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text("Token") },
-        modifier = modifier.fillMaxWidth(),
-        singleLine = true,
-        visualTransformation = if (visible) {
-            VisualTransformation.None
-        } else {
-            PasswordVisualTransformation()
-        },
-        trailingIcon = {
-            TextButton(
-                onClick = { onVisibilityChange(!visible) },
-                modifier = Modifier.heightIn(min = 56.dp)
-            ) {
-                Text(
-                    text = if (visible) "Hide" else "Show"
-                )
-            }
         }
     )
 }
