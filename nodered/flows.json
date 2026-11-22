@@ -1560,5 +1560,187 @@
                 "8dfccb15dd4e2124"
             ]
         ]
+    },
+    {
+        "id": "lab_ramp_tab",
+        "type": "tab",
+        "label": "Lab ramp test",
+        "disabled": false,
+        "info": "Physical ramp node (ESP32) in the B04 Ramps group: its state, and a lab test mode that sends commands only while the driver's HMI is offline."
+    },
+    {
+        "id": "lab_ramp_in_status",
+        "type": "mqtt in",
+        "z": "lab_ramp_tab",
+        "name": "node status",
+        "topic": "devices/ramp-esp32-01/status",
+        "qos": "1",
+        "datatype": "auto-detect",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 60,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_in_actuator",
+        "type": "mqtt in",
+        "z": "lab_ramp_tab",
+        "name": "actuator state",
+        "topic": "devices/ramp-esp32-01/ramps/ramp-phys-01",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 120,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_in_telemetry",
+        "type": "mqtt in",
+        "z": "lab_ramp_tab",
+        "name": "telemetry",
+        "topic": "telemetry/vehicles/BUS-DEMO-01/ramp",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 180,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_in_presence",
+        "type": "mqtt in",
+        "z": "lab_ramp_tab",
+        "name": "HMI presence",
+        "topic": "vehicles/BUS-DEMO-01/presence",
+        "qos": "1",
+        "datatype": "auto-detect",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 240,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_tick",
+        "type": "inject",
+        "z": "lab_ramp_tab",
+        "name": "tick 1 s",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "tick",
+        "x": 150,
+        "y": 300,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_fn",
+        "type": "function",
+        "z": "lab_ramp_tab",
+        "name": "physical ramp",
+        "func": "// Physical ramp node (ESP32): its state for the dashboard, and commands in lab test mode.\nconst s = flow.get('labRamp') || {};\nconst t = msg.topic || '';\nconst p = msg.payload || {};\nconst now = Date.now();\n\nif (t === 'devices/ramp-esp32-01/status') { s.status = p.status; }\nelse if (t === 'devices/ramp-esp32-01/ramps/ramp-phys-01') { s.motion = p.motion; s.result = p.lastResult; }\nelse if (t === 'telemetry/vehicles/BUS-DEMO-01/ramp') {\n    if (p.nodeId !== 'ramp-phys-01') { return null; }   // the simulator uses the same topic\n    s.stowed = p.stowedLimit; s.deployed = p.deployedLimit; s.at = now;\n}\nelse if (t === 'vehicles/BUS-DEMO-01/presence') {\n    s.hmi = p.status;\n    if (p.status === 'online') { s.test = false; }   // the driver's HMI takes over\n}\nelse if (msg.test !== undefined) { s.test = msg.test && s.hmi !== 'online'; }\n\n// Same rules as the HMI ramp card: no data for 15 s, both limits ON or moving lock the maneuvers.\nconst fresh = now - (s.at || 0) <= 15000;\nconst position = !fresh ? 'NO DATA' : s.stowed && s.deployed ? 'CONFLICT'\n    : s.stowed ? 'STOWED' : s.deployed ? 'DEPLOYED' : 'INTERMEDIATE';\nconst moving = s.motion === 'DEPLOYING' || s.motion === 'STOWING';\nconst armed = Boolean(s.test) && s.hmi !== 'online' && s.status === 'online';\nconst canMove = armed && fresh && !moving && position !== 'CONFLICT';\nconst allowed = { DEPLOY: canMove && position !== 'DEPLOYED', STOW: canMove && position !== 'STOWED', STOP: armed };\n\n// Checked here too, so a click from an old page does not get through.\nlet command = null;\nif (msg.action && allowed[msg.action]) {\n    command = { payload: { schemaVersion: 3, commandId: 'lab-test-' + now, action: msg.action } };\n}\nflow.set('labRamp', s);\nconst ramp = [s.status || 'no report', position, s.motion].filter(Boolean).join(' · ');\nreturn [{ payload: { ramp: ramp, hmi: s.hmi || 'no report', result: s.result || '-',\n    test: Boolean(s.test), allowed: allowed } }, command];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 180,
+        "wires": [
+            [
+                "lab_ramp_ui"
+            ],
+            [
+                "lab_ramp_cmd_out"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_ui",
+        "type": "ui-template",
+        "z": "lab_ramp_tab",
+        "group": "5f2baae0b10e6362",
+        "page": "",
+        "ui": "",
+        "name": "physical ramp panel",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div v-if=\"msg && msg.payload\" class=\"lab-ramp\">\n        <div class=\"row\"><span>Physical ramp (ESP32)</span>\n            <b>{{ msg.payload.ramp }}</b></div>\n        <div class=\"row\"><span>Driver HMI</span><b>{{ msg.payload.hmi }}</b></div>\n        <div class=\"row\"><span>Last result</span><b>{{ msg.payload.result }}</b></div>\n        <label><input type=\"checkbox\" :checked=\"msg.payload.test\" @change=\"send({ test: $event.target.checked })\">\n            Lab test mode (ramp in view, driver HMI offline)</label>\n        <div class=\"buttons\">\n            <button :disabled=\"!msg.payload.allowed.DEPLOY\" @click=\"send({ action: 'DEPLOY' })\">Deploy</button>\n            <button :disabled=\"!msg.payload.allowed.STOW\" @click=\"send({ action: 'STOW' })\">Stow</button>\n            <button :disabled=\"!msg.payload.allowed.STOP\" @click=\"send({ action: 'STOP' })\">Stop</button>\n        </div>\n    </div>\n</template>\n<style scoped>\n.lab-ramp { display: flex; flex-direction: column; gap: 12px; font-size: 1rem; }\n.row { display: flex; justify-content: space-between; gap: 12px; }\n.buttons { display: flex; gap: 8px; }\n.buttons button { flex: 1; padding: 10px; border: none; border-radius: 4px; background: #0094ce; color: white; cursor: pointer; }\n.buttons button:disabled { background: #bdbdbd; cursor: not-allowed; }\n</style>",
+        "storeOutMessages": true,
+        "passthru": false,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 700,
+        "y": 160,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_cmd_out",
+        "type": "mqtt out",
+        "z": "lab_ramp_tab",
+        "name": "ramp command",
+        "topic": "commands/vehicles/BUS-DEMO-01/ramp",
+        "qos": "1",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "sim_broker",
+        "x": 690,
+        "y": 220,
+        "wires": []
     }
 ]
