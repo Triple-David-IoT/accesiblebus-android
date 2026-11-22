@@ -315,7 +315,7 @@ For the Android emulator, the host computer can normally be reached using:
 
 By default the app talks to the laptop that runs Docker Compose and shares a **Windows mobile hotspot**: Windows always gives that laptop `192.168.137.1`, so the API is `http://192.168.137.1:8000/` and the broker `192.168.137.1:1883`. Set the hotspot to the **2.4 GHz** band (the ESP32 ramp node has no 5 GHz radio), join the phones and the ESP32 to it, and allow ports 8000 and 1883 in the Windows firewall.
 
-Any other address goes in **Preferences → Conexión** (API URL, broker host and port), and applies the next time the app starts:
+Any other address goes in **Preferences → Connection** (API URL, broker host and port), and applies the next time the app starts:
 
 | Where the laboratory runs | API URL | Broker host |
 | --- | --- | --- |
