@@ -2,8 +2,6 @@
 package dte.masteriot.accessiblebus.ui.screens
 
 import android.speech.tts.TextToSpeech
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,18 +9,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -33,21 +26,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dte.masteriot.accessiblebus.core.config.AppConfig
 import dte.masteriot.accessiblebus.core.config.AppConfigDefaults
 import dte.masteriot.accessiblebus.core.config.ConnectionProfile
-import dte.masteriot.accessiblebus.core.config.VoiceMode
 import dte.masteriot.accessiblebus.data.AppConfigRepository
 import dte.masteriot.accessiblebus.data.Repository
-import dte.masteriot.accessiblebus.core.config.AccessibilityPreferences
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -62,12 +53,33 @@ fun PreferencesScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    // Entorno que se está editando.
+    val preferencesViewModel: PreferencesViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>
+            ): T {
+                return PreferencesViewModel(repository) as T
+            }
+        }
+    )
+
+    val preferencesUiState by preferencesViewModel.uiState
+        .collectAsState()
+
+    val accessibilityPreferences =
+        preferencesUiState.accessibilityPreferences
+
+    val voiceMode = accessibilityPreferences.voiceMode
+    val vibrationEnabled = accessibilityPreferences.vibrationEnabled
+    val highContrastEnabled = accessibilityPreferences.highContrastEnabled
+
+    // Environment being edited.
     var selectedProfile by remember(profile) {
         mutableStateOf(profile)
     }
 
-    // Entorno que estaba activo al entrar en Preferences.
+    // Environment that was active when Preferences was opened.
     val initialProfile = remember(profile) {
         profile
     }
@@ -86,7 +98,7 @@ fun PreferencesScreen(
         }
     )
 
-    // Campos de conexión.
+    // Connection fields.
     var apiUrl by remember {
         mutableStateOf("")
     }
@@ -110,25 +122,6 @@ fun PreferencesScreen(
     var portError by remember {
         mutableStateOf(false)
     }
-
-    // Preferencias de accesibilidad.
-    var voiceMode by remember {
-        mutableStateOf(VoiceMode.AUTO)
-    }
-
-    var vibrationEnabled by remember {
-        mutableStateOf(true)
-    }
-
-    var highContrastEnabled by remember {
-        mutableStateOf(false)
-    }
-
-    val accessibilityPreferences by repository
-        .accessibilityPreferences()
-        .collectAsState(
-            initial = AccessibilityPreferences()
-        )
 
     // Text-to-Speech.
     var ttsReady by remember {
@@ -161,7 +154,7 @@ fun PreferencesScreen(
         }
     }
 
-    // Actualizar los campos de conexión al cambiar de entorno.
+    // Update connection fields when the environment changes.
     LaunchedEffect(config) {
         apiUrl = config.apiUrl
         mqttHost = config.mqttHost
@@ -172,15 +165,36 @@ fun PreferencesScreen(
         tokenVisible = false
     }
 
-    LaunchedEffect(accessibilityPreferences) {
-        voiceMode = accessibilityPreferences.voiceMode
-        vibrationEnabled =
-            accessibilityPreferences.vibrationEnabled
-        highContrastEnabled =
-            accessibilityPreferences.highContrastEnabled
-    }
-
     val connectionChanged = selectedProfile != initialProfile
+
+    val savePreferences: () -> Unit = {
+        val port = mqttPort.toIntOrNull()
+
+        if (port != null && port in 1..65535) {
+            val updatedConfig = AppConfig(
+                profile = selectedProfile,
+                apiUrl = apiUrl,
+                mqttHost = mqttHost,
+                mqttPort = port,
+                token = token,
+                voiceMode = voiceMode,
+                vibrationEnabled = vibrationEnabled,
+                highContrastEnabled = highContrastEnabled
+            )
+
+            coroutineScope.launch {
+                repository.saveConfig(updatedConfig)
+
+                preferencesViewModel.saveAccessibilityPreferences()
+
+                repository.saveActiveProfile(selectedProfile)
+
+                onBack()
+            }
+        } else {
+            portError = true
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -189,311 +203,109 @@ fun PreferencesScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .heightIn(min = 56.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Preferencias",
+                text = "Preferences",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Normal
             )
 
             // ---------------------------------------------------------
-            // AVISOS
+            // NOTIFICATIONS
             // ---------------------------------------------------------
 
-            Text(
-                text = "Avisos",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium
+            PreferencesSectionTitle(
+                title = "Notifications"
             )
 
             Text(
-                text = "Voz",
+                text = "Voice",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
 
-            // Selector AUTO / ALWAYS / OFF.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(0.dp)
-            ) {
-                VoiceMode.values().forEachIndexed { index, mode ->
-                    val selected = voiceMode == mode
-
-                    val label = when (mode) {
-                        VoiceMode.AUTO -> "AUTO"
-                        VoiceMode.ALWAYS -> "ALWAYS"
-                        VoiceMode.OFF -> "OFF"
-                    }
-
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
-                            .clickable {
-                                voiceMode = mode
-                            },
-                        color = if (selected) {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                        shape = when (index) {
-                            0 -> RoundedCornerShape(
-                                topStart = 24.dp,
-                                bottomStart = 24.dp
-                            )
-
-                            VoiceMode.values().lastIndex ->
-                                RoundedCornerShape(
-                                    topEnd = 24.dp,
-                                    bottomEnd = 24.dp
-                                )
-
-                            else -> RoundedCornerShape(0.dp)
-                        },
-                        border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.outline
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (selected) {
-                                Text(
-                                    text = "✓",
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-
-                                Spacer(
-                                    modifier = Modifier.width(6.dp)
-                                )
-                            }
-
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Medium,
-                                color = if (selected) {
-                                    MaterialTheme.colorScheme.onSecondaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                }
-                            )
-                        }
-                    }
+            VoiceModeSelector(
+                selectedMode = voiceMode,
+                onModeSelected = { mode ->
+                    preferencesViewModel.updateVoiceMode(mode)
                 }
-            }
-
-            Text(
-                text = when (voiceMode) {
-                    VoiceMode.AUTO ->
-                        "AUTO: habla si el teléfono está tapado (bolsillo o bolso). " +
-                                "Si no, texto y vibración."
-
-                    VoiceMode.ALWAYS ->
-                        "ALWAYS: los avisos se reproducen siempre por voz."
-
-                    VoiceMode.OFF ->
-                        "OFF: los avisos se muestran mediante texto y vibración."
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            // Vibración.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "Vibración",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+            VoiceModeDescription(
+                mode = voiceMode
+            )
 
-                    Text(
-                        text = "Vibra cuando llega una decisión del conductor.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            // Vibration.
+            PreferenceSwitchRow(
+                title = "Vibration",
+                description = "Vibrates when a decision from the driver is received.",
+                checked = vibrationEnabled,
+                onCheckedChange = { enabled ->
+                    preferencesViewModel.updateVibration(enabled)
                 }
+            )
 
-                Switch(
-                    checked = vibrationEnabled,
-                    onCheckedChange = {
-                        vibrationEnabled = it
-                    }
-                )
-            }
-
-            // Alto contraste.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "Alto contraste",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Text(
-                        text = "Fondo negro, texto blanco y acciones en amarillo.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            // High contrast.
+            PreferenceSwitchRow(
+                title = "High contrast",
+                description = "Black background, white text and yellow actions.",
+                checked = highContrastEnabled,
+                onCheckedChange = { enabled ->
+                    preferencesViewModel.updateHighContrast(enabled)
                 }
+            )
 
-                Switch(
-                    checked = highContrastEnabled,
-                    onCheckedChange = {
-                        highContrastEnabled = it
-                    }
-                )
-            }
-
-            // Probar voz.
-            Button(
+            // Test voice.
+            TestVoiceButton(
                 onClick = onTestVoice,
-                colors = ButtonDefaults.outlinedButtonColors(),
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outline
-                ),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Text("🔊  Probar voz")
-            }
+                modifier = Modifier.fillMaxWidth()
+            )
 
             // ---------------------------------------------------------
-            // CONEXIÓN
+            // CONNECTION
             // ---------------------------------------------------------
 
             Spacer(
                 modifier = Modifier.height(4.dp)
             )
 
-            Text(
-                text = "Conexión",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium
+            PreferencesSectionTitle(
+                title = "Connection"
             )
 
-            // Selector Laboratory / Course.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(0.dp)
-            ) {
-                listOf(
-                    ConnectionProfile.LABORATORY,
-                    ConnectionProfile.COURSE
-                ).forEachIndexed { index, connectionProfile ->
-                    val selected =
-                        selectedProfile == connectionProfile
-
-                    val label = when (connectionProfile) {
-                        ConnectionProfile.LABORATORY -> "Laboratorio"
-                        ConnectionProfile.COURSE -> "Curso"
-                    }
-
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
-                            .clickable {
-                                selectedProfile = connectionProfile
-                            },
-                        color = if (selected) {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                        shape = when (index) {
-                            0 -> RoundedCornerShape(
-                                topStart = 24.dp,
-                                bottomStart = 24.dp
-                            )
-
-                            else -> RoundedCornerShape(
-                                topEnd = 24.dp,
-                                bottomEnd = 24.dp
-                            )
-                        },
-                        border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.outline
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (selected) {
-                                Text(
-                                    text = "✓",
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-
-                                Spacer(
-                                    modifier = Modifier.width(6.dp)
-                                )
-                            }
-
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
+            // Laboratory / Course selector.
+            ConnectionProfileSelector(
+                selectedProfile = selectedProfile,
+                onProfileSelected = { newProfile ->
+                    selectedProfile = newProfile
                 }
-            }
-
-            // URL API.
-            OutlinedTextField(
-                value = apiUrl,
-                onValueChange = {
-                    apiUrl = it
-                },
-                label = {
-                    Text("URL de la API")
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
             )
 
-            // Host y puerto.
+            // API URL.
+            ConnectionTextField(
+                value = apiUrl,
+                onValueChange = { apiUrl = it },
+                label = "API URL",
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Host and port.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                OutlinedTextField(
+                ConnectionTextField(
                     value = mqttHost,
-                    onValueChange = {
-                        mqttHost = it
-                    },
-                    label = {
-                        Text("Host del broker")
-                    },
-                    modifier = Modifier.weight(1.5f),
-                    singleLine = true
+                    onValueChange = { mqttHost = it },
+                    label = "Broker host",
+                    modifier = Modifier.weight(1.5f)
                 )
 
-                OutlinedTextField(
+                ConnectionTextField(
                     value = mqttPort,
                     onValueChange = {
                         mqttPort = it
@@ -503,132 +315,35 @@ fun PreferencesScreen(
                         portError = it.isNotBlank() &&
                                 (port == null || port !in 1..65535)
                     },
-                    label = {
-                        Text("Puerto")
-                    },
+                    label = "Port",
                     modifier = Modifier.weight(1f),
-                    singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
                     ),
                     isError = portError,
-                    supportingText = {
-                        if (portError) {
-                            Text(
-                                text = "Puerto inválido"
-                            )
-                        }
-                    }
+                    supportingText = if (portError) "Invalid port" else null
                 )
             }
 
-            // Token oculto.
-            OutlinedTextField(
+            // Hidden token.
+            TokenTextField(
                 value = token,
-                onValueChange = {
-                    token = it
-                },
-                label = {
-                    Text("Token")
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                visualTransformation = if (tokenVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                trailingIcon = {
-                    Text(
-                        text = if (tokenVisible) "Ocultar" else "Mostrar",
-                        modifier = Modifier
-                            .clickable {
-                                tokenVisible = !tokenVisible
-                            }
-                            .padding(horizontal = 8.dp),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
+                onValueChange = { token = it },
+                visible = tokenVisible,
+                onVisibilityChange = { tokenVisible = it }
             )
 
-            // Aviso de reinicio.
+            // Restart notice.
             if (connectionChanged) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = "↻  Reinicia la app para aplicar la conexión",
-                        modifier = Modifier.padding(
-                            horizontal = 16.dp,
-                            vertical = 12.dp
-                        ),
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+                ConnectionRestartNotice()
             }
 
-            // Guardar.
-            Button(
-                onClick = {
-                    val port = mqttPort.toIntOrNull()
-
-                    if (port != null && port in 1..65535) {
-                        val updatedConfig = AppConfig(
-                            profile = selectedProfile,
-                            apiUrl = apiUrl,
-                            mqttHost = mqttHost,
-                            mqttPort = port,
-                            token = token,
-                            voiceMode = voiceMode,
-                            vibrationEnabled = vibrationEnabled,
-                            highContrastEnabled = highContrastEnabled
-                        )
-
-                        coroutineScope.launch {
-
-                            repository.saveConfig(updatedConfig)
-
-                            repository.saveAccessibilityPreferences(
-                                AccessibilityPreferences(
-                                    voiceMode = voiceMode,
-                                    vibrationEnabled = vibrationEnabled,
-                                    highContrastEnabled = highContrastEnabled
-                                )
-                            )
-
-                            repository.saveActiveProfile(
-                                selectedProfile
-                            )
-
-                            onBack()
-                        }
-                    } else {
-                        portError = true
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !portError
-            ) {
-                Text("Guardar preferencias")
-            }
-
-            // Volver.
-            Button(
-                onClick = onBack,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(),
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outline
-                ),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Text("Volver")
-            }
+            // Actions.
+            PreferencesActionButtons(
+                onSave = savePreferences,
+                onBack = onBack,
+                saveEnabled = !portError && preferencesUiState.isLoaded
+            )
 
             Spacer(
                 modifier = Modifier.height(12.dp)

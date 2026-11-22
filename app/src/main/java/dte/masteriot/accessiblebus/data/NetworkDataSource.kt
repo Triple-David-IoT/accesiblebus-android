@@ -13,7 +13,7 @@ interface StopsApiService {
 
 object NetworkDataSource {
 
-    // Con "adb reverse tcp:1880 tcp:1880", localhost del emulador = Mac
+    // With "adb reverse tcp:1880 tcp:1880", the emulator's localhost is the host computer
     private const val BASE_URL = "http://localhost:1880/"
 
     private val json = Json { ignoreUnknownKeys = true }

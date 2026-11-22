@@ -9,6 +9,9 @@ import android.os.Bundle
 import android.os.PowerManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import dte.masteriot.accessiblebus.core.config.AccessibilityPreferences
 import dte.masteriot.accessiblebus.navigation.AppNav
 import dte.masteriot.accessiblebus.ui.theme.AppTheme
 
@@ -33,7 +36,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            AppTheme(useHighContrast = false) {
+            val accessibilityPreferences by container.appConfigRepository
+                .accessibilityPreferences()
+                .collectAsState(
+                    initial = AccessibilityPreferences()
+                )
+
+            AppTheme(
+                useHighContrast = accessibilityPreferences.highContrastEnabled
+            ) {
                 AppNav()
             }
         }

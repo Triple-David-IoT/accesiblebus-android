@@ -25,7 +25,7 @@ class TrackingFactsTest {
     @Test
     fun fourSeparateFacts() {
         assertEquals(
-            listOf("Solicitud registrada", "Recibida por el terminal del autobús", "Decisión del conductor", "Cierre"),
+            listOf("Request registered", "Received by the bus terminal", "Driver's decision", "Closure"),
             trackingFacts(pending).map { it.title },
         )
         assertEquals(listOf(true, false, false, false), done(pending))
@@ -35,39 +35,39 @@ class TrackingFactsTest {
     fun receiptIsNotADecision() {
         val received = pending.copy(received = true)
         assertEquals(listOf(true, true, false, false), done(received))
-        assertTrue(texts(received)[1].contains("no significa que el conductor la haya leído"))
-        assertEquals("Pendiente de respuesta del conductor.", texts(received)[2])
+        assertTrue(texts(received)[1].contains("does not mean that the driver has read it"))
+        assertEquals("Waiting for the driver's response.", texts(received)[2])
     }
 
     @Test
     fun proposalMessages() {
-        // Propuesta p. 17, "Mensajes que no engañan".
-        assertEquals("El conductor ha confirmado tu solicitud.", texts(pending.to(RequestState.ACCEPTED, 2))[2])
-        assertEquals("Tu solicitud no se ha podido atender.", texts(pending.to(RequestState.REJECTED, 2, "UNSAFE_STOP"))[2])
+        // Proposal p. 17, "Messages that do not mislead".
+        assertEquals("The driver has confirmed your request.", texts(pending.to(RequestState.ACCEPTED, 2))[2])
+        assertEquals("Your request could not be fulfilled.", texts(pending.to(RequestState.REJECTED, 2, "UNSAFE_STOP"))[2])
         assertEquals(
-            "La parada ha quedado atrás sin confirmación; solicitud cerrada.",
+            "The bus passed the stop without confirmation; the request was closed.",
             texts(pending.to(RequestState.EXPIRED, 2, "STOP_PASSED"))[3],
         )
         assertEquals(
-            "El viaje de demostración ha finalizado; consulta el estado.",
+            "The demonstration trip has ended; check the status.",
             texts(pending.to(RequestState.EXPIRED, 2, "TRIP_ENDED"))[3],
         )
         // Completing is an explicit action of the driver.
-        assertEquals("El conductor ha marcado la asistencia como realizada.", texts(pending.to(RequestState.COMPLETED, 3))[3])
+        assertEquals("The driver has marked the assistance as completed.", texts(pending.to(RequestState.COMPLETED, 3))[3])
     }
 
     @Test
     fun closures() {
         val rejected = pending.to(RequestState.REJECTED, 2, "RAMP_UNAVAILABLE")
-        assertEquals("Solicitud cerrada. Motivo: Rampa no disponible.", texts(rejected)[3])
+        assertEquals("Request closed. Reason: Ramp unavailable.", texts(rejected)[3])
         assertEquals(listOf(true, false, true, true), done(rejected))
 
-        assertEquals("Cancelaste la solicitud.", texts(pending.to(RequestState.CANCELLED, 2))[3])
-        assertEquals("No hubo decisión del conductor.", texts(pending.to(RequestState.CANCELLED, 2))[2])
+        assertEquals("You cancelled the request.", texts(pending.to(RequestState.CANCELLED, 2))[3])
+        assertEquals("There was no decision from the driver.", texts(pending.to(RequestState.CANCELLED, 2))[2])
         // Accepted first (version 2), then cancelled or expired (version 3): the decision stays.
-        assertEquals("El conductor ha confirmado tu solicitud.", texts(pending.to(RequestState.CANCELLED, 3))[2])
-        assertEquals("El conductor ha confirmado tu solicitud.", texts(pending.to(RequestState.EXPIRED, 3, "TRIP_ENDED"))[2])
-        assertEquals("No hubo decisión del conductor.", texts(pending.to(RequestState.EXPIRED, 2, "STOP_PASSED"))[2])
+        assertEquals("The driver has confirmed your request.", texts(pending.to(RequestState.CANCELLED, 3))[2])
+        assertEquals("The driver has confirmed your request.", texts(pending.to(RequestState.EXPIRED, 3, "TRIP_ENDED"))[2])
+        assertEquals("There was no decision from the driver.", texts(pending.to(RequestState.EXPIRED, 2, "STOP_PASSED"))[2])
     }
 
     @Test
