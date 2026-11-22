@@ -50,6 +50,10 @@ import dte.masteriot.accessiblebus.data.Repository
 import dte.masteriot.accessiblebus.core.config.AccessibilityPreferences
 import kotlinx.coroutines.launch
 import java.util.Locale
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.collect
 
 @Composable
 fun PreferencesScreen(
@@ -61,6 +65,27 @@ fun PreferencesScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
+    val preferencesViewModel: PreferencesViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(
+                modelClass: Class<T>
+            ): T {
+                return PreferencesViewModel(repository) as T
+            }
+        }
+    )
+
+    val preferencesUiState by preferencesViewModel.uiState
+        .collectAsState()
+
+    val accessibilityPreferences =
+        preferencesUiState.accessibilityPreferences
+
+    val voiceMode = accessibilityPreferences.voiceMode
+    val vibrationEnabled = accessibilityPreferences.vibrationEnabled
+    val highContrastEnabled = accessibilityPreferences.highContrastEnabled
 
     // Entorno que se está editando.
     var selectedProfile by remember(profile) {
@@ -111,25 +136,6 @@ fun PreferencesScreen(
         mutableStateOf(false)
     }
 
-    // Preferencias de accesibilidad.
-    var voiceMode by remember {
-        mutableStateOf(VoiceMode.AUTO)
-    }
-
-    var vibrationEnabled by remember {
-        mutableStateOf(true)
-    }
-
-    var highContrastEnabled by remember {
-        mutableStateOf(false)
-    }
-
-    val accessibilityPreferences by repository
-        .accessibilityPreferences()
-        .collectAsState(
-            initial = AccessibilityPreferences()
-        )
-
     // Text-to-Speech.
     var ttsReady by remember {
         mutableStateOf(false)
@@ -171,15 +177,7 @@ fun PreferencesScreen(
         portError = false
         tokenVisible = false
     }
-
-    LaunchedEffect(accessibilityPreferences) {
-        voiceMode = accessibilityPreferences.voiceMode
-        vibrationEnabled =
-            accessibilityPreferences.vibrationEnabled
-        highContrastEnabled =
-            accessibilityPreferences.highContrastEnabled
-    }
-
+    
     val connectionChanged = selectedProfile != initialProfile
 
     Surface(
@@ -235,7 +233,7 @@ fun PreferencesScreen(
                             .weight(1f)
                             .height(48.dp)
                             .clickable {
-                                voiceMode = mode
+                                preferencesViewModel.updateVoiceMode(mode)
                             },
                         color = if (selected) {
                             MaterialTheme.colorScheme.secondaryContainer
@@ -331,7 +329,7 @@ fun PreferencesScreen(
                 Switch(
                     checked = vibrationEnabled,
                     onCheckedChange = {
-                        vibrationEnabled = it
+                        preferencesViewModel.updateVibration(it)
                     }
                 )
             }
@@ -359,7 +357,7 @@ fun PreferencesScreen(
                 Switch(
                     checked = highContrastEnabled,
                     onCheckedChange = {
-                        highContrastEnabled = it
+                        preferencesViewModel.updateHighContrast(it)
                     }
                 )
             }
@@ -592,13 +590,7 @@ fun PreferencesScreen(
 
                             repository.saveConfig(updatedConfig)
 
-                            repository.saveAccessibilityPreferences(
-                                AccessibilityPreferences(
-                                    voiceMode = voiceMode,
-                                    vibrationEnabled = vibrationEnabled,
-                                    highContrastEnabled = highContrastEnabled
-                                )
-                            )
+                            preferencesViewModel.saveAccessibilityPreferences()
 
                             repository.saveActiveProfile(
                                 selectedProfile
@@ -611,7 +603,7 @@ fun PreferencesScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !portError
+                enabled = !portError && preferencesUiState.isLoaded
             ) {
                 Text("Guardar preferencias")
             }
