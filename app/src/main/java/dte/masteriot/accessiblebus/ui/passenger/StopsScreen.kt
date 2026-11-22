@@ -34,6 +34,9 @@ import dte.masteriot.accessiblebus.core.net.Snapshot
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.platform.LocalConfiguration
 
 /**
  * Displays the four stops of the demo line, with their CRTM codes and names,
@@ -58,6 +61,11 @@ fun StopsScreen(
 ) {
     val stops by viewModel.stops.collectAsState()
     val snapshot by viewModel.snapshot.collectAsState()
+
+    val configuration = LocalConfiguration.current
+
+    val isLandscape =
+        configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     var showMap by rememberSaveable {
         mutableStateOf(false)
@@ -87,40 +95,81 @@ fun StopsScreen(
             style = MaterialTheme.typography.bodyLarge
         )
 
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedButton(
-                onClick = {
-                    viewModel.loadStops()
-                    viewModel.refresh()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 56.dp)
+        if (isLandscape) {
+            // Horizontal layout when the device is in landscape orientation.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Refresh")
-            }
+                OutlinedButton(
+                    onClick = {
+                        viewModel.loadStops()
+                        viewModel.refresh()
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 56.dp)
+                ) {
+                    Text("Refresh")
+                }
 
-            OutlinedButton(
-                onClick = {
-                    showMap = !showMap
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 56.dp)
-            ) {
-                Text(if (showMap) "View list" else "View map")
-            }
+                OutlinedButton(
+                    onClick = {
+                        showMap = !showMap
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 56.dp)
+                ) {
+                    Text(if (showMap) "View list" else "View map")
+                }
 
-            OutlinedButton(
-                onClick = onPreferences,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 56.dp)
+                OutlinedButton(
+                    onClick = onPreferences,
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 56.dp)
+                ) {
+                    Text("Preferences")
+                }
+            }
+        } else {
+            // Vertical layout when the device is in portrait orientation.
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Preferences")
+                OutlinedButton(
+                    onClick = {
+                        viewModel.loadStops()
+                        viewModel.refresh()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                ) {
+                    Text("Refresh")
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        showMap = !showMap
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                ) {
+                    Text(if (showMap) "View list" else "View map")
+                }
+
+                OutlinedButton(
+                    onClick = onPreferences,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                ) {
+                    Text("Preferences")
+                }
             }
         }
 
