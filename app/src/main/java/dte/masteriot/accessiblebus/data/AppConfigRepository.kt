@@ -25,13 +25,13 @@ class AppConfigRepository(
 ) {
 
     // -------------------------------------------------------------
-    // Claves generales
+    // General keys
     // -------------------------------------------------------------
 
     private val activeProfileKey =
         stringPreferencesKey("active_profile")
 
-    // Preferencias de accesibilidad compartidas.
+    // Shared accessibility preferences.
     private val voiceModeKey =
         stringPreferencesKey("voice_mode")
 
@@ -43,7 +43,7 @@ class AppConfigRepository(
 
 
     // -------------------------------------------------------------
-    // Claves específicas de cada entorno
+    // Keys specific to each environment
     // -------------------------------------------------------------
 
     private fun keyName(
@@ -80,7 +80,7 @@ class AppConfigRepository(
 
 
     // -------------------------------------------------------------
-    // Obtener configuración
+    // Read configuration
     // -------------------------------------------------------------
 
     fun config(
@@ -100,7 +100,7 @@ class AppConfigRepository(
             AppConfig(
                 profile = profile,
 
-                // Configuración específica del entorno.
+                // Environment-specific configuration.
                 apiUrl = preferences[apiUrlKey(profile)]
                     ?: defaults.apiUrl,
 
@@ -113,7 +113,7 @@ class AppConfigRepository(
                 token = preferences[tokenKey(profile)]
                     ?: defaults.token,
 
-                // Preferencias generales de accesibilidad.
+                // General accessibility preferences.
                 voiceMode = preferences[voiceModeKey]
                     ?.let { value ->
                         runCatching {
@@ -162,7 +162,7 @@ class AppConfigRepository(
 
 
     // -------------------------------------------------------------
-    // Guardar configuración
+    // Save configuration
     // -------------------------------------------------------------
 
     suspend fun saveConfig(
@@ -172,10 +172,10 @@ class AppConfigRepository(
 
         context.appConfigDataStore.edit { preferences ->
 
-            // Guardar el entorno.
+            // Save the environment.
             preferences[profileKey(profile)] = profile.name
 
-            // Guardar únicamente los parámetros de conexión.
+            // Save only the connection parameters.
             preferences[apiUrlKey(profile)] = config.apiUrl
 
             preferences[mqttHostKey(profile)] =
@@ -206,7 +206,7 @@ class AppConfigRepository(
     }
 
     // -------------------------------------------------------------
-    // Modificar parámetros de conexión
+    // Change connection parameters
     // -------------------------------------------------------------
 
     suspend fun setApiUrl(
@@ -254,15 +254,15 @@ class AppConfigRepository(
 
 
     // -------------------------------------------------------------
-    // Modificar preferencias de accesibilidad
+    // Change accessibility preferences
     // -------------------------------------------------------------
 
     suspend fun setVoiceMode(
         profile: ConnectionProfile,
         mode: VoiceMode
     ) {
-        // profile se conserva en la firma para no romper
-        // las llamadas existentes.
+        // profile stays in the signature so existing calls
+        // do not break.
         context.appConfigDataStore.edit { preferences ->
             preferences[voiceModeKey] = mode.name
         }
@@ -290,7 +290,7 @@ class AppConfigRepository(
 
 
     // -------------------------------------------------------------
-    // Entorno activo
+    // Active environment
     // -------------------------------------------------------------
 
     fun activeProfile(): Flow<ConnectionProfile> {

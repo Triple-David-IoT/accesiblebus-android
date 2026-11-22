@@ -42,7 +42,7 @@ class AnnouncementCoordinator(
     val uiEvents = uiEventsChannel.receiveAsFlow()
 
     init {
-        // Recibe las decisiones del repositorio.
+        // Receives the decisions from the repository.
         scope.launch {
             for (decision in incoming) {
                 pendingMutex.withLock {
@@ -53,8 +53,8 @@ class AnnouncementCoordinator(
             }
         }
 
-        // Cuando la aplicación vuelve a estar disponible,
-        // intenta procesar las decisiones retenidas.
+        // When the app is available again,
+        // tries to process the held decisions.
         scope.launch {
             processPending()
             availability.collect { isAvailable ->
@@ -106,8 +106,8 @@ class AnnouncementCoordinator(
     }
 
     /**
-     * Devuelve true si la decisión ya se ha procesado.
-     * Devuelve false si debe permanecer pendiente.
+     * Returns true if the decision has been processed.
+     * Returns false if it must stay pending.
      */
     private suspend fun processDecision(
         decision: DecisionEvent
@@ -188,7 +188,7 @@ class AnnouncementCoordinator(
 
     private fun messageFor(decision: DecisionEvent): String? {
 
-        // Mensaje utilizado por el botón "Probar voz".
+        // Message used by the "Test voice" button.
         if (decision.isTest) {
             return "Voice announcements are working."
         }

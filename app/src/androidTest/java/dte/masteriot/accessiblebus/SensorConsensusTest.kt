@@ -25,37 +25,37 @@ class SensorConsensusTest {
             .getInstrumentation()
             .targetContext
 
-        Log.i(TAG, "========== INICIO TEST C08 ==========")
+        Log.i(TAG, "========== START TEST C08 ==========")
 
         val sensorDataSource = SensorDataSource(context)
         val estimator = ContextEstimator(sensorDataSource)
 
-        // Mostrar qué sensores existen en el dispositivo.
+        // Log which sensors the device has.
         sensorDataSource.logSensorAvailability()
 
-        // Ejecutar la estimación real.
+        // Run the real estimation.
         val result: PhoneContext = estimator.estimate()
 
-        Log.i(TAG, "Resultado de estimate(): $result")
+        Log.i(TAG, "estimate() result: $result")
 
-        // La función debe terminar y devolver un contexto.
+        // The function must finish and return a context.
         assertNotNull(result)
 
-        // Tras estimate(), no debe quedar ninguna observación activa.
+        // After estimate(), no listener may remain registered.
         val activeListeners =
             sensorDataSource.activeListenersForTest()
 
         Log.i(
             TAG,
-            "Listeners activos después de estimate(): $activeListeners"
+            "Active listeners after estimate(): $activeListeners"
         )
 
         assertEquals(
-            "Quedan listeners registrados tras estimate()",
+            "Listeners still registered after estimate()",
             0,
             activeListeners
         )
 
-        Log.i(TAG, "========== FIN TEST C08 ==========")
+        Log.i(TAG, "========== END TEST C08 ==========")
     }
 }
