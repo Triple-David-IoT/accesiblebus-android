@@ -71,6 +71,7 @@ class MainActivity : ComponentActivity() {
 
         receiverRegistered = true
         updateAnnouncementAvailability()
+        container.refreshOnReturn()
     }
 
     override fun onResume() {
