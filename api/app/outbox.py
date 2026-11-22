@@ -203,14 +203,6 @@ class OutboxPublisher:
                     topic,
                 )
 
-                delay_ms = int(
-                    os.getenv("OUTBOX_PUBLISH_DELAY_MS", "0")
-                )
-                if delay_ms > 0:
-                    self._stop_event.wait(delay_ms / 1000)
-                    if self._stop_event.is_set():
-                        break
-
                 payload = row["payload"]
                 if not isinstance(payload, str):
                     payload = json.dumps(
@@ -237,6 +229,14 @@ class OutboxPublisher:
                         "Timed out waiting for MQTT PUBACK"
                     )
 
+                # Failure scenarios only (TD05): stopping the API in this window leaves a
+                # published event unmarked, so it is published again after the restart.
+                delay_ms = int(os.getenv("OUTBOX_PUBLISH_DELAY_MS", "0"))
+                if delay_ms > 0:
+                    self._stop_event.wait(delay_ms / 1000)
+                    if self._stop_event.is_set():
+                        break
+
                 cursor.execute(
                     """
                     UPDATE outbox_event
@@ -246,6 +246,8 @@ class OutboxPublisher:
                     """,
                     (row["seq"],),
                 )
+                # One commit per row: a stop loses at most the event in flight.
+                connection.commit()
 
                 logger.info(
                     "outbox.publish.confirmed event_id=%s topic=%s qos=1",

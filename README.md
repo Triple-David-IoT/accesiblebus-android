@@ -65,7 +65,7 @@ The exact image tags are defined in `docker-compose.yml`.
 
 Node-RED Dashboard 2.0 is declared in `nodered/package.json` and installed by `nodered/Dockerfile`.
 
-The flows are `nodered/flows.json`, built into the image: `docker compose up -d --build` loads them, with no copy into the container. A deploy from the editor lasts until the container is recreated, so export it to `nodered/flows.json`.
+The flows are `nodered/flows.json`, built into the image: `docker compose up -d --build` loads them, with no copy into the container. A deploy from the editor lasts until the container is recreated, so export it to `nodered/flows.json`. `docs/nodered-flows.pdf` shows the three flows and what each one does.
 
 ## 5. Environment Configuration
 

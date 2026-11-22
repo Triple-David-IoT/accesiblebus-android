@@ -85,8 +85,10 @@ The helper is added in A03. Message formats belong to the MQTT contract (K2).
 
 ### Outbox publisher
 
-`OUTBOX_PUBLISH_DELAY_MS` is an optional delay, in milliseconds,
-between selecting an outbox event and publishing it.
+Each event is published with QoS 1, and once the broker confirms it (PUBACK) the row is marked
+`published_at` and committed on its own.
 
-It defaults to `0` and can be used in failure scenarios to test
-the outbox behavior while the API or MQTT broker is interrupted.
+`OUTBOX_PUBLISH_DELAY_MS` is an optional delay, in milliseconds, between the PUBACK and that mark.
+It defaults to `0` and exists for the failure scenarios (TD05): stopping the API inside the window
+leaves a published event unmarked, so it is published again after the restart, and consumers drop
+the duplicate by `eventId`.
