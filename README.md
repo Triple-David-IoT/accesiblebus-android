@@ -36,6 +36,7 @@ AccessibleBus/
 │   └── tests/
 │       ├── export_openapi.sh
 │       └── smoke.sh
+├── firmware/                    # Physical ramp node (ESP32); see firmware/README.md
 ├── mosquitto/
 │   └── mosquitto.conf
 ├── nodered/

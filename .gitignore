@@ -35,3 +35,7 @@ node_modules/
 
 # Logs
 *.log
+
+# Physical ramp firmware (PlatformIO): Wi-Fi password and build output stay local
+firmware/ramp_node/secrets.h
+firmware/.pio/
