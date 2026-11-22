@@ -82,7 +82,7 @@ def ensure_scenario(settings: Settings) -> None:
 
 
 def end_active_trip(cursor: Cursor) -> None:
-    """End the active demo trip: its open requests expire and trip.ended is emitted (B05)."""
+    """End the active demo trip: its open requests expire and trip.ended is emitted."""
     cursor.execute("SELECT id FROM trip WHERE vehicle_id = %s AND state = 'ACTIVE' FOR UPDATE", (VEHICLE_ID,))
     for trip in cursor.fetchall():
         end_trip(cursor, trip["id"])

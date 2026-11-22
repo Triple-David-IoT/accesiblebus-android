@@ -1,4 +1,4 @@
-"""Trip progress: pass a stop and end the trip (B05)."""
+"""Trip progress: pass a stop and end the trip."""
 
 from typing import Annotated
 from uuid import UUID, uuid4
@@ -22,7 +22,7 @@ def trip_resource(row: dict) -> dict:
 
 
 def trip_event(cursor: Cursor, event_type: str, row: dict) -> None:
-    """One event for the vehicle and for every owner of a request of this trip (K2)."""
+    """One event for the vehicle and for every owner of a request of this trip."""
     resource = trip_resource(row)
     event_id = uuid4()
     message = {

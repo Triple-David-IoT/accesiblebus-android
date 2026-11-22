@@ -10,7 +10,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The models read the samples captured from the real API (K6) without changes. */
+/** The models read the samples captured from the real API without changes. */
 class ModelsTest {
 
     private fun sample(name: String) = File("src/main/assets/samples/$name").readText()

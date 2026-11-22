@@ -21,7 +21,7 @@ constexpr uint16_t STOW_US = 1440;
 constexpr uint32_t MANEUVER_TIMEOUT_MS = 6000;   // 1.5 x the measured maneuver
 
 constexpr uint32_t DEBOUNCE_MS = 25;
-constexpr uint32_t TELEMETRY_PERIOD_MS = 5000;   // K2: every 5 s and on every switch change
+constexpr uint32_t TELEMETRY_PERIOD_MS = 5000;   // every 5 s and on every switch change
 constexpr uint16_t MQTT_KEEPALIVE_S = 15;
 constexpr uint32_t MQTT_RETRY_MS = 3000;
 constexpr uint32_t WIFI_RETRY_MS = 15000;

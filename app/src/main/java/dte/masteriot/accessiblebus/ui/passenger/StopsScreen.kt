@@ -55,8 +55,8 @@ import androidx.compose.ui.semantics.contentDescription
  * Selecting a stop opens its details. The [onStop] callback receives
  * the CRTM stop code.
  *
- * "View map" displays the same stops on a map (A11).
- * Stop details (A12) are accessed from this screen.
+ * "View map" displays the same stops on a map.
+ * Stop details are opened from this screen.
  */
 @Composable
 fun StopsScreen(

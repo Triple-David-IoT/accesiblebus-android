@@ -24,7 +24,7 @@ data class SensorSnapshot(
 class SensorDataSource(context: Context) {
 
     companion object {
-        private const val TAG = "C08"
+        private const val TAG = "Sensors"
     }
 
     private val activeListenerCount = AtomicInteger(0)

@@ -5,8 +5,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
 
-// Shared app models (K5). They mirror the K1 schemas in contracts/openapi.yaml and the
-// K2 event envelope in contracts/mqtt.md, field for field.
+// Shared app models. They mirror the schemas in contracts/openapi.yaml and the
+// event envelope in contracts/mqtt.md, field for field.
 
 /** One JSON configuration for REST and MQTT, tolerant to fields added by later versions. */
 val ApiJson = Json {
@@ -81,7 +81,7 @@ data class ResetResult(
 )
 
 /**
- * MQTT event envelope (K2). The payload depends on [eventType]: a full AssistanceRequest for
+ * MQTT event envelope. The payload depends on [eventType]: a full AssistanceRequest for
  * request.created and the transitions, a Trip for trip.progressed and trip.ended, and
  * {"received": true} for request.receipt_recorded. Read it with [requestPayload] or [tripPayload].
  */

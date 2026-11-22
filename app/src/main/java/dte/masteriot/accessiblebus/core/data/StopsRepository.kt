@@ -83,7 +83,7 @@ private interface CrtmService {
 }
 
 /**
- * Stops of the demo line (A10). Downloads them from the CRTM service with the A01 query, keeps
+ * Stops of the demo line. Downloads them from the CRTM service (docs/stop-data.md), keeps
  * only code, name and coordinates, sorts them by the manifest and saves a copy in [cacheFile].
  * Without network, or with an incomplete answer, it shows that copy labelled as local; it never
  * makes up a stop that the source did not return.
@@ -99,7 +99,7 @@ class StopsRepository(
     private val _state = MutableStateFlow<StopsState>(StopsState.Loading)
     val state: StateFlow<StopsState> = _state.asStateFlow()
 
-    /** The A01 query: the manifest stops of layer 0, as GeoJSON in WGS84. */
+    /** The query: the manifest stops of layer 0, as GeoJSON in WGS84. */
     val sourceUrl: String = SERVICE.toHttpUrl().newBuilder()
         .addQueryParameter("where", "CODIGOESTACION IN (${manifest.stops.joinToString(",") { "'${it.physicalStopCode}'" }})")
         .addQueryParameter("outFields", "CODIGOESTACION,DENOMINACION")

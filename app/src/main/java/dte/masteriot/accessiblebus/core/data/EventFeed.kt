@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import org.meshtastic.mqtt.ConnectionState
 
-/** Source of the K2 events for one topic. Tests replace it with a fake. */
+/** Source of the MQTT events for one topic. Tests replace it with a fake. */
 interface EventFeed {
     val connected: StateFlow<Boolean>
 
@@ -20,8 +20,7 @@ interface EventFeed {
 }
 
 /**
- * EventFeed over BusMqttClient (B08). MQTTastic reconnects and subscribes again by itself
- * (PV-MQTT, docs/mqttastic.md), so a reconnection only needs the /sync that the repository runs.
+ * EventFeed over BusMqttClient. MQTTastic reconnects and subscribes again by itself, so a reconnection only needs the /sync that the repository runs.
  */
 class MqttEventFeed(private val client: BusMqttClient, scope: CoroutineScope) : EventFeed {
 

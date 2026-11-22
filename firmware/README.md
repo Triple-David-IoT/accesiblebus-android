@@ -1,8 +1,8 @@
 # Physical ramp node (ESP32)
 
 An ESP32 drives a rack-and-pinion ramp (a continuous-rotation SG90 servo and two limit switches,
-"stowed" and "deployed"). It publishes the same K2 telemetry as the Node-RED simulator and takes
-the maneuver commands of the driver's HMI or of the lab dashboard test mode. The MQTT contract is
+"stowed" and "deployed"). It publishes the same ramp telemetry as the Node-RED simulator and takes
+the maneuver commands of the driver's HMI or of the laboratory panel's test mode. The MQTT contract is
 in `contracts/mqtt.md` ("Physical ramp node").
 
 ## Hardware
@@ -59,22 +59,11 @@ calibrate again, change them and flash.
 
 | Topic | Direction | QoS / retain | Content |
 | --- | --- | --- | --- |
-| `telemetry/vehicles/BUS-DEMO-01/ramp` | node → ingest | 0 / no | K2 sample, every 5 s and on every limit switch change |
-| `commands/vehicles/BUS-DEMO-01/ramp` | HMI or dashboard → node | 1 / no | `{"schemaVersion":3,"commandId":"…","action":"DEPLOY"\|"STOW"\|"STOP"}` |
-| `devices/ramp-esp32-01/status` | node → HMI and dashboard | 1 / yes | `online` on connect and Will `offline`, with the `sessionId` of the boot |
-| `devices/ramp-esp32-01/ramps/ramp-phys-01` | node → HMI and dashboard | 0 / no | `position`, `motion`, `fault`, `lastCommandId` and `lastResult` |
+| `telemetry/vehicles/BUS-DEMO-01/ramp` | node → ingest, HMI and laboratory panel | 0 / no | Telemetry sample, every 5 s and on every limit switch change |
+| `commands/vehicles/BUS-DEMO-01/ramp` | HMI or laboratory panel → node | 1 / no | `{"schemaVersion":3,"commandId":"…","action":"DEPLOY"\|"STOW"\|"STOP"}` |
+| `devices/ramp-esp32-01/status` | node → laboratory panel | 1 / yes | `online` on connect and Will `offline`, with the `sessionId` of the boot |
+| `devices/ramp-esp32-01/ramps/ramp-phys-01` | node → HMI and laboratory panel | 0 / no | `position`, `motion`, `fault`, `lastCommandId` and `lastResult` |
 
 - `sessionId` is a new UUID on every boot; `sequence` starts at 1 and grows with every sample.
 - A repeated command (same `commandId`, the last eight) is ignored, because QoS 1 may deliver it
   twice. So is a command without `schemaVersion` 3 or `commandId`.
-
-## Test of 22 Nov 2026
-
-In the laboratory stack, with the test mode of the lab dashboard (`docs/evidence/lab-ramp-test/`):
-
-- DEPLOY, STOP halfway (`INTERMEDIATE`, `STOPPED`), DEPLOY to the limit switch and STOW back.
-- The same `commandId` twice: the second one ignored. A command with `schemaVersion` 2: ignored.
-- Network cut for 35 s on the VM: the broker published the Will `offline` after 22 s (1.5 times
-  the keepalive); when the network came back the node reconnected by itself in 1–2 s and
-  published `online`.
-- At boot the router refused the first Wi-Fi association and the node recovered by itself.

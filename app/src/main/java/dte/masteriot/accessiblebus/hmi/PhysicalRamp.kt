@@ -9,12 +9,11 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /*
- * Physical ramp node (ESP32) driven from the HMI (K2 proposal: commands, node status and
+ * Physical ramp node (ESP32) driven from the HMI (contracts/mqtt.md: commands, node status and
  * actuator state). HmiScreen shows HmiViewModel.ramp in its ramp card and sends HmiViewModel.ramp(action).
  *
- * Until the projection (B03/B13) exists, the position comes straight from the K2 telemetry, with
- * no session or sequence validation. When B13 lands, feed describe() from the projection instead;
- * the commands do not change.
+ * The position comes straight from the node's telemetry, with no session or sequence validation:
+ * the Node-RED projection only covers the simulated ramps.
  */
 
 /** Last limit-switch sample. [receivedAtMs] is a monotonic clock reading. */

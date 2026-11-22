@@ -1,4 +1,4 @@
-"""Identity from the fixed K7 demo tokens. This is laboratory access, not real security."""
+"""Identity from the fixed demo tokens. This is laboratory access, not real security."""
 
 from dataclasses import dataclass
 from enum import StrEnum

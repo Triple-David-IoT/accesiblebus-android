@@ -229,7 +229,7 @@ class OutboxPublisher:
                         "Timed out waiting for MQTT PUBACK"
                     )
 
-                # Failure scenarios only (TD05): stopping the API in this window leaves a
+                # Failure tests only: stopping the API in this window leaves a
                 # published event unmarked, so it is published again after the restart.
                 delay_ms = int(os.getenv("OUTBOX_PUBLISH_DELAY_MS", "0"))
                 if delay_ms > 0:

@@ -3,7 +3,7 @@ package dte.masteriot.accessiblebus.core.data
 import android.content.Context
 import dte.masteriot.accessiblebus.core.net.RequestState
 
-/** A decision on one of the user's requests, announced once by voice and vibration (K5). */
+/** A decision on one of the user's requests, announced once by voice and vibration. */
 data class DecisionEvent(
     val requestId: String,
     val version: Int,

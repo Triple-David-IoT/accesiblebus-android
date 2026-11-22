@@ -32,7 +32,7 @@ class ContextEstimator(
         val snapshot = result ?: latestSnapshot
 
         Log.d(
-            "C08",
+            "Sensors",
             "Sensor snapshot: lightRegistered=${snapshot.lightRegistered}, " +
                     "lightLux=${snapshot.lightLux}, " +
                     "proximityRegistered=${snapshot.proximityRegistered}, " +
@@ -121,7 +121,7 @@ class ContextEstimator(
     ): PhoneContext {
         val near = sensorDataSource.isNear(proximity)
 
-        Log.d("C08", "lux=$lux, proximity=$proximity, near=$near")
+        Log.d("Sensors", "lux=$lux, proximity=$proximity, near=$near")
 
         return when {
             near && lux < L_OSC ->

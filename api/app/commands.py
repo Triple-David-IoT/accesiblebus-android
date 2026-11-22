@@ -1,4 +1,4 @@
-"""Assistance request commands and reads (A05).
+"""Assistance request commands and reads.
 
 Every command runs inside run_command: one transaction that reserves the idempotency key,
 applies the change, writes the outbox rows and stores the response. Either all of it is
@@ -27,7 +27,7 @@ UNAUTHORIZED = {"model": ErrorResponse, "description": "Missing or unknown token
 FORBIDDEN = {"model": ErrorResponse, "description": "The token's role or identity cannot do this"}
 NOT_FOUND = {"model": ErrorResponse, "description": "The resource does not exist"}
 
-# The request resource of K1, with the driver used for permission checks.
+# The request resource of the REST contract, with the driver used for permission checks.
 REQUEST_SELECT = """
     SELECT r.id, v.trip_id, t.vehicle_id, t.driver_subject, r.owner_subject,
            r.stop_visit_id, v.sequence, v.physical_stop_code, r.assistance_type,
@@ -177,7 +177,7 @@ def post_request(
 
 
 def request_event(cursor: Cursor, event_type: str, resource: dict, event_id: UUID | None = None) -> None:
-    """Write one request event for the owner and the vehicle, with the full resource (K2)."""
+    """Write one request event for the owner and the vehicle, with the full resource (contracts/mqtt.md)."""
     event_id = event_id or uuid4()
     message = {
         "schemaVersion": MESSAGE_SCHEMA_VERSION,
@@ -195,7 +195,7 @@ def request_event(cursor: Cursor, event_type: str, resource: dict, event_id: UUI
 def change_state(cursor: Cursor, request_id: UUID, new_state: str, reason: str | None, event_type: str) -> dict:
     """Apply a state change that was already validated, raise the version and write its event.
 
-    The caller must hold the trip and request locks. B05 reuses it to close requests on
+    The caller must hold the trip and request locks. Trip progress reuses it to close requests on
     advance and end, with EXPIRED and STOP_PASSED or TRIP_ENDED.
     """
     cursor.execute(

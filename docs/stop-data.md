@@ -1,10 +1,10 @@
-# Stop data (PV-DATOS, A01)
+# Stop data
 
-Query checked on 6 November 2026. The service data has `FECHAACTUAL = 20260529`.
+The four stops of the demo line come from the open data of the Madrid transport consortium (CRTM). Query checked on 6 November 2026; the service data has `FECHAACTUAL = 20260529`.
 
 ## Selection
 
-Line **27**, direction **2** (Plaza de Castilla → Glorieta de Embajadores), itinerary `369441`, consecutive stops 21 to 24 of the `M6_ParadasPorItinerario` table. The API (A04) and the app (A10) share this selection through [`contracts/manifest.json`](../contracts/manifest.json).
+Line **27**, direction **2** (Plaza de Castilla → Glorieta de Embajadores), itinerary `369441`, consecutive stops 21 to 24 of the `M6_ParadasPorItinerario` table. The API and the app share this selection through [`contracts/manifest.json`](../contracts/manifest.json).
 
 | Trip sequence | Itinerary order | `CODIGOESTACION` | `DENOMINACION` (CRTM) | EMT stop code | EMT stop name |
 | --- | --- | --- | --- | --- | --- |
@@ -13,9 +13,9 @@ Line **27**, direction **2** (Plaza de Castilla → Glorieta de Embajadores), it
 | 3 | 23 | `460` | Pº PRADO-PZA.PLATERIA MTNEZ. | `79` | Museo del Prado-Jardín Botánico |
 | 4 | 24 | `461` | Pº PRADO-ATOCHA | `81` | Prado-Atocha |
 
-These stops replace the first selection on Paseo de la Castellana for three reasons:
+These stops were chosen for three reasons:
 
-- **They exist in both sources.** Two of the previous stops, EMT codes `56` and `52`, were reported as unavailable or nonexistent by EMT and were missing from its current list for line 27.
+- **They exist in both sources**, the CRTM and the EMT, with matching codes.
 - **Several lines serve them.** Lines `001`, `14`, `27`, `37`, `45` and `C03` run through all four, which makes live testing easier.
 - **They are close together.** The stops are 295 to 343 m apart, so all four fit well on the map.
 
@@ -61,7 +61,3 @@ The real response is in [`contracts/samples/stops.geojson`](../contracts/samples
 2. **Join by `CODIGOESTACION`.** Do not use `OBJECTID`, which this response does not include.
 3. **Do not mix the codes.** `physicalStopCode` is the CRTM `CODIGOESTACION`. `emtStopCode` is the public EMT number (`CODIGOEMPRESA`). Sent to the EMT API, a CRTM code can return a different stop.
 4. **Check that all four stops arrive** before accepting the download.
-
-## Not verified
-
-The query ran from a laptop. Downloading from the Android device, including its certificates, belongs to A10. The EMT stop names and codes were checked against its API once, close to midnight.
