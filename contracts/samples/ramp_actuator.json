@@ -7,8 +7,5 @@
   "motion": "STOWING",
   "fault": "NONE",
   "lastCommandId": "b8aeadac-76fe-40a1-984c-120cb8d0c18b",
-  "lastResult": "STARTED",
-  "deployUs": 1560,
-  "stowUs": 1440,
-  "timeoutMs": 6000
+  "lastResult": "STARTED"
 }
