@@ -61,50 +61,55 @@ fun StopDetailScreen(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
-            stop?.name ?: "Stop $stopCode",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.semantics {
-                heading()
-            }
-        )
-
-        Text(
-            "CRTM code: $stopCode",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        stop?.let {
+        Column(
+            modifier = Modifier.semantics(mergeDescendants = true) {},
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Text(
-                "EMT stop number: ${it.emtStopCode}",
+                stop?.name ?: "Stop $stopCode",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.semantics {
+                    heading()
+                }
+            )
+
+            Text(
+                "CRTM code: $stopCode",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            stop?.let {
+                Text(
+                    "EMT stop number: ${it.emtStopCode}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
+            Text(
+                "Line 27 · Plaza de Castilla → Glorieta de Embajadores",
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            val visit = when (status) {
+                is VisitStatus.Available -> status.visit
+                is VisitStatus.Open -> status.visit
+                is VisitStatus.Passed -> status.visit
+                is VisitStatus.Ended -> status.visit
+                VisitStatus.NoVisit -> null
+            }
+
+            visit?.let {
+                Text(
+                    "Laboratory trip: stop ${it.sequence} of ${snapshot.stopVisits.size}",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+
+            Text(
+                statusText(status),
                 style = MaterialTheme.typography.bodyLarge
             )
         }
-
-        Text(
-            "Line 27 · Plaza de Castilla → Glorieta de Embajadores",
-            style = MaterialTheme.typography.bodyLarge
-        )
-
-        val visit = when (status) {
-            is VisitStatus.Available -> status.visit
-            is VisitStatus.Open -> status.visit
-            is VisitStatus.Passed -> status.visit
-            is VisitStatus.Ended -> status.visit
-            VisitStatus.NoVisit -> null
-        }
-
-        visit?.let {
-            Text(
-                "Laboratory trip: stop ${it.sequence} of ${snapshot.stopVisits.size}",
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
-
-        Text(
-            statusText(status),
-            style = MaterialTheme.typography.bodyLarge
-        )
 
         when (status) {
             is VisitStatus.Available -> {

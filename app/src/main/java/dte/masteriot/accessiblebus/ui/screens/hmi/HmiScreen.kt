@@ -148,7 +148,9 @@ fun HmiScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .semantics(mergeDescendants = true) {},
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
@@ -347,25 +349,29 @@ private fun RequestRow(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                "Stop ${r.physicalStopCode} · visit ${r.sequence}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Column(
+                modifier = Modifier.semantics(mergeDescendants = true) {}
+            ) {
+                Text(
+                    "Stop ${r.physicalStopCode} · visit ${r.sequence}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
 
-            Text(
-                if (r.received) {
-                    "Received by terminal"
-                } else {
-                    "Not yet confirmed by terminal"
-                },
-                style = MaterialTheme.typography.bodyMedium
-            )
+                Text(
+                    if (r.received) {
+                        "Received by terminal"
+                    } else {
+                        "Not yet confirmed by terminal"
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
 
-            Text(
-                "Status: ${r.state}",
-                style = MaterialTheme.typography.bodyMedium
-            )
+                Text(
+                    "Status: ${r.state}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
 
             actions()
         }

@@ -66,33 +66,38 @@ fun ConfirmScreen(
         LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     val details: @Composable ColumnScope.() -> Unit = {
-        Text(
-            text = "Confirm assistance",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.semantics { heading() }
-        )
+        Column(
+            modifier = Modifier.semantics(mergeDescendants = true) {},
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Confirm assistance",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.semantics { heading() }
+            )
 
-        Text(
-            text = stop?.name ?: "Stop ${visit?.physicalStopCode ?: "unknown"}",
-            style = MaterialTheme.typography.titleLarge
-        )
+            Text(
+                text = stop?.name ?: "Stop ${visit?.physicalStopCode ?: "unknown"}",
+                style = MaterialTheme.typography.titleLarge
+            )
 
-        Text(
-            text = "CRTM code ${visit?.physicalStopCode ?: "-"}" +
-                    (stop?.let { " · EMT ${it.emtStopCode}" } ?: ""),
-            style = MaterialTheme.typography.bodyLarge
-        )
+            Text(
+                text = "CRTM code ${visit?.physicalStopCode ?: "-"}" +
+                        (stop?.let { " · EMT ${it.emtStopCode}" } ?: ""),
+                style = MaterialTheme.typography.bodyLarge
+            )
 
-        Text(
-            text = "Line 27, laboratory trip, stop ${visit?.sequence ?: "-"} " +
-                    "of ${snapshot.stopVisits.size}",
-            style = MaterialTheme.typography.bodyLarge
-        )
+            Text(
+                text = "Line 27, laboratory trip, stop ${visit?.sequence ?: "-"} " +
+                        "of ${snapshot.stopVisits.size}",
+                style = MaterialTheme.typography.bodyLarge
+            )
 
-        Text(
-            text = "Assistance: boarding ramp",
-            style = MaterialTheme.typography.bodyLarge
-        )
+            Text(
+                text = "Assistance: boarding ramp",
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
     }
 
     val actions: @Composable ColumnScope.() -> Unit = {

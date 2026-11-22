@@ -128,27 +128,32 @@ fun TrackingScreen(
                 request.physicalStopCode
             )?.name
 
-            Text(
-                name ?: "Stop ${request.physicalStopCode}",
-                style = MaterialTheme.typography.titleLarge
-            )
-
-            Text(
-                "CRTM code ${request.physicalStopCode} · " +
-                        "stop ${request.sequence} of the laboratory trip · " +
-                        "boarding ramp",
-                style = MaterialTheme.typography.bodyLarge,
-            )
-
-            if (tripFinished(snapshot, request)) {
+            Column(
+                modifier = Modifier.semantics(mergeDescendants = true) {},
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Text(
-                    "The demonstration trip has finished; check the status.",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.semantics {
-                        liveRegion = LiveRegionMode.Polite
-                    },
+                    name ?: "Stop ${request.physicalStopCode}",
+                    style = MaterialTheme.typography.titleLarge
                 )
+
+                Text(
+                    "CRTM code ${request.physicalStopCode} · " +
+                            "stop ${request.sequence} of the laboratory trip · " +
+                            "boarding ramp",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+
+                if (tripFinished(snapshot, request)) {
+                    Text(
+                        "The demonstration trip has finished; check the status.",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.semantics {
+                            liveRegion = LiveRegionMode.Polite
+                        },
+                    )
+                }
             }
 
             trackingFacts(request).forEach {

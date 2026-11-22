@@ -268,6 +268,7 @@ private fun StopRow(
             .clickable(role = Role.Button) {
                 onStop(stop.code)
             }
+            .semantics(mergeDescendants = true) {}
             .heightIn(min = 56.dp)
             .padding(vertical = 16.dp)
     ) {
