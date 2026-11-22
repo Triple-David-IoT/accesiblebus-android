@@ -7,6 +7,188 @@
         "info": ""
     },
     {
+        "id": "f091a826ae3d1ecb",
+        "type": "tab",
+        "label": "B04 operation dashboard",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "sim_broker",
+        "type": "mqtt-broker",
+        "name": "Mosquitto (compose)",
+        "broker": "mosquitto",
+        "port": "1883",
+        "clientid": "nodered",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "15",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "closeTopic": "",
+        "willTopic": "",
+        "willQos": "0",
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "71c4b08b00e1297f",
+        "type": "ui-base",
+        "name": "My Dashboard",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "default",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": 1,
+        "showDisconnectNotification": true,
+        "allowInstall": false
+    },
+    {
+        "id": "28770f0ba13aa9bc",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "0a0462dc690d74f0",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "@flowfuse/node-red-dashboard": "1.29.0"
+        }
+    },
+    {
+        "id": "f07cf00afdce6610",
+        "type": "ui-page",
+        "name": "Simulators",
+        "ui": "71c4b08b00e1297f",
+        "path": "/page1",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "28770f0ba13aa9bc",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "48e5e96c325fdb8c",
+        "type": "ui-group",
+        "name": "Operation",
+        "page": "f07cf00afdce6610",
+        "width": 6,
+        "height": 1,
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "5f2baae0b10e6362",
+        "type": "ui-group",
+        "name": "B04 Ramps",
+        "page": "f07cf00afdce6610",
+        "width": 6,
+        "height": 1,
+        "order": 2,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "a16095d2a10f8a91",
+        "type": "ui-group",
+        "name": "B04 HMI presence",
+        "page": "f07cf00afdce6610",
+        "width": 6,
+        "height": 1,
+        "order": 3,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "d0db52af74b7fee3",
+        "type": "ui-group",
+        "name": "B04 Requests",
+        "page": "f07cf00afdce6610",
+        "width": 6,
+        "height": 1,
+        "order": 4,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "b5814d66f34d7fe2",
+        "type": "ui-group",
+        "name": "B04 Demo",
+        "page": "f07cf00afdce6610",
+        "width": 6,
+        "height": 1,
+        "order": 5,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
         "id": "sim_init_inj",
         "type": "inject",
         "z": "sim_tab",
@@ -461,7 +643,7 @@
         "group": "48e5e96c325fdb8c",
         "name": "Contradiction",
         "label": "Contradiction",
-        "order": 1,
+        "order": 2,
         "width": 0,
         "height": 0,
         "emulateClick": false,
@@ -500,7 +682,7 @@
         "group": "48e5e96c325fdb8c",
         "name": "Normal",
         "label": "Normal",
-        "order": 6,
+        "order": 7,
         "width": 0,
         "height": 0,
         "emulateClick": false,
@@ -539,7 +721,7 @@
         "group": "48e5e96c325fdb8c",
         "name": "Duplicate",
         "label": "Duplicate",
-        "order": 7,
+        "order": 8,
         "width": 0,
         "height": 0,
         "emulateClick": false,
@@ -578,7 +760,7 @@
         "group": "48e5e96c325fdb8c",
         "name": "Out of order",
         "label": "Out of order",
-        "order": 5,
+        "order": 6,
         "width": 0,
         "height": 0,
         "emulateClick": false,
@@ -617,7 +799,7 @@
         "group": "48e5e96c325fdb8c",
         "name": "Cut / resume",
         "label": "Cut / resume",
-        "order": 4,
+        "order": 5,
         "width": 0,
         "height": 0,
         "emulateClick": false,
@@ -656,7 +838,7 @@
         "group": "48e5e96c325fdb8c",
         "name": "Incomplete",
         "label": "Incomplete",
-        "order": 3,
+        "order": 4,
         "width": 0,
         "height": 0,
         "emulateClick": false,
@@ -695,7 +877,7 @@
         "group": "48e5e96c325fdb8c",
         "name": "Restart",
         "label": "Restart",
-        "order": 2,
+        "order": 3,
         "width": 0,
         "height": 0,
         "emulateClick": false,
@@ -735,7 +917,7 @@
         "name": "",
         "label": "Select Option:",
         "tooltip": "",
-        "order": 0,
+        "order": 1,
         "width": 0,
         "height": 0,
         "passthru": false,
@@ -819,7 +1001,7 @@
         "type": "function",
         "z": "sim_tab",
         "name": "ingest and project",
-        "func": "const NODES = { 'BUS-DEMO-01': 'ramp-node-01', 'BUS-DEMO-02': 'ramp-node-02' };\nconst expected = flow.get('expected');\nif (!expected) { return null; }\n\nfunction freshState() {\n  return { lastSeq: 0, age: 0, hasSample: false, stowed: false, deployed: false, position: 'UNKNOWN', quality: 'STALE', sincePublish: 0, discards: { schema: 0, session: 0, duplicate: 0, order: 0 } };\n}\nfunction getState(nodeId) {\n  return flow.get('ingest_' + nodeId) || freshState();\n}\nfunction derive(st) {\n  if (!st.hasSample || st.age >= 15) { return ['UNKNOWN', 'STALE']; }\n  if (st.stowed && st.deployed) { return ['UNKNOWN', 'INVALID']; }\n  if (st.stowed) { return ['STOWED', 'VALID']; }\n  if (st.deployed) { return ['DEPLOYED', 'VALID']; }\n  return ['INTERMEDIATE', 'VALID'];\n}\nfunction publish(vehicleId, nodeId, st) {\n  const p = flow.get('proj_' + vehicleId);\n  if (!p) { return null; }\n  const d = derive(st);\n  st.position = d[0];\n  st.quality = d[1];\n  st.sincePublish = 0;\n  p.projectionSequence += 1;\n  flow.set('proj_' + vehicleId, p);\n  flow.set('ingest_' + nodeId, st);\n  return { topic: 'vehicles/' + vehicleId + '/ramp/state', payload: { schemaVersion: 3, vehicleId: vehicleId, projectionRunId: p.runId, projectionSequence: p.projectionSequence, sourceSequence: st.lastSeq, position: st.position, quality: st.quality } };\n}\n\nconst out = [];\nconst events = [];\n\nif (msg.kind === 'tick') {\n  for (const vehicleId in NODES) {\n    const nodeId = NODES[vehicleId];\n    const st = getState(nodeId);\n    if (st.hasSample) { st.age += 1; }\n    st.sincePublish += 1;\n    const d = derive(st);\n    if (d[0] !== st.position || d[1] !== st.quality || st.sincePublish >= 5) {\n      const m = publish(vehicleId, nodeId, st);\n      if (m) { out.push(m); }\n    } else {\n      flow.set('ingest_' + nodeId, st);\n    }\n  }\n} else if (msg.payload === 'restart') {\n  const nodeId = NODES[msg.topic];\n  if (nodeId) {\n    const m = publish(msg.topic, nodeId, freshState());\n    if (m) { out.push(m); }\n  }\n} else if (typeof msg.topic === 'string' && msg.topic.indexOf('telemetry/vehicles/') === 0) {\n  const topicVehicle = msg.topic.split('/')[2];\n  const nodeId = NODES[topicVehicle];\n  let s = msg.payload;\n  if (typeof s === 'string') {\n    try { s = JSON.parse(s); } catch (e) { s = null; }\n  }\n  const discard = function (reason) {\n    if (nodeId) {\n      const st0 = getState(nodeId);\n      st0.discards[reason] += 1;\n      flow.set('ingest_' + nodeId, st0);\n    }\n    events.push({ topic: msg.topic, payload: { discarded: reason, sample: s } });\n  };\n  const wellFormed = s !== null && typeof s === 'object' && s.schemaVersion === 3 &&\n    typeof s.nodeId === 'string' && typeof s.vehicleId === 'string' && typeof s.sessionId === 'string' &&\n    Number.isInteger(s.sequence) && s.sequence > 0 && typeof s.sourceMode === 'string' &&\n    typeof s.stowedLimit === 'boolean' && typeof s.deployedLimit === 'boolean';\n  if (!nodeId || !wellFormed || s.vehicleId !== topicVehicle || s.nodeId !== nodeId) {\n    discard('schema');\n  } else if (s.sessionId !== expected[nodeId]) {\n    discard('session');\n  } else {\n    const st = getState(nodeId);\n    if (s.sequence === st.lastSeq) {\n      discard('duplicate');\n    } else if (s.sequence < st.lastSeq) {\n      discard('order');\n    } else {\n      st.lastSeq = s.sequence;\n      st.age = 0;\n      st.hasSample = true;\n      st.stowed = s.stowedLimit;\n      st.deployed = s.deployedLimit;\n      const d = derive(st);\n      if (d[0] !== st.position || d[1] !== st.quality) {\n        const m = publish(topicVehicle, nodeId, st);\n        if (m) { out.push(m); }\n      } else {\n        flow.set('ingest_' + nodeId, st);\n      }\n    }\n  }\n}\nreturn [out.length > 0 ? out : null, events.length > 0 ? events : null];",
+        "func": "const NODES = { 'BUS-DEMO-01': 'ramp-node-01', 'BUS-DEMO-02': 'ramp-node-02' };\nconst expected = flow.get('expected');\nif (!expected) { return null; }\n\nfunction freshState() {\n  return { lastSeq: 0, age: 0, hasSample: false, stowed: false, deployed: false, position: 'UNKNOWN', quality: 'STALE', sincePublish: 0, discards: { schema: 0, session: 0, duplicate: 0, order: 0 } };\n}\nfunction getState(nodeId) {\n  return flow.get('ingest_' + nodeId) || freshState();\n}\nfunction derive(st) {\n  if (!st.hasSample || st.age >= 15) { return ['UNKNOWN', 'STALE']; }\n  if (st.stowed && st.deployed) { return ['UNKNOWN', 'INVALID']; }\n  if (st.stowed) { return ['STOWED', 'VALID']; }\n  if (st.deployed) { return ['DEPLOYED', 'VALID']; }\n  return ['INTERMEDIATE', 'VALID'];\n}\nfunction publish(vehicleId, nodeId, st) {\n  const p = flow.get('proj_' + vehicleId);\n  if (!p) { return null; }\n  const d = derive(st);\n  st.position = d[0];\n  st.quality = d[1];\n  st.sincePublish = 0;\n  p.projectionSequence += 1;\n  flow.set('proj_' + vehicleId, p);\n  flow.set('ingest_' + nodeId, st);\n  return { topic: 'vehicles/' + vehicleId + '/ramp/state', payload: { schemaVersion: 3, vehicleId: vehicleId, projectionRunId: p.runId, projectionSequence: p.projectionSequence, sourceSequence: st.lastSeq, position: st.position, quality: st.quality } };\n}\n\nconst out = [];\nconst events = [];\n\nif (msg.kind === 'tick') {\n  for (const vehicleId in NODES) {\n    const nodeId = NODES[vehicleId];\n    const st = getState(nodeId);\n    if (st.hasSample) { st.age += 1; }\n    st.sincePublish += 1;\n    const d = derive(st);\n    if (d[0] !== st.position || d[1] !== st.quality || st.sincePublish >= 5) {\n      const m = publish(vehicleId, nodeId, st);\n      if (m) { out.push(m); }\n    } else {\n      flow.set('ingest_' + nodeId, st);\n    }\n  }\n} else if (msg.payload === 'restart') {\n  const nodeId = NODES[msg.topic];\n  if (nodeId) {\n    const m = publish(msg.topic, nodeId, freshState());\n    if (m) { out.push(m); }\n  }\n} else if (typeof msg.topic === 'string' && msg.topic.indexOf('telemetry/vehicles/') === 0) {\n  const topicVehicle = msg.topic.split('/')[2];\n  const nodeId = NODES[topicVehicle];\n  let s = msg.payload;\n  if (typeof s === 'string') {\n    try { s = JSON.parse(s); } catch (e) { s = null; }\n  }\n  // The physical node shares the vehicle topic; the projection only uses the simulator.\n  if (nodeId && s !== null && typeof s === 'object' && s.sourceMode === 'PHYSICAL' && s.nodeId !== nodeId) { return null; }\n  const discard = function (reason) {\n    if (nodeId) {\n      const st0 = getState(nodeId);\n      st0.discards[reason] += 1;\n      flow.set('ingest_' + nodeId, st0);\n    }\n    events.push({ topic: msg.topic, payload: { discarded: reason, sample: s } });\n  };\n  const wellFormed = s !== null && typeof s === 'object' && s.schemaVersion === 3 &&\n    typeof s.nodeId === 'string' && typeof s.vehicleId === 'string' && typeof s.sessionId === 'string' &&\n    Number.isInteger(s.sequence) && s.sequence > 0 && typeof s.sourceMode === 'string' &&\n    typeof s.stowedLimit === 'boolean' && typeof s.deployedLimit === 'boolean';\n  if (!nodeId || !wellFormed || s.vehicleId !== topicVehicle || s.nodeId !== nodeId) {\n    discard('schema');\n  } else if (s.sessionId !== expected[nodeId]) {\n    discard('session');\n  } else {\n    const st = getState(nodeId);\n    if (s.sequence === st.lastSeq) {\n      discard('duplicate');\n    } else if (s.sequence < st.lastSeq) {\n      discard('order');\n    } else {\n      st.lastSeq = s.sequence;\n      st.age = 0;\n      st.hasSample = true;\n      st.stowed = s.stowedLimit;\n      st.deployed = s.deployedLimit;\n      const d = derive(st);\n      if (d[0] !== st.position || d[1] !== st.quality) {\n        const m = publish(topicVehicle, nodeId, st);\n        if (m) { out.push(m); }\n      } else {\n        flow.set('ingest_' + nodeId, st);\n      }\n    }\n  }\n}\nreturn [out.length > 0 ? out : null, events.length > 0 ? events : null];",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -873,119 +1055,692 @@
         "wires": []
     },
     {
-        "id": "sim_broker",
-        "type": "mqtt-broker",
-        "name": "Mosquitto (compose)",
-        "broker": "mosquitto",
-        "port": "1883",
-        "clientid": "nodered",
-        "autoConnect": true,
-        "usetls": false,
-        "protocolVersion": "4",
-        "keepalive": "15",
-        "cleansession": true,
-        "autoUnsubscribe": true,
-        "birthTopic": "",
-        "closeTopic": "",
-        "willTopic": "",
-        "userProps": "",
-        "sessionExpiry": ""
+        "id": "c8333d1a854f3e71",
+        "type": "mqtt in",
+        "z": "f091a826ae3d1ecb",
+        "name": "",
+        "topic": "vehicles/+/ramp/state",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 200,
+        "y": 160,
+        "wires": [
+            [
+                "312134063fc213df"
+            ]
+        ]
     },
     {
-        "id": "48e5e96c325fdb8c",
-        "type": "ui-group",
-        "name": "Operation",
-        "page": "f07cf00afdce6610",
-        "width": 6,
-        "height": 1,
-        "order": 1,
-        "showTitle": true,
+        "id": "312134063fc213df",
+        "type": "function",
+        "z": "f091a826ae3d1ecb",
+        "name": "ramp state per vehicle",
+        "func": "const p = msg.payload;\nif (!p || typeof p !== 'object' || !p.vehicleId) { return null; }\nconst text = p.position + ' · ' + p.quality +\n    ' · projection ' + p.projectionSequence + ' (sample ' + p.sourceSequence + ')' +\n    ' · run ' + String(p.projectionRunId).slice(0, 8) +\n    ' · received ' + new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' });\nif (p.vehicleId === 'BUS-DEMO-01') { return [{ payload: text }, null]; }\nif (p.vehicleId === 'BUS-DEMO-02') { return [null, { payload: text }]; }\nreturn null;",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 160,
+        "wires": [
+            [
+                "41f5ae8203b70208"
+            ],
+            [
+                "acd1653f2acdc7e4"
+            ]
+        ]
+    },
+    {
+        "id": "acd1653f2acdc7e4",
+        "type": "ui-text",
+        "z": "f091a826ae3d1ecb",
+        "group": "5f2baae0b10e6362",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "BUS-DEMO-02",
+        "label": "BUS-DEMO-02",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": true,
         "className": "",
-        "visible": "true",
-        "disabled": "false",
-        "groupType": "default"
+        "value": "payload",
+        "valueType": "msg",
+        "x": 600,
+        "y": 220,
+        "wires": []
     },
     {
-        "id": "f07cf00afdce6610",
-        "type": "ui-page",
-        "name": "Simulators",
-        "ui": "71c4b08b00e1297f",
-        "path": "/page1",
-        "icon": "home",
-        "layout": "grid",
-        "theme": "28770f0ba13aa9bc",
-        "breakpoints": [
+        "id": "41f5ae8203b70208",
+        "type": "ui-text",
+        "z": "f091a826ae3d1ecb",
+        "group": "5f2baae0b10e6362",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "name": "BUS-DEMO-01",
+        "label": "BUS-DEMO-01",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": true,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 600,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "1a0b6755ca97dd3b",
+        "type": "mqtt in",
+        "z": "f091a826ae3d1ecb",
+        "name": "",
+        "topic": "vehicles/+/presence",
+        "qos": "1",
+        "datatype": "auto-detect",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 190,
+        "y": 360,
+        "wires": [
+            [
+                "e1ecead4ebed6c30"
+            ]
+        ]
+    },
+    {
+        "id": "e1ecead4ebed6c30",
+        "type": "function",
+        "z": "f091a826ae3d1ecb",
+        "name": "HMI presence text",
+        "func": "const p = msg.payload;\nif (!p || !p.status) { return null; }\nconst id = msg.topic.split('/')[1];\nmsg.payload = id + ': ' + p.status + ' · terminal ' + p.terminalId +\n    ' · reported ' + (p.reportedAt || 'no date (Will)') +\n    ' · received ' + new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' });\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 360,
+        "wires": [
+            [
+                "885e6116506bab44"
+            ]
+        ]
+    },
+    {
+        "id": "885e6116506bab44",
+        "type": "ui-text",
+        "z": "f091a826ae3d1ecb",
+        "group": "a16095d2a10f8a91",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "name": "HMI presence (last report)",
+        "label": "HMI presence (last report)",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": true,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 690,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "94f981c68513311f",
+        "type": "inject",
+        "z": "f091a826ae3d1ecb",
+        "name": "Sync at deploy",
+        "props": [
             {
-                "name": "Default",
-                "px": "0",
-                "cols": "3"
+                "p": "payload"
             },
             {
-                "name": "Tablet",
-                "px": "576",
-                "cols": "6"
-            },
-            {
-                "name": "Small Desktop",
-                "px": "768",
-                "cols": "9"
-            },
-            {
-                "name": "Desktop",
-                "px": "1024",
-                "cols": "12"
+                "p": "topic",
+                "vt": "str"
             }
         ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 180,
+        "y": 460,
+        "wires": [
+            [
+                "8dfccb15dd4e2124"
+            ]
+        ]
+    },
+    {
+        "id": "8dfccb15dd4e2124",
+        "type": "function",
+        "z": "f091a826ae3d1ecb",
+        "name": "build sync request",
+        "func": "msg.method = 'GET';\nmsg.url = 'http://api:8000/sync?scope=vehicle&vehicleId=BUS-DEMO-01';\nmsg.headers = { 'Authorization': 'Bearer demo-operador-1' };\ndelete msg.payload;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 460,
+        "wires": [
+            [
+                "c99c93214a924b0b"
+            ]
+        ]
+    },
+    {
+        "id": "c99c93214a924b0b",
+        "type": "http request",
+        "z": "f091a826ae3d1ecb",
+        "name": "",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 650,
+        "y": 460,
+        "wires": [
+            [
+                "38895cbf733304e8"
+            ]
+        ]
+    },
+    {
+        "id": "38895cbf733304e8",
+        "type": "function",
+        "z": "f091a826ae3d1ecb",
+        "name": "apply snapshot",
+        "func": "const snap = msg.payload;\nif (msg.statusCode !== 200 || !snap || !snap.trip) {\n    node.status({ fill: 'red', shape: 'ring', text: 'sync failed: ' + msg.statusCode });\n    return null;\n}\nlet st = flow.get('b04');\nif (!st || st.tripId !== snap.trip.id) {\n    st = { tripId: snap.trip.id, tripState: snap.trip.state, lastPassed: snap.trip.lastPassedSequence, reqs: {}, seen: [] };\n} else {\n    st.tripState = (st.tripState === 'ENDED') ? 'ENDED' : snap.trip.state;\n    st.lastPassed = Math.max(st.lastPassed, snap.trip.lastPassedSequence);\n}\nfor (const r of snap.requests) {\n    if (r.tripId !== snap.trip.id) { continue; }\n    const cur = st.reqs[r.id];\n    const received = Boolean((cur && cur.received) || r.received);\n    if (!cur || r.version > cur.version) { st.reqs[r.id] = Object.assign({}, r, { received: received }); }\n    else { cur.received = received; }\n}\nflow.set('b04', st);\nnode.status({ fill: 'green', shape: 'dot', text: 'sync ok' });\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 540,
+        "wires": [
+            [
+                "ca4eb682344a449c"
+            ]
+        ]
+    },
+    {
+        "id": "d83ef9136bd74c10",
+        "type": "function",
+        "z": "f091a826ae3d1ecb",
+        "name": "apply events",
+        "func": "const e = msg.payload;\nconst st = flow.get('b04');\nif (!e || e.schemaVersion !== 3 || typeof e.eventType !== 'string' || !st) { return null; }\nif (st.seen.indexOf(e.eventId) >= 0) { return null; }\nst.seen.push(e.eventId);\nif (st.seen.length > 200) { st.seen.shift(); }\nif (e.tripId !== st.tripId) { flow.set('b04', st); return [null, { payload: 'resync' }]; }\nif (e.eventType === 'request.receipt_recorded') {\n    const cur = st.reqs[e.requestId];\n    if (!cur) { flow.set('b04', st); return [null, { payload: 'resync' }]; }\n    cur.received = true;\n} else if (e.eventType.indexOf('request.') === 0 && e.payload && e.payload.id) {\n    const r = e.payload;\n    const cur = st.reqs[r.id];\n    const received = Boolean((cur && cur.received) || r.received);\n    if (!cur || r.version > cur.version) { st.reqs[r.id] = Object.assign({}, r, { received: received }); }\n    else { cur.received = received; }\n} else if (e.eventType === 'trip.progressed') {\n    st.lastPassed = Math.max(st.lastPassed, e.payload.lastPassedSequence);\n} else if (e.eventType === 'trip.ended') {\n    st.tripState = 'ENDED';\n}\nflow.set('b04', st);\nreturn [{ payload: 'render' }, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 600,
+        "wires": [
+            [
+                "ca4eb682344a449c"
+            ],
+            [
+                "8dfccb15dd4e2124"
+            ]
+        ]
+    },
+    {
+        "id": "0d753b0ac1fc484c",
+        "type": "mqtt in",
+        "z": "f091a826ae3d1ecb",
+        "name": "",
+        "topic": "vehicles/+/events",
+        "qos": "1",
+        "datatype": "auto-detect",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 600,
+        "wires": [
+            [
+                "d83ef9136bd74c10"
+            ]
+        ]
+    },
+    {
+        "id": "ca4eb682344a449c",
+        "type": "function",
+        "z": "f091a826ae3d1ecb",
+        "name": "render requests",
+        "func": "const st = flow.get('b04');\nconst when = new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' });\nif (!st) { msg.payload = { trip: 'No trip data yet · ' + when, rows: [] }; return msg; }\nconst rows = Object.values(st.reqs)\n    .sort(function (a, b) { return a.sequence - b.sequence; })\n    .map(function (r) {\n        return {\n            id: r.id, line: 'Stop ' + r.physicalStopCode + ' · visit ' + r.sequence + ' · ' + r.state +\n                ' · received: ' + (r.received ? 'yes' : 'no') + ' · v' + r.version\n        };\n    });\nmsg.payload = {\n    trip: 'Trip ' + st.tripId.slice(0, 8) + ' · ' + st.tripState +\n        ' · last stop passed: ' + st.lastPassed + ' · updated ' + when, rows: rows\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 620,
+        "wires": [
+            [
+                "629bba11479bc351"
+            ]
+        ]
+    },
+    {
+        "id": "629bba11479bc351",
+        "type": "ui-template",
+        "z": "f091a826ae3d1ecb",
+        "group": "d0db52af74b7fee3",
+        "page": "",
+        "ui": "",
+        "name": "",
         "order": 1,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div>\n        <div><strong>{{ msg.payload.trip }}</strong></div>\n        <div v-if=\"msg.payload.rows.length === 0\">No requests</div>\n        <div v-for=\"r in msg.payload.rows\" :key=\"r.id\">{{ r.line }}</div>\n    </div>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
         "className": "",
-        "visible": "true",
-        "disabled": "false"
+        "x": 900,
+        "y": 620,
+        "wires": [
+            []
+        ]
     },
     {
-        "id": "71c4b08b00e1297f",
-        "type": "ui-base",
-        "name": "My Dashboard",
-        "path": "/dashboard",
-        "appIcon": "",
-        "includeClientData": true,
-        "acceptsClientConfig": [
-            "ui-notification",
-            "ui-control"
+        "id": "628e701f7ec639c5",
+        "type": "ui-button",
+        "z": "f091a826ae3d1ecb",
+        "group": "b5814d66f34d7fe2",
+        "name": "Reset demo (new trip)",
+        "label": "Reset demo (new trip)",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 160,
+        "y": 720,
+        "wires": [
+            [
+                "ed848ad231b79a7d"
+            ]
+        ]
+    },
+    {
+        "id": "ed848ad231b79a7d",
+        "type": "function",
+        "z": "f091a826ae3d1ecb",
+        "name": "build reset request",
+        "func": "msg.method = 'POST';\nmsg.url = 'http://api:8000/demo/reset';\nmsg.headers = {\n    'Authorization': 'Bearer demo-operador-1',\n    'Idempotency-Key': 'reset-' + Date.now() + '-' + Math.random().toString(16).slice(2)\n};\nmsg.payload = '';\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 720,
+        "wires": [
+            [
+                "bd02a74dccb2b673"
+            ]
+        ]
+    },
+    {
+        "id": "bd02a74dccb2b673",
+        "type": "http request",
+        "z": "f091a826ae3d1ecb",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 630,
+        "y": 720,
+        "wires": [
+            [
+                "a021417d6c4d5d85"
+            ]
+        ]
+    },
+    {
+        "id": "a021417d6c4d5d85",
+        "type": "function",
+        "z": "f091a826ae3d1ecb",
+        "name": "after reset",
+        "func": "if (msg.statusCode === 200 && msg.payload && msg.payload.trip) {\n    flow.set('b04', undefined);\n    return [{ payload: 'Reset OK · new trip ' + msg.payload.trip.id.slice(0, 8) + ' · ' + new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' }) }, { payload: 'resync' }];\n}\nreturn [{ payload: 'Reset failed: HTTP ' + msg.statusCode }, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 720,
+        "wires": [
+            [
+                "e3e75756c7651918"
+            ],
+            [
+                "8dfccb15dd4e2124"
+            ]
+        ]
+    },
+    {
+        "id": "e3e75756c7651918",
+        "type": "ui-text",
+        "z": "f091a826ae3d1ecb",
+        "group": "b5814d66f34d7fe2",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "Last reset",
+        "label": "Last reset",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": true,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 1020,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "1efdcd76cb85ec36",
+        "type": "ui-button",
+        "z": "f091a826ae3d1ecb",
+        "group": "b5814d66f34d7fe2",
+        "name": "Resync",
+        "label": "Resync",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 140,
+        "y": 520,
+        "wires": [
+            [
+                "8dfccb15dd4e2124"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_tab",
+        "type": "tab",
+        "label": "Lab ramp test",
+        "disabled": false,
+        "info": "Physical ramp node (ESP32) in the B04 Ramps group: its state, and a lab test mode that sends commands only while the driver's HMI is offline."
+    },
+    {
+        "id": "lab_ramp_in_status",
+        "type": "mqtt in",
+        "z": "lab_ramp_tab",
+        "name": "node status",
+        "topic": "devices/ramp-esp32-01/status",
+        "qos": "1",
+        "datatype": "auto-detect",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 60,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_in_actuator",
+        "type": "mqtt in",
+        "z": "lab_ramp_tab",
+        "name": "actuator state",
+        "topic": "devices/ramp-esp32-01/ramps/ramp-phys-01",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 120,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_in_telemetry",
+        "type": "mqtt in",
+        "z": "lab_ramp_tab",
+        "name": "telemetry",
+        "topic": "telemetry/vehicles/BUS-DEMO-01/ramp",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 180,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_in_presence",
+        "type": "mqtt in",
+        "z": "lab_ramp_tab",
+        "name": "HMI presence",
+        "topic": "vehicles/BUS-DEMO-01/presence",
+        "qos": "1",
+        "datatype": "auto-detect",
+        "broker": "sim_broker",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 240,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_tick",
+        "type": "inject",
+        "z": "lab_ramp_tab",
+        "name": "tick 1 s",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
         ],
-        "showPathInSidebar": false,
-        "headerContent": "page",
-        "navigationStyle": "default",
-        "titleBarStyle": "default",
-        "showReconnectNotification": true,
-        "notificationDisplayTime": 1,
-        "showDisconnectNotification": true,
-        "allowInstall": false
+        "repeat": "1",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "tick",
+        "x": 150,
+        "y": 300,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
     },
     {
-        "id": "28770f0ba13aa9bc",
-        "type": "ui-theme",
-        "name": "Default Theme",
-        "colors": {
-            "surface": "#ffffff",
-            "primary": "#0094CE",
-            "bgPage": "#eeeeee",
-            "groupBg": "#ffffff",
-            "groupOutline": "#cccccc"
-        },
-        "sizes": {
-            "density": "default",
-            "pagePadding": "12px",
-            "groupGap": "12px",
-            "groupBorderRadius": "4px",
-            "widgetGap": "12px"
-        }
+        "id": "lab_ramp_fn",
+        "type": "function",
+        "z": "lab_ramp_tab",
+        "name": "physical ramp",
+        "func": "// Physical ramp node (ESP32): its state for the dashboard, and commands in lab test mode.\nconst s = flow.get('labRamp') || {};\nconst t = msg.topic || '';\nconst p = msg.payload || {};\nconst now = Date.now();\n\nif (t === 'devices/ramp-esp32-01/status') { s.status = p.status; }\nelse if (t === 'devices/ramp-esp32-01/ramps/ramp-phys-01') { s.motion = p.motion; s.result = p.lastResult; }\nelse if (t === 'telemetry/vehicles/BUS-DEMO-01/ramp') {\n    if (p.nodeId !== 'ramp-phys-01') { return null; }   // the simulator uses the same topic\n    s.stowed = p.stowedLimit; s.deployed = p.deployedLimit; s.at = now;\n}\nelse if (t === 'vehicles/BUS-DEMO-01/presence') {\n    s.hmi = p.status;\n    if (p.status === 'online') { s.test = false; }   // the driver's HMI takes over\n}\nelse if (msg.test !== undefined) { s.test = msg.test && s.hmi !== 'online'; }\n\n// Same rules as the HMI ramp card: no data for 15 s, both limits ON or moving lock the maneuvers.\nconst fresh = now - (s.at || 0) <= 15000;\nconst position = !fresh ? 'NO DATA' : s.stowed && s.deployed ? 'CONFLICT'\n    : s.stowed ? 'STOWED' : s.deployed ? 'DEPLOYED' : 'INTERMEDIATE';\nconst moving = s.motion === 'DEPLOYING' || s.motion === 'STOWING';\nconst armed = Boolean(s.test) && s.hmi !== 'online' && s.status === 'online';\nconst canMove = armed && fresh && !moving && position !== 'CONFLICT';\nconst allowed = { DEPLOY: canMove && position !== 'DEPLOYED', STOW: canMove && position !== 'STOWED', STOP: armed };\n\n// Checked here too, so a click from an old page does not get through.\nlet command = null;\nif (msg.action && allowed[msg.action]) {\n    command = { payload: { schemaVersion: 3, commandId: 'lab-test-' + now, action: msg.action } };\n}\nflow.set('labRamp', s);\nconst ramp = [s.status || 'no report', position, s.motion].filter(Boolean).join(' · ');\nreturn [{ payload: { ramp: ramp, hmi: s.hmi || 'no report', result: s.result || '-',\n    test: Boolean(s.test), allowed: allowed } }, command];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 180,
+        "wires": [
+            [
+                "lab_ramp_ui"
+            ],
+            [
+                "lab_ramp_cmd_out"
+            ]
+        ]
     },
     {
-        "id": "0a0462dc690d74f0",
-        "type": "global-config",
-        "env": [],
-        "modules": {
-            "@flowfuse/node-red-dashboard": "1.29.0"
-        }
+        "id": "lab_ramp_ui",
+        "type": "ui-template",
+        "z": "lab_ramp_tab",
+        "group": "5f2baae0b10e6362",
+        "page": "",
+        "ui": "",
+        "name": "physical ramp panel",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n    <div v-if=\"msg && msg.payload\" class=\"lab-ramp\">\n        <div class=\"row\"><span>Physical ramp (ESP32)</span>\n            <b>{{ msg.payload.ramp }}</b></div>\n        <div class=\"row\"><span>Driver HMI</span><b>{{ msg.payload.hmi }}</b></div>\n        <div class=\"row\"><span>Last result</span><b>{{ msg.payload.result }}</b></div>\n        <label><input type=\"checkbox\" :checked=\"msg.payload.test\" @change=\"send({ test: $event.target.checked })\">\n            Lab test mode (ramp in view, driver HMI offline)</label>\n        <div class=\"buttons\">\n            <button :disabled=\"!msg.payload.allowed.DEPLOY\" @click=\"send({ action: 'DEPLOY' })\">Deploy</button>\n            <button :disabled=\"!msg.payload.allowed.STOW\" @click=\"send({ action: 'STOW' })\">Stow</button>\n            <button :disabled=\"!msg.payload.allowed.STOP\" @click=\"send({ action: 'STOP' })\">Stop</button>\n        </div>\n    </div>\n</template>\n<style scoped>\n.lab-ramp { display: flex; flex-direction: column; gap: 12px; font-size: 1rem; }\n.row { display: flex; justify-content: space-between; gap: 12px; }\n.buttons { display: flex; gap: 8px; }\n.buttons button { flex: 1; padding: 10px; border: none; border-radius: 4px; background: #0094ce; color: white; cursor: pointer; }\n.buttons button:disabled { background: #bdbdbd; cursor: not-allowed; }\n</style>",
+        "storeOutMessages": true,
+        "passthru": false,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 700,
+        "y": 160,
+        "wires": [
+            [
+                "lab_ramp_fn"
+            ]
+        ]
+    },
+    {
+        "id": "lab_ramp_cmd_out",
+        "type": "mqtt out",
+        "z": "lab_ramp_tab",
+        "name": "ramp command",
+        "topic": "commands/vehicles/BUS-DEMO-01/ramp",
+        "qos": "1",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "sim_broker",
+        "x": 690,
+        "y": 220,
+        "wires": []
     }
 ]

@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 
 /** What the app knows about a command that has not finished cleanly. */
 sealed interface CommandState {
-    /** Sent and waiting for the answer. Shown as "Pendiente de envío". */
+    /** Sent and waiting for the answer. Shown as "Sending…". */
     data object Sending : CommandState
 
     /** No answer: the key is kept and the same command can be sent again. */
@@ -52,8 +52,9 @@ object CommandIds {
  * version of a request wins, received stays true, and a trip only moves forward.
  *
  * Commands go through [ApiSource] with a key saved in [keys] before sending. Every decision on
- * a request (accepted, rejected, completed, expired) reaches [announcer] once, whichever input
- * brought it, because [announced] remembers "requestId:version" on disk.
+ * a request (accepted, rejected, completed, expired) reaches [announcer] once per process, whichever
+ * input brought it, because [announced] remembers "requestId:version". The announcer keeps on disk
+ * what it actually announced, so a decision held when the process dies comes back with /sync.
  *
  * [syncScope] and [vehicleId] are those of GET /sync: "mine" for the passenger, "vehicle" with
  * the bus for the driver. [scope] runs the /sync that follows a reconnection or a new trip.
@@ -75,7 +76,7 @@ class AssistanceRepository(
 
     // Keys left from a previous run have no answer yet: show them as unconfirmed.
     private val _commands = MutableStateFlow<Map<String, CommandState>>(
-        keys.all().associateWith { CommandState.Unconfirmed("Sin confirmar antes de cerrar la app") },
+        keys.all().associateWith { CommandState.Unconfirmed("Not confirmed before the app was closed") },
     )
     val commands: StateFlow<Map<String, CommandState>> = _commands.asStateFlow()
 
@@ -163,24 +164,24 @@ class AssistanceRepository(
         call: suspend (String, AssistanceRequest) -> ApiResult<AssistanceRequest>,
     ): ApiResult<AssistanceRequest> {
         val request = _snapshot.value.requests.find { it.id == requestId }
-            ?: return ApiResult.Failure("Solicitud desconocida", retryable = false)
+            ?: return ApiResult.Failure("Unknown request", retryable = false)
         return send(CommandIds.request(operation, request), ::applyRequest) { key -> call(key, request) }
     }
 
     private suspend fun onTrip(id: (Trip) -> String, call: suspend (String, Trip) -> ApiResult<Trip>): ApiResult<Trip> {
-        val trip = _snapshot.value.trip ?: return ApiResult.Failure("No hay viaje", retryable = false)
+        val trip = _snapshot.value.trip ?: return ApiResult.Failure("No trip", retryable = false)
         return send(id(trip), ::applyTrip) { key -> call(key, trip) }
     }
 
     private suspend fun <T> send(commandId: String, apply: (T) -> Unit, call: suspend (String) -> ApiResult<T>): ApiResult<T> {
         if (_commands.value[commandId] == CommandState.Sending) {
-            return ApiResult.Failure("Ya se está enviando", retryable = true)
+            return ApiResult.Failure("Already sending", retryable = true)
         }
         // A key that could not be removed after an answer belongs to a finished command: never reuse it.
         val key = keys.get(commandId)?.takeUnless { commandId in staleKeys } ?: newKey().also { key ->
             if (!keys.put(commandId, key)) {
                 // Without the key on disk a retry after closing the app could run the command twice.
-                val failure = ApiResult.Failure("No se pudo guardar el comando en el teléfono; no se ha enviado", retryable = true)
+                val failure = ApiResult.Failure("Could not save the command on the phone; it was not sent", retryable = true)
                 setState(commandId, CommandState.Unconfirmed(failure.message))
                 return failure
             }
@@ -190,7 +191,7 @@ class AssistanceRepository(
         val result = try {
             call(key)
         } catch (e: CancellationException) {
-            setState(commandId, CommandState.Unconfirmed("Envío interrumpido"))
+            setState(commandId, CommandState.Unconfirmed("Sending interrupted"))
             throw e
         }
         when (result) {

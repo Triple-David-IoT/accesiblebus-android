@@ -1,8 +1,8 @@
-# AccessibleBus — Docker Infrastructure (C01)
+# AccessBus — Docker Infrastructure (C01)
 
 ## 1. Overview
 
-This file describes the Docker Compose infrastructure for the AccessibleBus project.
+This file describes the Docker Compose infrastructure for the AccessBus project.
 
 The environment provides the services required for local development and integration:
 
@@ -27,7 +27,7 @@ Docker Desktop must be running before starting the services.
 ## 3. Project Structure
 
 ```text
-AccessibleBus/
+AccessBus/
 ├── app/                         # Android application
 ├── api/
 │   ├── Dockerfile
@@ -36,6 +36,7 @@ AccessibleBus/
 │   └── tests/
 │       ├── export_openapi.sh
 │       └── smoke.sh
+├── firmware/                    # Physical ramp node (ESP32); see firmware/README.md
 ├── mosquitto/
 │   └── mosquitto.conf
 ├── nodered/
@@ -63,6 +64,8 @@ The Compose configuration uses the following image families:
 The exact image tags are defined in `docker-compose.yml`.
 
 Node-RED Dashboard 2.0 is declared in `nodered/package.json` and installed by `nodered/Dockerfile`.
+
+The flows are `nodered/flows.json`, built into the image: `docker compose up -d --build` loads them, with no copy into the container. A deploy from the editor lasts until the container is recreated, so export it to `nodered/flows.json`. `docs/nodered-flows.pdf` shows the three flows and what each one does.
 
 ## 5. Environment Configuration
 
@@ -171,13 +174,13 @@ mosquitto_sub -h localhost -p 1883 -t "accessiblebus/test" -v
 Publish a message from another terminal:
 
 ```bash
-mosquitto_pub -h localhost -p 1883 -t "accessiblebus/test" -m "Hello AccessibleBus"
+mosquitto_pub -h localhost -p 1883 -t "accessiblebus/test" -m "Hello AccessBus"
 ```
 
 The subscriber should receive:
 
 ```text
-accessiblebus/test Hello AccessibleBus
+accessiblebus/test Hello AccessBus
 ```
 
 ## 9. API Health Check
@@ -244,7 +247,7 @@ Docker volumes are used to preserve service data.
 | Volume | Purpose |
 |---|---|
 | `postgres_data` | PostgreSQL database files |
-| `nodered_data` | Node-RED flows and configuration |
+| `nodered_data` | Node-RED settings and context (the flows come from the image) |
 | `mosquitto_data` | Mosquitto persistent data |
 | `mosquitto_log` | Mosquitto logs |
 
@@ -308,15 +311,20 @@ For the Android emulator, the host computer can normally be reached using:
 10.0.2.2:1883
 ```
 
-For a physical Android device, use the host computer's LAN IP address, for example:
+### Android app
 
-```text
-192.168.1.50:1883
-```
+By default the app talks to the laptop that runs Docker Compose and shares a **Windows mobile hotspot**: Windows always gives that laptop `192.168.137.1`, so the API is `http://192.168.137.1:8000/` and the broker `192.168.137.1:1883`. Set the hotspot to the **2.4 GHz** band (the ESP32 ramp node has no 5 GHz radio), join the phones and the ESP32 to it, and allow ports 8000 and 1883 in the Windows firewall.
 
-The example address must be replaced with the actual IP address of the computer running Docker.
+Any other address goes in **Preferences → Connection** (API URL, broker host and port), and applies the next time the app starts:
 
-The Android device and the host computer must be connected to a network that allows communication between them. The host firewall must permit the required connections.
+| Where the laboratory runs | API URL | Broker host |
+| --- | --- | --- |
+| Laptop hotspot (default) | `http://192.168.137.1:8000/` | `192.168.137.1` |
+| Phone on USB, with `adb reverse tcp:8000 tcp:8000` and `adb reverse tcp:1883 tcp:1883` | `http://127.0.0.1:8000/` | `127.0.0.1` |
+| Android emulator on the same computer | `http://10.0.2.2:8000/` | `10.0.2.2` |
+| Another computer on a network that lets devices reach each other | `http://<its IP>:8000/` | `<its IP>` |
+
+The broker field also accepts `host:port`. A build can change the defaults with `-PapiBaseUrl=... -PmqttBroker=tcp://host:port`, and `-PuseSampleApi=true` runs the app on `assets/samples` without a laboratory.
 
 Inside the Docker Compose network, services communicate using their service names:
 

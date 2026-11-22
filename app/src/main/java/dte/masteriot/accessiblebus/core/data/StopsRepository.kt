@@ -33,7 +33,7 @@ data class StopsManifest(
     val stops: List<ManifestStop>,
 )
 
-// ---- CRTM GeoJSON: only the fields the app uses (docs/datos.md)
+// ---- CRTM GeoJSON: only the fields the app uses (docs/stop-data.md)
 
 @Serializable
 private data class FeatureCollection(val features: List<Feature> = emptyList())
@@ -128,7 +128,7 @@ class StopsRepository(
     fun parse(text: String): List<Stop> {
         val byCode = ApiJson.decodeFromString(FeatureCollection.serializer(), text).features.associateBy { it.properties.code }
         val missing = manifest.stops.map { it.physicalStopCode }.filter { it !in byCode }
-        if (missing.isNotEmpty()) throw IllegalStateException("Faltan paradas en la respuesta: ${missing.joinToString()}")
+        if (missing.isNotEmpty()) throw IllegalStateException("Stops missing from the response: ${missing.joinToString()}")
         return manifest.stops.sortedBy { it.sequence }.map { m ->
             val feature = byCode.getValue(m.physicalStopCode)
             val (longitude, latitude) = feature.geometry.coordinates

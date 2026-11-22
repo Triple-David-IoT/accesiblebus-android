@@ -1,3 +1,4 @@
+
 package dte.masteriot.accessiblebus.ui.passenger
 
 import android.content.Context
@@ -24,13 +25,21 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
 /**
- * The stops on an OpenStreetMap map (osmdroid), framed automatically. No location permission and
- * no own position. Tiles are cached in internal storage, so the area should be opened once with
- * network before the demo; without network and without tiles the map may be empty, and the list
- * is still there with the same information.
+ * Displays the stops on an OpenStreetMap map (osmdroid), automatically framed.
+ * No location permission or current location is required.
+ *
+ * Tiles are cached in internal storage, so the area should be opened once
+ * with a network connection before the demo.
+ *
+ * Without a network connection and cached tiles, the map may be empty.
+ * The list remains available with the same information.
  */
 @Composable
-fun StopsMap(stops: List<Stop>, onStop: (String) -> Unit, modifier: Modifier = Modifier) {
+fun StopsMap(
+    stops: List<Stop>,
+    onStop: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val map = rememberMapView(context)
@@ -43,8 +52,10 @@ fun StopsMap(stops: List<Stop>, onStop: (String) -> Unit, modifier: Modifier = M
                 else -> Unit
             }
         }
+
         lifecycle.addObserver(observer)
         map.onResume()
+
         onDispose {
             lifecycle.removeObserver(observer)
             map.onPause()
@@ -54,63 +65,118 @@ fun StopsMap(stops: List<Stop>, onStop: (String) -> Unit, modifier: Modifier = M
 
     AndroidView(
         factory = { map },
-        // MapView can draw outside its own bounds; keep it inside its slot of the screen.
-        modifier = modifier.clipToBounds().semantics {
-            contentDescription = "Mapa con ${stops.size} paradas. La lista tiene la misma información."
+        // MapView can draw outside its own bounds; keep it inside its screen area.
+        modifier = modifier
+            .clipToBounds()
+            .semantics {
+                contentDescription =
+                    "Visual map with ${stops.size} stops. " +
+                            "To browse and select stops using accessibility features, " +
+                            "switch to list mode."
+            },
+        update = { view ->
+            showStops(view, stops, onStop)
         },
-        update = { view -> showStops(view, stops, onStop) },
     )
 }
 
 @Composable
 private fun rememberMapView(context: Context): MapView = remember {
     configureOsmdroid(context)
+
     MapView(context).apply {
         setTileSource(TileSourceFactory.MAPNIK)
         setMultiTouchControls(true)
-        zoomController.setVisibility(CustomZoomButtonsController.Visibility.SHOW_AND_FADEOUT)
+
+        zoomController.setVisibility(
+            CustomZoomButtonsController.Visibility.SHOW_AND_FADEOUT
+        )
+
         minZoomLevel = 12.0
         maxZoomLevel = 19.0
-        // Madrid centre until the stops are framed.
+
+        // Set the initial map center to Madrid until the stops are framed.
         controller.setZoom(15.0)
         controller.setCenter(GeoPoint(40.414, -3.694))
     }
 }
 
-/** User agent required by the OSM tile policy, and tile cache inside the app's own files. */
+/**
+ * Sets the user agent required by the OSM tile policy
+ * and stores the tile cache inside the app's internal files.
+ */
 private fun configureOsmdroid(context: Context) {
     val configuration = Configuration.getInstance()
-    configuration.load(context, context.getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
+
+    configuration.load(
+        context,
+        context.getSharedPreferences("osmdroid", Context.MODE_PRIVATE)
+    )
+
     configuration.userAgentValue = context.packageName
+
     val base = File(context.filesDir, "osmdroid")
     configuration.osmdroidBasePath = base
     configuration.osmdroidTileCache = File(base, "tiles")
 }
 
-private fun showStops(map: MapView, stops: List<Stop>, onStop: (String) -> Unit) {
+private fun showStops(
+    map: MapView,
+    stops: List<Stop>,
+    onStop: (String) -> Unit
+) {
     map.overlays.removeAll { it is Marker }
+
     stops.forEach { stop ->
         map.overlays.add(
             Marker(map).apply {
                 position = GeoPoint(stop.latitude, stop.longitude)
-                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+
+                setAnchor(
+                    Marker.ANCHOR_CENTER,
+                    Marker.ANCHOR_BOTTOM
+                )
+
                 title = "${stop.sequence}. ${stop.name}"
-                snippet = "Parada ${stop.code}"
-                // First tap shows the name; tapping the marker again opens the stop detail.
+                snippet = "Stop ${stop.code}"
+
+                // The first tap displays the stop name.
+                // Tapping the marker again opens the stop details.
                 setOnMarkerClickListener { marker, _ ->
-                    if (marker.isInfoWindowShown) onStop(stop.code) else marker.showInfoWindow()
+                    if (marker.isInfoWindowShown) {
+                        onStop(stop.code)
+                    } else {
+                        marker.showInfoWindow()
+                    }
+
                     true
                 }
             },
         )
     }
-    // Frame once: later updates (a new request, a passed stop) must not move the map the user moved.
+
+    // Frame the map only once. Later updates, such as a new request
+    // or a passed stop, must not move the map after the user has moved it.
     if (stops.isNotEmpty() && map.tag == null) {
         map.tag = FRAMED
-        val box = BoundingBox.fromGeoPoints(stops.map { GeoPoint(it.latitude, it.longitude) }).increaseByScale(1.4f)
-        // Framing needs the view size: wait for the first layout if it has not happened yet.
-        if (map.width > 0 && map.height > 0) map.zoomToBoundingBox(box, false) else map.addOnFirstLayoutListener { _, _, _, _, _ -> map.zoomToBoundingBox(box, false) }
+
+        val box = BoundingBox.fromGeoPoints(
+            stops.map {
+                GeoPoint(it.latitude, it.longitude)
+            }
+        ).increaseByScale(1.4f)
+
+        // Framing requires the view dimensions.
+        // Wait for the first layout if it has not happened yet.
+        if (map.width > 0 && map.height > 0) {
+            map.zoomToBoundingBox(box, false)
+        } else {
+            map.addOnFirstLayoutListener { _, _, _, _, _ ->
+                map.zoomToBoundingBox(box, false)
+            }
+        }
     }
+
     map.invalidate()
 }
 
