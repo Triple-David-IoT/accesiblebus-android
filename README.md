@@ -361,7 +361,7 @@ The script generates a new idempotency key for each intentional execution. If co
 ### 10.1 API smoke test
 
 ```bash
-bash api/tests/smoke.sh
+PYTHON=python bash api/tests/smoke.sh
 ```
 
 The test checks health, reset, request creation, idempotency-key replay and conflict, acceptance, completion and synchronisation using the three tokens.
