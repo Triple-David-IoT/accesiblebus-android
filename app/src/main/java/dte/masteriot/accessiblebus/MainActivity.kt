@@ -4,14 +4,20 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import dte.masteriot.accessiblebus.core.config.AccessibilityPreferences
+import java.util.Locale
 import dte.masteriot.accessiblebus.navigation.AppNav
 import dte.masteriot.accessiblebus.ui.theme.AppTheme
 
@@ -42,10 +48,25 @@ class MainActivity : ComponentActivity() {
                     initial = AccessibilityPreferences()
                 )
 
-            AppTheme(
-                useHighContrast = accessibilityPreferences.highContrastEnabled
+            val localizedContext = remember(accessibilityPreferences.language) {
+                val locale = Locale.forLanguageTag(
+                    accessibilityPreferences.language.tag
+                )
+                Locale.setDefault(locale)
+                val configuration = Configuration(resources.configuration)
+                configuration.setLocale(locale)
+                createConfigurationContext(configuration)
+            }
+
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalConfiguration provides localizedContext.resources.configuration
             ) {
-                AppNav()
+                AppTheme(
+                    useHighContrast = accessibilityPreferences.highContrastEnabled
+                ) {
+                    AppNav()
+                }
             }
         }
     }

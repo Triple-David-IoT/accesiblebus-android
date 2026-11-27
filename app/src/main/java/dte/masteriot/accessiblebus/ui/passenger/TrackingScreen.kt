@@ -30,6 +30,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -37,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dte.masteriot.accessiblebus.core.data.CommandIds
+import dte.masteriot.accessiblebus.R
 
 /**
  * Tracking screen.
@@ -83,7 +85,7 @@ fun TrackingScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "Tracking",
+                stringResource(R.string.tracking),
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .weight(1f)
@@ -110,16 +112,16 @@ fun TrackingScreen(
 
         Text(
             if (live) {
-                "Live notifications are active"
+                stringResource(R.string.live_notifications_active)
             } else {
-                "No live notifications: press Refresh to check the status"
+                stringResource(R.string.live_notifications_inactive)
             },
             style = MaterialTheme.typography.bodyMedium,
         )
 
         if (request == null) {
             Text(
-                "Loading request…",
+                stringResource(R.string.loading_request),
                 style = MaterialTheme.typography.bodyLarge
             )
         } else {
@@ -138,15 +140,17 @@ fun TrackingScreen(
                 )
 
                 Text(
-                    "CRTM code ${request.physicalStopCode} · " +
-                            "stop ${request.sequence} of the laboratory trip · " +
-                            "boarding ramp",
+                    stringResource(
+                        R.string.crtm_code_format,
+                        request.physicalStopCode
+                    ) + " · stop ${request.sequence} of the laboratory trip · " +
+                            stringResource(R.string.boarding_ramp),
                     style = MaterialTheme.typography.bodyLarge,
                 )
 
                 if (tripFinished(snapshot, request)) {
                     Text(
-                        "The demonstration trip has finished; check the status.",
+                        stringResource(R.string.trip_finished),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.semantics {
@@ -167,7 +171,7 @@ fun TrackingScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Cancel request")
+                    Text(stringResource(R.string.cancel_request))
                 }
             }
 
@@ -200,12 +204,14 @@ fun TrackingScreen(
                         askCancel = false
                     },
                     title = {
-                        Text("Cancel the request?")
+                        Text(stringResource(R.string.cancel_request_title))
                     },
                     text = {
                         Text(
-                            "The driver will no longer have your ramp " +
-                                    "request at ${name ?: "stop ${request.physicalStopCode}"}."
+                            stringResource(
+                                R.string.cancel_request_message,
+                                name ?: "stop ${request.physicalStopCode}"
+                            )
                         )
                     },
                     confirmButton = {
@@ -215,7 +221,7 @@ fun TrackingScreen(
                                 viewModel.cancel(request.id)
                             }
                         ) {
-                            Text("Yes, cancel")
+                            Text(stringResource(R.string.yes_cancel))
                         }
                     },
                     dismissButton = {
@@ -224,7 +230,7 @@ fun TrackingScreen(
                                 askCancel = false
                             }
                         ) {
-                            Text("No")
+                            Text(stringResource(R.string.no))
                         }
                     },
                 )
@@ -235,14 +241,14 @@ fun TrackingScreen(
             onClick = viewModel::refresh,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Refresh")
+            Text(stringResource(R.string.refresh))
         }
 
         OutlinedButton(
             onClick = onBack,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Back")
+            Text(stringResource(R.string.back))
         }
     }
 }

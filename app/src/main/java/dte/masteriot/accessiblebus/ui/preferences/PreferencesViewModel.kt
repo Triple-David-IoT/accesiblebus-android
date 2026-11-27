@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dte.masteriot.accessiblebus.core.config.AccessibilityPreferences
 import dte.masteriot.accessiblebus.core.config.VoiceMode
+import dte.masteriot.accessiblebus.core.config.AppLanguage
 import dte.masteriot.accessiblebus.core.config.AppConfigRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,6 +69,17 @@ class PreferencesViewModel(
                 accessibilityPreferences =
                     current.accessibilityPreferences.copy(
                         highContrastEnabled = enabled
+                    )
+            )
+        }
+    }
+
+    fun updateLanguage(language: AppLanguage) {
+        _uiState.update { current ->
+            current.copy(
+                accessibilityPreferences =
+                    current.accessibilityPreferences.copy(
+                        language = language
                     )
             )
         }

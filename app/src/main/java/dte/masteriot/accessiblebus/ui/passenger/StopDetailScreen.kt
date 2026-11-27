@@ -19,10 +19,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dte.masteriot.accessiblebus.R
 
 /**
  * Displays a stop's CRTM name and code, the EMT number shown
@@ -74,19 +76,19 @@ fun StopDetailScreen(
             )
 
             Text(
-                "CRTM code: $stopCode",
+                stringResource(R.string.crtm_code_format, stopCode),
                 style = MaterialTheme.typography.titleMedium
             )
 
             stop?.let {
                 Text(
-                    "EMT stop number: ${it.emtStopCode}",
+                    stringResource(R.string.emt_stop_format, it.emtStopCode),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
 
             Text(
-                "Line 27 · Plaza de Castilla → Glorieta de Embajadores",
+                stringResource(R.string.route_line_27),
                 style = MaterialTheme.typography.bodyLarge
             )
 
@@ -100,7 +102,11 @@ fun StopDetailScreen(
 
             visit?.let {
                 Text(
-                    "Laboratory trip: stop ${it.sequence} of ${snapshot.stopVisits.size}",
+                    stringResource(
+                        R.string.laboratory_trip_stop_format,
+                        it.sequence,
+                        snapshot.stopVisits.size
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
@@ -121,7 +127,7 @@ fun StopDetailScreen(
                         .fillMaxWidth()
                         .heightIn(min = 56.dp)
                 ) {
-                    Text("Request assistance here")
+                    Text(stringResource(R.string.request_assistance_here))
                 }
             }
 
@@ -134,7 +140,7 @@ fun StopDetailScreen(
                         .fillMaxWidth()
                         .heightIn(min = 56.dp)
                 ) {
-                    Text("View tracking")
+                    Text(stringResource(R.string.view_tracking))
                 }
             }
 
@@ -146,7 +152,7 @@ fun StopDetailScreen(
                         .fillMaxWidth()
                         .heightIn(min = 56.dp)
                 ) {
-                    Text("Request assistance here")
+                    Text(stringResource(R.string.request_assistance_here))
                 }
             }
         }
@@ -157,7 +163,7 @@ fun StopDetailScreen(
                 .fillMaxWidth()
                 .heightIn(min = 56.dp)
         ) {
-            Text("Refresh")
+            Text(stringResource(R.string.refresh))
         }
 
         OutlinedButton(
@@ -166,7 +172,7 @@ fun StopDetailScreen(
                 .fillMaxWidth()
                 .heightIn(min = 56.dp)
         ) {
-            Text("Preferences")
+            Text(stringResource(R.string.preferences))
         }
 
         OutlinedButton(
@@ -175,7 +181,7 @@ fun StopDetailScreen(
                 .fillMaxWidth()
                 .heightIn(min = 56.dp)
         ) {
-            Text("Back")
+            Text(stringResource(R.string.back))
         }
     }
 }

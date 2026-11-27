@@ -25,16 +25,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dte.masteriot.accessiblebus.R
 import dte.masteriot.accessiblebus.core.config.AppConfig
 import dte.masteriot.accessiblebus.core.config.AppConfigDefaults
 import dte.masteriot.accessiblebus.core.config.ConnectionProfile
 import dte.masteriot.accessiblebus.core.config.AppConfigRepository
+import dte.masteriot.accessiblebus.core.config.AppLanguage
 import kotlinx.coroutines.launch
 
 @Composable
@@ -66,6 +69,10 @@ fun PreferencesScreen(
     val voiceMode = accessibilityPreferences.voiceMode
     val vibrationEnabled = accessibilityPreferences.vibrationEnabled
     val highContrastEnabled = accessibilityPreferences.highContrastEnabled
+
+    var selectedLanguage by remember(accessibilityPreferences.language) {
+        mutableStateOf(accessibilityPreferences.language)
+    }
 
     // Environment being edited.
     var selectedProfile by remember(profile) {
@@ -163,7 +170,7 @@ fun PreferencesScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Preferences",
+                text = stringResource(R.string.preferences_title),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Normal
             )
@@ -173,11 +180,11 @@ fun PreferencesScreen(
             // ---------------------------------------------------------
 
             PreferencesSectionTitle(
-                title = "Notifications"
+                title = stringResource(R.string.preferences_notifications)
             )
 
             Text(
-                text = "Voice",
+                text = stringResource(R.string.preferences_voice),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -195,8 +202,8 @@ fun PreferencesScreen(
 
             // Vibration.
             PreferenceSwitchRow(
-                title = "Vibration",
-                description = "Vibrates when a decision from the driver is received.",
+                title = stringResource(R.string.preferences_vibration),
+                description = stringResource(R.string.preferences_vibration_description),
                 checked = vibrationEnabled,
                 onCheckedChange = { enabled ->
                     preferencesViewModel.updateVibration(enabled)
@@ -205,11 +212,23 @@ fun PreferencesScreen(
 
             // High contrast.
             PreferenceSwitchRow(
-                title = "High contrast",
-                description = "Black background, white text and yellow actions.",
+                title = stringResource(R.string.preferences_high_contrast),
+                description = stringResource(R.string.preferences_high_contrast_description),
                 checked = highContrastEnabled,
                 onCheckedChange = { enabled ->
                     preferencesViewModel.updateHighContrast(enabled)
+                }
+            )
+
+            PreferencesSectionTitle(
+                title = stringResource(R.string.preferences_language)
+            )
+
+            LanguageSelector(
+                selectedLanguage = selectedLanguage,
+                onLanguageSelected = {
+                    selectedLanguage = it
+                    preferencesViewModel.updateLanguage(it)
                 }
             )
 
@@ -228,7 +247,7 @@ fun PreferencesScreen(
             )
 
             PreferencesSectionTitle(
-                title = "Connection"
+                title = stringResource(R.string.preferences_connection)
             )
 
             // Laboratory / Course selector.
@@ -243,7 +262,7 @@ fun PreferencesScreen(
             ConnectionTextField(
                 value = apiUrl,
                 onValueChange = { apiUrl = it },
-                label = "API URL",
+                label = stringResource(R.string.preferences_api_url),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -255,7 +274,7 @@ fun PreferencesScreen(
                 ConnectionTextField(
                     value = mqttHost,
                     onValueChange = { mqttHost = it },
-                    label = "Broker host",
+                    label = stringResource(R.string.preferences_broker_host),
                     modifier = Modifier.weight(1.5f)
                 )
 
@@ -269,13 +288,17 @@ fun PreferencesScreen(
                         portError = it.isNotBlank() &&
                                 (port == null || port !in 1..65535)
                     },
-                    label = "Port",
+                    label = stringResource(R.string.preferences_port),
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
                     ),
                     isError = portError,
-                    supportingText = if (portError) "Invalid port" else null
+                    supportingText = if (portError) {
+                        stringResource(R.string.preferences_invalid_port)
+                    } else {
+                        null
+                    }
                 )
             }
 

@@ -17,9 +17,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import dte.masteriot.accessiblebus.R
 
 @Composable
 fun ProfileScreen(
@@ -35,7 +37,7 @@ fun ProfileScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Select your profile",
+            text = stringResource(R.string.select_profile),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.semantics {
                 heading()
@@ -50,7 +52,7 @@ fun ProfileScreen(
                 .fillMaxWidth()
                 .heightIn(min = 56.dp)
         ) {
-            Text("Passenger")
+            Text(stringResource(R.string.passenger))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -61,7 +63,7 @@ fun ProfileScreen(
                 .fillMaxWidth()
                 .heightIn(min = 56.dp)
         ) {
-            Text("Driver")
+            Text(stringResource(R.string.driver))
         }
     }
 }

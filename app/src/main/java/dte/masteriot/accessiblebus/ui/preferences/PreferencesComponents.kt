@@ -30,8 +30,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dte.masteriot.accessiblebus.R
+import dte.masteriot.accessiblebus.core.config.AppLanguage
 import dte.masteriot.accessiblebus.core.config.ConnectionProfile
 import dte.masteriot.accessiblebus.core.config.VoiceMode
+import androidx.compose.ui.res.stringResource
 
 /**
  * Title of a Preferences section.
@@ -48,6 +51,56 @@ fun PreferencesSectionTitle(
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Medium
     )
+}
+
+@Composable
+fun LanguageSelector(
+    selectedLanguage: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        AppLanguage.values().forEach { language ->
+            val label = when (language) {
+                AppLanguage.ENGLISH -> R.string.language_english
+                AppLanguage.SPANISH -> R.string.language_spanish
+            }
+
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 56.dp)
+                    .selectable(
+                        selected = language == selectedLanguage,
+                        onClick = { onLanguageSelected(language) },
+                        role = Role.RadioButton
+                    ),
+                color = if (language == selectedLanguage) {
+                    MaterialTheme.colorScheme.secondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(stringResource(label))
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -155,14 +208,13 @@ fun VoiceModeDescription(
 ) {
     val description = when (mode) {
         VoiceMode.AUTO ->
-            "AUTO: speaks when the phone is covered (pocket or bag). " +
-                    "Otherwise, notifications use text and vibration."
+            stringResource(R.string.voice_auto_description)
 
         VoiceMode.ALWAYS ->
-            "ALWAYS: notifications are always spoken aloud."
+            stringResource(R.string.voice_always_description)
 
         VoiceMode.OFF ->
-            "OFF: notifications are displayed using text and vibration."
+            stringResource(R.string.voice_off_description)
     }
 
     Text(
@@ -242,8 +294,8 @@ fun ConnectionProfileSelector(
             val selected = selectedProfile == profile
 
             val label = when (profile) {
-                ConnectionProfile.LABORATORY -> "Laboratory"
-                ConnectionProfile.COURSE -> "Course"
+                ConnectionProfile.LABORATORY -> stringResource(R.string.profile_laboratory)
+                ConnectionProfile.COURSE -> stringResource(R.string.profile_course)
             }
 
             val shape = when (index) {
@@ -349,7 +401,7 @@ fun TestVoiceButton(
         ),
         shape = RoundedCornerShape(24.dp)
     ) {
-        Text("🔊  Test voice")
+        Text(stringResource(R.string.test_voice))
     }
 }
 
@@ -374,7 +426,7 @@ fun PreferencesActionButtons(
                 .heightIn(min = 56.dp),
             enabled = saveEnabled
         ) {
-            Text("Save preferences")
+                Text(stringResource(R.string.save_preferences))
         }
 
         Button(
@@ -389,7 +441,7 @@ fun PreferencesActionButtons(
             ),
             shape = RoundedCornerShape(24.dp)
         ) {
-            Text("Back")
+        Text(stringResource(R.string.back))
         }
     }
 }

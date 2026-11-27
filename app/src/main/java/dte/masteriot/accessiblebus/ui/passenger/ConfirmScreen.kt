@@ -21,12 +21,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dte.masteriot.accessiblebus.core.data.CommandIds
 import dte.masteriot.accessiblebus.core.data.CommandState
+import dte.masteriot.accessiblebus.R
 
 /**
  * Confirm the stop, the trip and the assistance request.
@@ -71,7 +73,7 @@ fun ConfirmScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "Confirm assistance",
+                text = stringResource(R.string.confirm_assistance),
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.semantics { heading() }
             )
@@ -82,8 +84,10 @@ fun ConfirmScreen(
             )
 
             Text(
-                text = "CRTM code ${visit?.physicalStopCode ?: "-"}" +
-                        (stop?.let { " · EMT ${it.emtStopCode}" } ?: ""),
+                text = stringResource(
+                    R.string.crtm_code_format,
+                    visit?.physicalStopCode ?: "-"
+                ) + (stop?.let { " · EMT ${it.emtStopCode}" } ?: ""),
                 style = MaterialTheme.typography.bodyLarge
             )
 
@@ -94,7 +98,7 @@ fun ConfirmScreen(
             )
 
             Text(
-                text = "Assistance: boarding ramp",
+                text = stringResource(R.string.assistance_boarding_ramp),
                 style = MaterialTheme.typography.bodyLarge
             )
         }
@@ -109,7 +113,7 @@ fun ConfirmScreen(
                     .fillMaxWidth()
                     .heightIn(min = 56.dp),
             ) {
-                Text("Request assistance")
+                Text(stringResource(R.string.request_assistance))
             }
 
             is VisitStatus.Open -> {
@@ -124,7 +128,7 @@ fun ConfirmScreen(
                         .fillMaxWidth()
                         .heightIn(min = 56.dp)
                 ) {
-                    Text("View tracking")
+                    Text(stringResource(R.string.view_tracking))
                 }
             }
 
@@ -146,7 +150,7 @@ fun ConfirmScreen(
                 .fillMaxWidth()
                 .heightIn(min = 56.dp)
         ) {
-            Text("Back")
+            Text(stringResource(R.string.back))
         }
     }
 

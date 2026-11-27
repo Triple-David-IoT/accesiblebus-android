@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dte.masteriot.accessiblebus.core.net.AssistanceRequest
 import dte.masteriot.accessiblebus.core.net.RejectReason
+import dte.masteriot.accessiblebus.R
 import dte.masteriot.accessiblebus.hmi.HmiViewModel
 
 @Composable
@@ -59,7 +61,7 @@ fun HmiScreen(
     rejectingId?.let { id ->
         AlertDialog(
             onDismissRequest = { rejectingId = null },
-            title = { Text("Reject request") },
+            title = { Text(stringResource(R.string.reject_request)) },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -82,7 +84,7 @@ fun HmiScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { rejectingId = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -95,13 +97,13 @@ fun HmiScreen(
 
         AlertDialog(
             onDismissRequest = { confirmEnd = false },
-            title = { Text("End trip?") },
+            title = { Text(stringResource(R.string.end_trip_question)) },
             text = {
                 Text(
                     if (open.isEmpty()) {
-                        "There are no open assistances."
+                        stringResource(R.string.no_open_assistances)
                     } else {
-                        "These assistances will be closed:\n" +
+                        stringResource(R.string.assistances_will_close) + "\n" +
                                 open.joinToString("\n") {
                                     "Stop ${it.physicalStopCode} (${it.state})"
                                 }
@@ -116,7 +118,7 @@ fun HmiScreen(
                     },
                     modifier = Modifier.heightIn(min = 56.dp)
                 ) {
-                    Text("End trip")
+                    Text(stringResource(R.string.end_trip))
                 }
             },
             dismissButton = {
@@ -124,7 +126,7 @@ fun HmiScreen(
                     onClick = { confirmEnd = false },
                     modifier = Modifier.heightIn(min = 56.dp)
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -160,7 +162,7 @@ fun HmiScreen(
                         )
 
                         Text(
-                            "Vehicle ${ui.vehicleId}",
+                            stringResource(R.string.vehicle_format, ui.vehicleId),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.semantics { heading() }
@@ -223,7 +225,7 @@ fun HmiScreen(
                             .weight(1f)
                             .heightIn(min = 56.dp)
                     ) {
-                        Text("Stop passed")
+                        Text(stringResource(R.string.stop_passed))
                     }
 
                     OutlinedButton(
@@ -233,7 +235,7 @@ fun HmiScreen(
                             .weight(1f)
                             .heightIn(min = 56.dp)
                     ) {
-                        Text("End trip")
+                        Text(stringResource(R.string.end_trip))
                     }
                 }
             }
@@ -245,13 +247,13 @@ fun HmiScreen(
             }
 
             item {
-                SectionTitle("Pending (${ui.pending.size})")
+                    SectionTitle(stringResource(R.string.pending_format, ui.pending.size))
             }
 
             if (ui.pending.isEmpty()) {
                 item {
                     Text(
-                        "No pending requests",
+                        stringResource(R.string.no_pending_requests),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -268,7 +270,7 @@ fun HmiScreen(
                                 .weight(1f)
                                 .heightIn(min = 56.dp)
                         ) {
-                            Text("Accept")
+                        Text(stringResource(R.string.accept))
                         }
 
                         OutlinedButton(
@@ -277,20 +279,20 @@ fun HmiScreen(
                                 .weight(1f)
                                 .heightIn(min = 56.dp)
                         ) {
-                            Text("Reject")
+                            Text(stringResource(R.string.reject))
                         }
                     }
                 }
             }
 
             item {
-                SectionTitle("In Progress (${ui.inProgress.size})")
+                SectionTitle(stringResource(R.string.in_progress_format, ui.inProgress.size))
             }
 
             if (ui.inProgress.isEmpty()) {
                 item {
                     Text(
-                        "No ongoing assistance",
+                        stringResource(R.string.no_ongoing_assistance),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -304,7 +306,7 @@ fun HmiScreen(
                             .fillMaxWidth()
                             .heightIn(min = 56.dp)
                     ) {
-                        Text("Complete")
+                        Text(stringResource(R.string.complete))
                     }
                 }
             }
