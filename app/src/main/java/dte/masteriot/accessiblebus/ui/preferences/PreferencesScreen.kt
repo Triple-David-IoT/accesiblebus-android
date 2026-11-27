@@ -1,6 +1,7 @@
 
 package dte.masteriot.accessiblebus.ui.preferences
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -62,6 +64,9 @@ fun PreferencesScreen(
 
     val accessibilityPreferences =
         preferencesUiState.accessibilityPreferences
+
+    val landscape =
+        LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     val voiceMode = accessibilityPreferences.voiceMode
     val vibrationEnabled = accessibilityPreferences.vibrationEnabled
@@ -288,7 +293,8 @@ fun PreferencesScreen(
             PreferencesActionButtons(
                 onSave = savePreferences,
                 onBack = onBack,
-                saveEnabled = !portError && preferencesUiState.isLoaded
+                saveEnabled = !portError && preferencesUiState.isLoaded,
+                landscape = landscape
             )
 
             Spacer(

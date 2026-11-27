@@ -1,6 +1,7 @@
 
 package dte.masteriot.accessiblebus.ui.hmi
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -53,6 +55,9 @@ fun HmiScreen(
     val ui by viewModel.state.collectAsState()
     val ramp by viewModel.ramp.collectAsState()
     val rampFlow by viewModel.rampFlow.collectAsState()
+
+    val landscape =
+        LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     var rejectingId by remember { mutableStateOf<String?>(null) }
 
@@ -202,21 +207,58 @@ fun HmiScreen(
             }
 
             item {
-                Button(
-                    onClick = viewModel::refresh,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                ) {
-                    Text("Refresh")
-                }
-            }
+                if (landscape) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = viewModel::refresh,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp)
+                        ) {
+                            Text("Refresh")
+                        }
 
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
+                        OutlinedButton(
+                            onClick = viewModel::advance,
+                            enabled = ui.canAdvance,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp)
+                        ) {
+                            Text("Stop passed")
+                        }
+
+                        OutlinedButton(
+                            onClick = { confirmEnd = true },
+                            enabled = ui.tripActive,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp)
+                        ) {
+                            Text("End trip")
+                        }
+                    }
+                } else {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Button(
+                            onClick = viewModel::refresh,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 56.dp)
+                        ) {
+                            Text("Refresh")
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                    Button(
                         onClick = viewModel::advance,
                         enabled = ui.canAdvance,
                         modifier = Modifier
@@ -234,6 +276,8 @@ fun HmiScreen(
                             .heightIn(min = 56.dp)
                     ) {
                         Text("End trip")
+                    }
+                        }
                     }
                 }
             }

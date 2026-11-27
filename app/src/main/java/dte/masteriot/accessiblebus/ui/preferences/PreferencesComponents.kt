@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -361,36 +362,64 @@ fun PreferencesActionButtons(
     onSave: () -> Unit,
     onBack: () -> Unit,
     saveEnabled: Boolean,
+    landscape: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Button(
-            onClick = onSave,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 56.dp),
-            enabled = saveEnabled
+    if (landscape) {
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Save preferences")
-        }
+            Button(
+                onClick = onSave,
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 56.dp),
+                enabled = saveEnabled
+            ) {
+                Text("Save preferences")
+            }
 
-        Button(
-            onClick = onBack,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 56.dp),
-            colors = ButtonDefaults.outlinedButtonColors(),
-            border = BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outline
-            ),
-            shape = RoundedCornerShape(24.dp)
-        ) {
-            Text("Back")
+            BackPreferencesButton(onBack, Modifier.weight(1f))
         }
+    } else {
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(
+                onClick = onSave,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp),
+                enabled = saveEnabled
+            ) {
+                Text("Save preferences")
+            }
+
+            BackPreferencesButton(onBack)
+        }
+    }
+}
+
+@Composable
+private fun BackPreferencesButton(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onBack,
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp),
+        colors = ButtonDefaults.outlinedButtonColors(),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline
+        ),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Text("Back")
     }
 }
 
