@@ -43,7 +43,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import dte.masteriot.accessiblebus.R
 
 /**
  * Displays the four stops of the demo line, with their CRTM codes and names,
@@ -74,6 +76,9 @@ fun StopsScreen(
     val isLandscape =
         configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
+    val openPreferencesDescription =
+        stringResource(R.string.open_preferences)
+
     var showMap by rememberSaveable {
         mutableStateOf(false)
     }
@@ -95,7 +100,7 @@ fun StopsScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "Stops",
+                stringResource(R.string.stops),
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .weight(1f)
@@ -108,7 +113,7 @@ fun StopsScreen(
                 onClick = onPreferences,
                 modifier = Modifier.size(64.dp)
                     .semantics {
-                        contentDescription = "Open preferences"
+                        contentDescription = openPreferencesDescription
                     }
             ) {
                 Icon(
@@ -120,7 +125,7 @@ fun StopsScreen(
         }
 
         Text(
-            "Line 27 · Plaza de Castilla → Glorieta de Embajadores",
+            stringResource(R.string.route_line_27),
             style = MaterialTheme.typography.bodyLarge
         )
 
@@ -139,7 +144,7 @@ fun StopsScreen(
                         .weight(1f)
                         .heightIn(min = 56.dp)
                 ) {
-                    Text("Refresh")
+                    Text(stringResource(R.string.refresh))
                 }
 
                 OutlinedButton(
@@ -150,7 +155,11 @@ fun StopsScreen(
                         .weight(1f)
                         .heightIn(min = 56.dp)
                 ) {
-                    Text(if (showMap) "View list" else "View map")
+                    Text(
+                        stringResource(
+                            if (showMap) R.string.view_list else R.string.view_map
+                        )
+                    )
                 }
             }
         } else {
@@ -168,7 +177,7 @@ fun StopsScreen(
                         .fillMaxWidth()
                         .heightIn(min = 56.dp)
                 ) {
-                    Text("Refresh")
+                    Text(stringResource(R.string.refresh))
                 }
 
                 OutlinedButton(
@@ -179,26 +188,29 @@ fun StopsScreen(
                         .fillMaxWidth()
                         .heightIn(min = 56.dp)
                 ) {
-                    Text(if (showMap) "View list" else "View map")
+                    Text(
+                        stringResource(
+                            if (showMap) R.string.view_list else R.string.view_map
+                        )
+                    )
                 }
             }
         }
 
         when (val state = stops) {
             StopsState.Loading -> {
-                Text("Loading stops…")
+                Text(stringResource(R.string.loading_stops))
             }
 
             is StopsState.Failed -> {
                 Text(
-                    "The stops could not be loaded and no local copy is available. " +
-                            "Check your connection and press Refresh.",
+                    stringResource(R.string.stops_load_failed),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.error,
                 )
 
                 Text(
-                    "Details: ${state.problem}",
+                    stringResource(R.string.details_format, state.problem),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -206,15 +218,17 @@ fun StopsScreen(
             is StopsState.Ready -> {
                 if (state.fromCache) {
                     Text(
-                        "Local copy from ${localTime(state.copy.fetchedAt)}: " +
-                                "no connection to CRTM.",
+                        stringResource(
+                            R.string.local_copy_format,
+                            localTime(state.copy.fetchedAt)
+                        ),
                         style = MaterialTheme.typography.titleSmall,
                     )
                 }
 
                 if (showMap) {
                     Text(
-                        "Tap a stop to see its name, then tap it again to open its details.",
+                        stringResource(R.string.map_accessibility_hint),
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -278,23 +292,23 @@ private fun StopRow(
         )
 
         Text(
-            "Stop ${stop.code}",
+            stringResource(R.string.stop_format, stop.code),
             style = MaterialTheme.typography.bodyLarge
         )
 
         Text(
             when {
                 visit == null ->
-                    "No visit in the laboratory trip"
+                    stringResource(R.string.no_visit)
 
                 passed ->
-                    "The bus has already passed"
+                    stringResource(R.string.bus_passed)
 
                 open ->
-                    "You have an open request"
+                    stringResource(R.string.open_request)
 
                 else ->
-                    "Visit ${visit.sequence} of the laboratory trip"
+                    stringResource(R.string.visit_format, visit.sequence)
             },
             style = MaterialTheme.typography.bodyMedium
         )

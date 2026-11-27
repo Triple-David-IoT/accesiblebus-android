@@ -36,6 +36,9 @@ class AppConfigRepository(
     private val highContrastEnabledKey =
         booleanPreferencesKey("high_contrast_enabled")
 
+    private val languageKey =
+        stringPreferencesKey("language")
+
 
     // -------------------------------------------------------------
     // Keys specific to each environment
@@ -144,7 +147,14 @@ class AppConfigRepository(
                 vibrationEnabled =
                     preferences[vibrationEnabledKey] ?: true,
                 highContrastEnabled =
-                    preferences[highContrastEnabledKey] ?: false
+                    preferences[highContrastEnabledKey] ?: false,
+                language = preferences[languageKey]
+                    ?.let { value ->
+                        runCatching {
+                            AppLanguage.valueOf(value)
+                        }.getOrDefault(AppLanguage.ENGLISH)
+                    }
+                    ?: AppLanguage.ENGLISH
             )
         }
     }
@@ -197,6 +207,9 @@ class AppConfigRepository(
 
             dataStore[highContrastEnabledKey] =
                 preferences.highContrastEnabled
+
+            dataStore[languageKey] =
+                preferences.language.name
         }
     }
 
