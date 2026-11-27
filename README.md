@@ -143,28 +143,9 @@ bash scripts/up.sh
 
 **Do not run `docker compose down -v` unless you intend to delete the persistent volumes as well**, including PostgreSQL, Node-RED and Mosquitto data.
 
-## 5. Demo users and credentials
+## 5. Configure the Android application
 
-The API uses fixed Bearer tokens. These are laboratory credentials and are not an appropriate security mechanism for production.
-
-| Token | Role | Associated identity | Usage |
-|---|---|---|---|
-| `demo-pasajero-1` | Passenger | `passenger-1` | Passenger assistance requests |
-| `demo-conductor-1` | Driver | `driver-1`, vehicle `BUS-DEMO-01`, terminal `hmi-demo-01` | HMI operations |
-| `demo-operador-1` | Operator | `operator-1` | Demo reset and authorised synchronisation |
-
-### 5.1 How the Android application uses tokens
-
-In the current Android code:
-
-- The passenger API client uses `demo-pasajero-1`, defined through `BuildConfig.API_TOKEN` in `app/build.gradle.kts`.
-- The driver API client uses `demo-conductor-1`, defined in `AppContainer.kt`.
-- Node-RED uses `demo-operador-1` for the demo reset operation.
-- The operator token is also used by `scripts/reset.sh`.
-
-## 6. Configure the Android application
-
-### 6.1 Open and build the project
+### 5.1 Open and build the project
 
 1. Open the project folder in Android Studio.
 2. Wait for Gradle synchronisation to finish.
@@ -184,7 +165,7 @@ On Windows, from Git Bash:
 ./gradlew.bat assembleDebug
 ```
 
-### 6.2 Network configuration
+### 5.2 Network configuration
 
 The laboratory publishes the API on port `8000` and MQTT on port `1883`. The phone must be able to reach the IP address of the computer running Docker Desktop.
 
@@ -222,7 +203,7 @@ adb reverse tcp:1883 tcp:1883
 
 The broker field also accepts a `host:port` value.
 
-### 6.3 Connection preferences
+### 5.3 Connection preferences
 
 In the application, open **Preferences → Connection**.
 
@@ -241,9 +222,7 @@ Press **Save** to store the configuration. Connection changes are applied when t
 
 When selecting `Course`, enter the connection details provided for that environment. Empty fields may cause the application to fall back to build-time defaults; do not assume that leaving them empty disables the connection.
 
-**Important:** changing the profile or connection addresses does not change the application's tokens. Credentials remain as described in the previous section.
-
-### 6.4 Build parameters
+### 5.4 Build parameters
 
 Default values can be overridden at build time:
 
@@ -259,11 +238,11 @@ To build the application with sample data included in `assets/samples`, without 
 
 The sample-data mode is not equivalent to a backend connection and cannot be used to validate real MQTT communication.
 
-## 7. Using the Android application
+## 6. Using the Android application
 
 When the application opens, the **Select your profile** screen is displayed. Choose one of the two profiles.
 
-### 7.1 Passenger profile
+### 6.1 Passenger profile
 
 The passenger's usual workflow is:
 
@@ -278,7 +257,7 @@ The application uses the stop manifest included in its resources and synchronise
 
 The passenger can open **Preferences** from screens that provide access to it, to change accessibility and connection settings.
 
-### 7.2 Driver profile
+### 6.2 Driver profile
 
 1. Select **Driver**.
 2. The HMI for vehicle `BUS-DEMO-01` opens.
@@ -289,7 +268,7 @@ The passenger can open **Preferences** from screens that provide access to it, t
 
 The HMI uses MQTT to receive events and communicate presence/receipts. When it reconnects, the application synchronises its state with the API again.
 
-### 7.3 Accessibility preferences
+### 6.3 Accessibility preferences
 
 The **Preferences** screen provides the following settings:
 
@@ -299,7 +278,7 @@ The **Preferences** screen provides the following settings:
 - **Test voice**: plays a test voice announcement.
 - **Connection**: connection profile and settings described above.
 
-## 8. Node-RED dashboard
+## 7. Node-RED dashboard
 
 Open:
 
@@ -320,7 +299,7 @@ The **Reset demo (new trip)** button asks the API to create a new demo trip. It 
 
 For details about each flow, see `docs/nodered-flows.pdf`.
 
-## 9. Reset the demo scenario
+## 8. Reset the demo scenario
 
 The demo reset creates a new demo trip through the `POST /demo/reset` endpoint. The previous trip is ended and new visits to the four stops are created.
 
@@ -339,12 +318,11 @@ bash scripts/reset.sh --yes
 The script requires the API to be available and uses these defaults:
 
 - API: `http://localhost:8000`
-- Operator token: `demo-operador-1`
 
-They can be overridden with environment variables:
+The API address can be overridden with an environment variable:
 
 ```bash
-API_URL=http://192.168.137.1:8000 OPERATOR_TOKEN=demo-operador-1 bash scripts/reset.sh
+API_URL=http://192.168.137.1:8000 bash scripts/reset.sh
 ```
 
 The reset operation:
@@ -356,15 +334,15 @@ The reset operation:
 
 The script generates a new idempotency key for each intentional execution. If confirmation is cancelled, no request is sent to the API.
 
-## 10. Tests and checks
+## 9. Tests and checks
 
-### 10.1 API smoke test
+### 9.1 API smoke test
 
 ```bash
 PYTHON=python bash api/tests/smoke.sh
 ```
 
-The test checks health, reset, request creation, idempotency-key replay and conflict, acceptance, completion and synchronisation using the three tokens.
+The test checks health, reset, request creation, idempotency-key replay and conflict, acceptance, completion and synchronisation.
 
 **This test modifies the demo scenario**, so do not run it during a demonstration whose state you want to preserve.
 
@@ -374,13 +352,13 @@ It requires `curl` and Python 3. To target a different API address:
 API_URL=http://COMPUTER_IP:8000 bash api/tests/smoke.sh
 ```
 
-### 10.2 Android unit tests
+### 9.2 Android unit tests
 
 ```bash
 ./gradlew testDebugUnitTest
 ```
 
-### 10.3 View service logs
+### 9.3 View service logs
 
 ```bash
 docker compose logs -f api
@@ -391,7 +369,7 @@ docker compose logs -f postgres
 
 Press `Ctrl+C` to stop viewing logs. This does not stop the containers.
 
-### 10.4 Inspect MQTT messages
+### 9.4 Inspect MQTT messages
 
 If `mosquitto_sub` and `mosquitto_pub` are installed, vehicle messages can be monitored with:
 
@@ -401,7 +379,7 @@ mosquitto_sub -h localhost -t "vehicles/BUS-DEMO-01/#" -v
 
 Topics, payload formats, QoS, retained messages and Last Will are documented in `contracts/mqtt.md`.
 
-## 11. Data and persistence
+## 10. Data and persistence
 
 Docker Compose uses the following volumes:
 
@@ -412,7 +390,7 @@ Docker Compose uses the following volumes:
 
 `docker compose down` retains these volumes. `docker compose down -v` deletes them. The demo reset (`scripts/reset.sh`) does not delete any of them.
 
-## 12. Additional documentation
+## 11. Additional documentation
 
 - `api/app/README.md`: API startup, shutdown and background processes.
 - `contracts/openapi.yaml`: REST API contract.
@@ -430,10 +408,10 @@ bash api/tests/export_openapi.sh
 
 This requires Python 3 with PyYAML. Do not edit `contracts/openapi.yaml` manually; it must be generated from the API.
 
-## 13. Known limitations
+## 12. Known limitations
 
 - The bus, trip and simulated ramps are laboratory data. There is no operational connection to real EMT buses.
-- Tokens are fixed and the MQTT broker allows anonymous access in the laboratory configuration. Do not expose this environment to a public network.
+- The MQTT broker allows anonymous access in the laboratory configuration. Do not expose this environment to a public network.
 - The scenario uses one demo vehicle (`BUS-DEMO-01`) and one passenger identity.
 - Passenger decision announcements depend on the application being visible and available; announcements while the screen is off would require a foreground service and push notifications.
 - The ESP32 node is optional and controls a mock-up, not a real vehicle ramp.
