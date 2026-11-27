@@ -1,8 +1,11 @@
 
 package dte.masteriot.accessiblebus.ui.passenger
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -19,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -53,14 +57,10 @@ fun StopDetailScreen(
     val stop = findStop(stops, stopCode)
     val status = visitStatus(snapshot, stopCode)
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .safeDrawingPadding()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    val landscape =
+        LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    val details: @Composable ColumnScope.() -> Unit = {
         Column(
             modifier = Modifier.semantics(mergeDescendants = true) {},
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -110,7 +110,9 @@ fun StopDetailScreen(
                 style = MaterialTheme.typography.bodyLarge
             )
         }
+    }
 
+    val actions: @Composable ColumnScope.() -> Unit = {
         when (status) {
             is VisitStatus.Available -> {
                 Button(
@@ -176,6 +178,42 @@ fun StopDetailScreen(
                 .heightIn(min = 56.dp)
         ) {
             Text("Back")
+        }
+    }
+
+    val screen = Modifier
+        .fillMaxSize()
+        .safeDrawingPadding()
+        .padding(16.dp)
+
+    if (landscape) {
+        Row(
+            modifier = screen,
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                content = details
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                content = actions
+            )
+        }
+    } else {
+        Column(
+            modifier = screen.verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            details()
+            actions()
         }
     }
 }

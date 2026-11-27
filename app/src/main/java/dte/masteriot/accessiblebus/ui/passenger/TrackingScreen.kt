@@ -1,5 +1,6 @@
 package dte.masteriot.accessiblebus.ui.passenger
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -64,6 +66,9 @@ fun TrackingScreen(
     val request = snapshot.requests.find {
         it.id == requestId
     }
+
+    val landscape =
+        LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     var askCancel by rememberSaveable {
         mutableStateOf(false)
@@ -156,8 +161,24 @@ fun TrackingScreen(
                 }
             }
 
-            trackingFacts(request).forEach {
-                FactCard(it)
+            if (landscape) {
+                trackingFacts(request).chunked(2).forEach { rowFacts ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        rowFacts.forEach { fact ->
+                            FactCard(
+                                fact,
+                                Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            } else {
+                trackingFacts(request).forEach {
+                    FactCard(it)
+                }
             }
 
             if (request.isOpen) {
@@ -231,18 +252,39 @@ fun TrackingScreen(
             }
         }
 
-        OutlinedButton(
-            onClick = viewModel::refresh,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Refresh")
-        }
+        if (landscape) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = viewModel::refresh,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Refresh")
+                }
 
-        OutlinedButton(
-            onClick = onBack,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Back")
+                OutlinedButton(
+                    onClick = onBack,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Back")
+                }
+            }
+        } else {
+            OutlinedButton(
+                onClick = viewModel::refresh,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Refresh")
+            }
+
+            OutlinedButton(
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Back")
+            }
         }
     }
 }
@@ -253,9 +295,12 @@ fun TrackingScreen(
  * rather than relying on colour alone.
  */
 @Composable
-private fun FactCard(fact: Fact) {
+private fun FactCard(
+    fact: Fact,
+    modifier: Modifier = Modifier
+) {
     OutlinedCard(
-        Modifier
+        modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = true) {}
     ) {
